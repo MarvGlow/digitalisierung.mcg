@@ -1,2 +1,1 @@
-# MarvinGlow.github.io
-GitHub Pages personal website
+Dateien und html-Skripte für digitale Projekte
