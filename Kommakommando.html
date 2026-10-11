@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Komma-Kommando</title>
+<style>
+  :root{
+    --bg:#eef3f8; --ink:#222; --brand:#1d4e89; --good:#2e7d32; --bad:#c62828; --warn:#e65100;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.4}
+  #top{position:sticky;top:0;z-index:10;background:var(--bg);padding:.5rem .7rem .6rem;
+       box-shadow:0 3px 8px rgba(0,0,0,.15)}
+  .wrap{max-width:680px;margin:0 auto}
+  .stats{display:flex;justify-content:space-between;align-items:center;gap:.5rem;
+         font-size:.95rem;margin-bottom:.4rem;flex-wrap:wrap}
+  .stats b{font-variant-numeric:tabular-nums}
+  .track{height:12px;background:#cfd8e3;border-radius:999px;overflow:hidden}
+  #bar{height:100%;width:100%;background:var(--brand);transition:width .2s linear,background .3s}
+  #bar.low{background:var(--bad)}
+  main{max-width:680px;margin:0 auto;padding:1rem .7rem 3rem}
+  .label{font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;color:#555;margin-bottom:.4rem}
+  .card{background:#fff;border-radius:14px;padding:1rem;box-shadow:0 1px 5px rgba(0,0,0,.18)}
+  .sent{display:flex;flex-wrap:wrap;gap:.4rem .3rem;font-size:1.3rem;align-items:center}
+  .w{font:inherit;color:inherit;background:#fff;border:2px solid #cdd6e2;border-radius:8px;
+     padding:.3rem .5rem;min-height:46px;cursor:pointer;display:inline-flex;align-items:baseline}
+  .w:hover,.w:focus-visible{border-color:var(--brand);outline:none;background:#f1f6fc}
+  .w.on{border-color:var(--brand);background:#e3eefb}
+  .w.last{border:2px solid transparent;cursor:default;background:transparent;padding-left:.2rem}
+  .w.last:hover{background:transparent}
+  .cm{display:inline-block;min-width:.4em;color:var(--brand);font-weight:900}
+  .hint{font-size:.9rem;color:#555;margin:.7rem 0 0}
+  .actions{margin-top:1rem;text-align:center}
+  button.primary{background:var(--brand);color:#fff;border:none;border-radius:10px;
+                 padding:.75rem 1.4rem;font-size:1.05rem;font-weight:700;cursor:pointer;min-height:48px}
+  button.primary:hover,button.primary:focus-visible{filter:brightness(1.18);outline:none}
+
+  /* Auswertung */
+  .fw{display:inline-block;white-space:nowrap}
+  .fw .cm{font-size:1.5em;line-height:1;padding:0 .12em;border-radius:6px}
+  .fw .cm.ok{color:#fff;background:var(--good)}
+  .fw .cm.miss{color:#fff;background:var(--bad)}
+  .fw .cm.extra{color:var(--bad);background:#fde4e4;text-decoration:line-through;border:2px solid var(--bad)}
+  .fb{margin-top:1rem;border-radius:12px;padding:.8rem 1rem;background:#fff;border:3px solid var(--good)}
+  .fb.bad{border-color:var(--bad)}
+  .fb h2{font-size:1.1rem;margin:0 0 .4rem}
+  .fb ul{margin:.3rem 0 .5rem;padding-left:1.2rem}
+  .fb p{margin:.4rem 0 .7rem}
+  .rule{background:#f4f7fb;border-left:5px solid var(--brand);padding:.5rem .7rem;border-radius:6px}
+  .legend{font-size:.85rem;color:#444;margin-top:.6rem}
+
+  /* Start-/Endbildschirm */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;
+           justify-content:center;padding:1rem;z-index:50}
+  .overlay.hidden{display:none}
+  .box{background:#fff;border-radius:16px;padding:1.3rem;max-width:460px;width:100%;
+       max-height:92vh;overflow:auto;text-align:center}
+  .box h2{margin:.2rem 0 .6rem}
+  .box ul{text-align:left;padding-left:1.2rem;margin:.5rem 0 1rem}
+  .big{font-size:2.4rem;font-weight:800;color:var(--brand)}
+</style>
+</head>
+<body>
+
+<div id="top">
+  <div class="wrap">
+    <div class="stats">
+      <span>Zeit: <b id="time">60</b> s</span>
+      <span>Punkte: <b id="score">0</b></span>
+      <span>Serie: <b id="streak">0</b></span>
+      <span>Stufe: <b id="level">1</b></span>
+      <span>Rang: <b id="rank"></b></span>
+    </div>
+    <div class="track"><div id="bar"></div></div>
+  </div>
+</div>
+
+<main>
+  <div class="label" id="task">Setze die fehlenden Kommas</div>
+  <div class="card">
+    <div class="sent" id="sentence"></div>
+    <p class="hint" id="hint">Tippe auf ein Wort, hinter dem ein Komma stehen muss. Nochmal tippen entfernt das Komma wieder.</p>
+  </div>
+  <div class="actions" id="actions"></div>
+  <div id="fb" aria-live="polite"></div>
+</main>
+
+<div class="overlay" id="overlay"><div class="box" id="box"></div></div>
+
+<script>
+"use strict";
+
+/* ---------- Daten ----------
+   l = Stufe (1-3), s = Satz MIT korrekten Kommas, r = Regel für die Rückmeldung.
+   Aus dem Satz werden Wörter und die Positionen der Kommas automatisch abgeleitet.
+   Es kommen nur Sätze vor, bei denen das Komma verpflichtend ist. */
+const R_ENUM  = "Bei Aufzählungen trennt man gleichrangige Wörter oder Wortgruppen durch Kommas. Vor „und“ und „oder“ steht kein Komma.";
+const R_ADJ   = "Gleichrangige Adjektive vor einem Nomen trennt man durch Komma. Test: Passt „und“ dazwischen? „kalter und nasser und grauer Tag“ passt, also Komma.";
+const R_ANR   = "Eine Anrede trennt man durch Komma vom restlichen Satz ab.";
+const R_ANRM  = "Eine Anrede mitten im Satz wird vorn und hinten durch Kommas abgetrennt.";
+const R_DASS  = "Vor „dass“ steht immer ein Komma, denn es leitet einen Nebensatz ein.";
+const R_NS    = "Hauptsatz und Nebensatz trennt man durch Komma. Nebensätze erkennt man oft an Wörtern wie „weil“, „damit“, „obwohl“ und am Verb am Satzende.";
+const R_VOR   = "Steht der Nebensatz vor dem Hauptsatz, endet er mit einem Komma. Das Komma steht direkt hinter dem Verb des Nebensatzes.";
+const R_FRAGE = "Eine indirekte Frage ist ein Nebensatz. Sie wird durch Komma vom Hauptsatz getrennt.";
+const R_REL   = "Ein eingeschobener Nebensatz (hier ein Relativsatz) wird vorn und hinten durch Kommas vom Hauptsatz abgetrennt.";
+const R_ABER  = "Vor „aber“, „sondern“ und „denn“ steht immer ein Komma.";
+const R_INF   = "Eine Infinitivgruppe mit „um … zu“, „ohne … zu“ oder „(an)statt … zu“ wird immer durch Komma abgetrennt.";
+const R_MIX   = "Jeder Nebensatz wird vom Rest des Satzes durch Komma getrennt. Bei mehreren Nebensätzen und eingeschobenen Sätzen entstehen mehrere Kommas.";
+
+const RAW = [
+  /* Stufe 1: Aufzählungen und Anreden */
+  {l:1,s:"Im Rucksack sind Hefte, Stifte, ein Lineal und ein Radiergummi.",r:R_ENUM},
+  {l:1,s:"Zum Frühstück gibt es Brötchen, Käse, Honig und Orangensaft.",r:R_ENUM},
+  {l:1,s:"Lena spielt Gitarre, Klavier und Schlagzeug.",r:R_ENUM},
+  {l:1,s:"Der Zoo hat Löwen, Zebras, Giraffen, Elefanten und Affen.",r:R_ENUM},
+  {l:1,s:"Der Hund war groß, braun und sehr freundlich.",r:R_ENUM},
+  {l:1,s:"Im Urlaub möchten wir Paris, Rom, Wien oder Prag besuchen.",r:R_ENUM},
+  {l:1,s:"Im Garten blühen rote, gelbe und weiße Rosen.",r:R_ADJ},
+  {l:1,s:"Es war ein kalter, nasser, grauer Novembertag.",r:R_ADJ},
+  {l:1,s:"Mia, kommst du bitte mal her?",r:R_ANR},
+  {l:1,s:"Ich habe dich überall gesucht, Tim.",r:R_ANR},
+  {l:1,s:"Kommst du, Paul, heute zum Training?",r:R_ANRM},
+
+  /* Stufe 2: Hauptsatz und Nebensatz */
+  {l:2,s:"Ich weiß, dass du recht hast.",r:R_DASS},
+  {l:2,s:"Die Lehrerin sagt, dass wir leise sein sollen.",r:R_DASS},
+  {l:2,s:"Wir bleiben zu Hause, weil es regnet.",r:R_NS},
+  {l:2,s:"Max freut sich, weil morgen schulfrei ist.",r:R_NS},
+  {l:2,s:"Sie lernt viel, damit sie eine gute Note bekommt.",r:R_NS},
+  {l:2,s:"Wenn es regnet, bleiben wir zu Hause.",r:R_VOR},
+  {l:2,s:"Obwohl er müde war, ging er noch zum Training.",r:R_VOR},
+  {l:2,s:"Als wir ankamen, war das Spiel schon vorbei.",r:R_VOR},
+  {l:2,s:"Nachdem die Sonne untergegangen war, wurde es schnell kalt.",r:R_VOR},
+  {l:2,s:"Sobald es klingelt, rennen alle auf den Pausenhof.",r:R_VOR},
+  {l:2,s:"Ich frage mich, ob der Bus pünktlich kommt.",r:R_FRAGE},
+  {l:2,s:"Wir wissen nicht, wann der Zug abfährt.",r:R_FRAGE},
+
+  /* Stufe 3: eingeschobene Sätze, Satzreihen, Infinitivgruppen, mehrere Kommas */
+  {l:3,s:"Das Buch, das ich gestern gelesen habe, war spannend.",r:R_REL},
+  {l:3,s:"Mein Bruder, der sehr gut zeichnen kann, will Künstler werden.",r:R_REL},
+  {l:3,s:"Die Frau, die neben uns wohnt, hat einen Hund.",r:R_REL},
+  {l:3,s:"Der Film, den wir gestern gesehen haben, hat mir gut gefallen.",r:R_REL},
+  {l:3,s:"Wir wollten ins Schwimmbad, aber es hat geregnet.",r:R_ABER},
+  {l:3,s:"Das ist kein Hund, sondern ein Wolf.",r:R_ABER},
+  {l:3,s:"Er blieb im Bett, denn er war krank.",r:R_ABER},
+  {l:3,s:"Es war kalt, aber wir gingen trotzdem spazieren.",r:R_ABER},
+  {l:3,s:"Tom geht in den Wald, um Pilze zu sammeln.",r:R_INF},
+  {l:3,s:"Sie verließ den Raum, ohne ein Wort zu sagen.",r:R_INF},
+  {l:3,s:"Anstatt zu lernen, spielt er den ganzen Tag am Computer.",r:R_INF},
+  {l:3,s:"Ich hoffe, dass du kommst, weil ich dich vermisse.",r:R_MIX},
+  {l:3,s:"Lisa sagt, dass der Junge, der neben ihr sitzt, nett ist.",r:R_MIX}
+];
+
+/* Satz zerlegen: Wörter ohne Komma + need[i] = "nach Wort i steht ein Komma" */
+const SENT = RAW.map((x,id) => {
+  const parts = x.s.split(" ");
+  return {id, l:x.l, r:x.r,
+          words: parts.map(w => w.replace(/,$/,"")),
+          need:  parts.map(w => w.endsWith(","))};
+});
+
+const RANKS = [
+  {min:0,   name:"Komma-Neuling"},
+  {min:30,  name:"Komma-Kenner:in"},
+  {min:70,  name:"Komma-Profi"},
+  {min:120, name:"Komma-Kommandant:in"}
+];
+const GAME_MS = 60000;
+const STORAGE_KEY = "komma_kommando_best";
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = id => document.getElementById(id);
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(text !== undefined) e.textContent = text;   // textContent statt innerHTML: sicher
+  return e;
+}
+function rankFor(s){
+  let r = RANKS[0];
+  for(const x of RANKS) if(s >= x.min) r = x;
+  return r;
+}
+let best = 0;
+try { best = parseInt(localStorage.getItem(STORAGE_KEY),10) || 0; } catch(e){}   // Safari privat: kein Absturz
+function saveBest(){ try { localStorage.setItem(STORAGE_KEY, String(best)); } catch(e){} }
+
+/* ---------- Spielzustand ---------- */
+let state = "start";   // start | play | feedback | over
+let remaining, lastTick, timerId;
+let cur, marks, score, streak, correctCount, answered, used;
+
+function currentLevel(){ return 1 + Math.min(2, Math.floor(correctCount/3)); }
+
+function pickSentence(level){
+  let pool = SENT.filter(x => x.l === level && !used.has(x.id));
+  if(!pool.length) pool = SENT.filter(x => !used.has(x.id));   // Stufe leer: nimm irgendeinen neuen Satz
+  if(!pool.length){ used.clear(); pool = SENT.filter(x => x.l === level); }   // alles gespielt: von vorn
+  const item = pool[Math.floor(Math.random()*pool.length)];
+  used.add(item.id);
+  return item;
+}
+
+function newGame(){
+  score = 0; streak = 0; correctCount = 0; answered = 0; used = new Set();
+  remaining = GAME_MS; lastTick = Date.now();
+  $("overlay").classList.add("hidden");
+  clearInterval(timerId);
+  timerId = setInterval(tick, 200);
+  nextSentence();
+}
+
+function nextSentence(){
+  cur = pickSentence(currentLevel());
+  marks = cur.words.map(() => false);
+  state = "play";
+  $("fb").textContent = "";
+  buildPlay();
+  renderActions();
+  renderStats();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* Die Uhr läuft nur im Zustand "play". Beim Lesen der Erklärung steht sie still. */
+function tick(){
+  const now = Date.now();
+  const dt = Math.min(now - lastTick, 500);   // Deckel: Tab-Wechsel soll keine Zeit „fressen“
+  lastTick = now;
+  if(state === "play"){
+    remaining -= dt;
+    if(remaining <= 0){ remaining = 0; renderTime(); endGame(); return; }
+  }
+  renderTime();
+}
+
+/* ---------- Auswertung ---------- */
+function check(){
+  if(state !== "play") return;
+  const last = cur.words.length - 1;
+  const missing = [], extra = [];
+  for(let i=0;i<last;i++){
+    if(cur.need[i] && !marks[i]) missing.push(i);
+    if(!cur.need[i] && marks[i]) extra.push(i);
+  }
+  const ok = missing.length === 0 && extra.length === 0;
+  let points = 0;
+  answered++;
+  if(ok){
+    streak++; correctCount++;
+    points = 10 + Math.min(streak-1, 5)*2;     // Serienbonus bis +10
+    score += points;
+  } else {
+    streak = 0;
+  }
+  state = "feedback";
+  buildFeedback({ok, points, missing, extra});
+  renderActions();
+  renderStats();
+}
+
+/* ---------- Darstellung ---------- */
+function buildPlay(){
+  const box = $("sentence");
+  box.textContent = "";
+  $("hint").style.display = "";
+  const last = cur.words.length - 1;
+  cur.words.forEach((w,i) => {
+    if(i === last){ box.appendChild(el("span","w last",w)); return; }   // letztes Wort: Satzzeichen, kein Komma
+    const b = el("button","w");
+    b.type = "button";
+    b.appendChild(el("span","wt",w));
+    const cm = el("span","cm","");
+    b.appendChild(cm);
+    b.setAttribute("aria-pressed","false");
+    b.setAttribute("aria-label","Komma nach „"+w+"“ setzen");
+    b.addEventListener("click", () => {
+      if(state !== "play") return;
+      marks[i] = !marks[i];
+      cm.textContent = marks[i] ? "," : "";
+      b.classList.toggle("on", marks[i]);
+      b.setAttribute("aria-pressed", String(marks[i]));
+    });
+    box.appendChild(b);
+  });
+}
+
+function buildFeedback(res){
+  // Satz ohne Buttons, mit farbig und zusätzlich per Text markierten Kommas
+  const box = $("sentence");
+  box.textContent = "";
+  $("hint").style.display = "none";
+  const last = cur.words.length - 1;
+  cur.words.forEach((w,i) => {
+    const s = el("span","fw");
+    s.appendChild(document.createTextNode(w));
+    if(i < last){
+      if(marks[i] && cur.need[i])      s.appendChild(el("span","cm ok",","));
+      else if(cur.need[i])             s.appendChild(el("span","cm miss",","));
+      else if(marks[i])                s.appendChild(el("span","cm extra",","));
+    }
+    box.appendChild(s);
+  });
+
+  const fb = $("fb");
+  fb.textContent = "";
+  const p = el("div","fb"+(res.ok ? "" : " bad"));
+  p.appendChild(el("h2","", res.ok ? "✓ Richtig! +"+res.points+" Punkte" : "✗ Noch nicht ganz richtig"));
+  if(!res.ok){
+    const ul = el("ul");
+    res.missing.forEach(i => ul.appendChild(el("li","","Hier fehlt ein Komma: nach „"+cur.words[i]+"“")));
+    res.extra.forEach(i   => ul.appendChild(el("li","","Hier ist ein Komma zu viel: nach „"+cur.words[i]+"“")));
+    p.appendChild(ul);
+  }
+  p.appendChild(el("div","rule","Regel: "+cur.r));
+  p.appendChild(el("div","legend","Grün = richtig gesetzt · Rot ausgefüllt = fehlt · Rot durchgestrichen = zu viel. Die Zeit steht still, bis du auf „Weiter“ tippst."));
+  fb.appendChild(p);
+}
+
+function renderActions(){
+  const a = $("actions");
+  a.textContent = "";
+  const b = el("button","primary", state === "play" ? "Prüfen" : "Weiter");
+  b.type = "button";
+  b.addEventListener("click", state === "play" ? check : nextSentence);
+  a.appendChild(b);
+  if(state === "feedback") b.focus({preventScroll:true});
+}
+
+function renderTime(){
+  const sec = Math.ceil(remaining/1000);
+  $("time").textContent = sec;
+  const bar = $("bar");
+  bar.style.width = (remaining/GAME_MS*100)+"%";
+  bar.classList.toggle("low", sec <= 15);
+}
+function renderStats(){
+  $("score").textContent = score;
+  $("streak").textContent = streak;
+  $("level").textContent = currentLevel();
+  $("rank").textContent = rankFor(score).name;
+  renderTime();
+}
+
+/* ---------- Start- und Endbildschirm ---------- */
+function showOverlay(build){
+  const box = $("box");
+  box.textContent = "";
+  build(box);
+  $("overlay").classList.remove("hidden");
+}
+function startButton(label){
+  const b = el("button","primary",label);
+  b.type = "button";
+  b.addEventListener("click", newGame);
+  return b;
+}
+function showStart(){
+  showOverlay(box => {
+    box.appendChild(el("div","big",","));
+    box.appendChild(el("h2","","Komma-Kommando"));
+    const ul = el("ul");
+    ["Du hast 60 Sekunden. Jeder Satz hat keine Kommas.",
+     "Tippe auf jedes Wort, hinter dem ein Komma stehen muss, und dann auf „Prüfen“.",
+     "Alles richtig: Punkte, in Serie gibt es Bonus. Die Aufgaben werden nach und nach schwerer.",
+     "Bei Fehlern siehst du, welches Komma fehlt oder zu viel ist, und die passende Regel. Währenddessen steht die Zeit still.",
+     "Rekord bisher: "+best+" Punkte"].forEach(t => ul.appendChild(el("li","",t)));
+    box.appendChild(ul);
+    box.appendChild(startButton("Spiel starten"));
+  });
+}
+function endGame(){
+  state = "over";
+  clearInterval(timerId);
+  const newRecord = score > best;
+  if(newRecord){ best = score; saveBest(); }
+  showOverlay(box => {
+    box.appendChild(el("div","big","⏱️"));
+    box.appendChild(el("h2","","Zeit abgelaufen"));
+    box.appendChild(el("p","","Punkte: "+score));
+    box.appendChild(el("p","","Rang: "+rankFor(score).name));
+    box.appendChild(el("p","","Richtige Sätze: "+correctCount+" von "+answered));
+    box.appendChild(el("p","", newRecord ? "🎉 Neuer Rekord!" : "Rekord: "+best+" Punkte"));
+    box.appendChild(startButton("Nochmal spielen"));
+  });
+}
+
+/* Anfangsanzeige (hinter dem Startbildschirm) */
+score = 0; streak = 0; correctCount = 0; answered = 0; remaining = GAME_MS;
+renderStats();
+showStart();
+</script>
+</body>
+</html>
