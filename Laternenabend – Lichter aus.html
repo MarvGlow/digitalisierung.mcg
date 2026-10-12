@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Laternenabend – Lichter aus</title>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --sky-top: #0c0f26;
+    --sky-bottom: #1d2250;
+    --lamp-off: #252c5c;
+    --lamp-off-edge: #3a437f;
+    --lamp-on: #ffc857;
+    --lamp-glow: #ff9f45;
+    --text: #f3efe2;
+    --text-soft: #b9bddb;
+    --hint: #8be3c6;
+    --panel: rgba(255,255,255,0.07);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+    color: var(--text);
+    font-family: "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: #fff; opacity: .5; animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle { 0%,100% { opacity: .15; } 50% { opacity: .8; } }
+
+  main {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 1100px;
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 12px 16px 16px; gap: 12px;
+  }
+  h1 { margin: 0; font-size: clamp(1.6rem, 4.5vh, 2.6rem); letter-spacing: .02em; text-align: center; }
+  .rule { margin: 0; color: var(--text-soft); text-align: center; font-size: clamp(1rem, 2.4vh, 1.4rem); max-width: 40em; line-height: 1.4; }
+
+  .levels { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: inherit; color: var(--text); cursor: pointer;
+    background: var(--panel); border: 2px solid rgba(255,255,255,.18);
+    border-radius: 999px; padding: 12px 24px; min-height: 56px;
+    font-size: clamp(1rem, 2.6vh, 1.4rem);
+    touch-action: manipulation;
+    transition: background .15s, border-color .15s, transform .1s;
+  }
+  button:hover { background: rgba(255,255,255,.14); }
+  button:active { transform: scale(.97); }
+  button:focus-visible { outline: 4px solid var(--hint); outline-offset: 3px; }
+  button[aria-pressed="true"] { background: var(--lamp-on); color: #2a1d00; border-color: var(--lamp-on); font-weight: 700; }
+
+  .board-wrap { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  #board {
+    --n: 3;
+    --size: min(92vw, 56vh, 640px);
+    width: var(--size); height: var(--size);
+    display: grid; gap: clamp(6px, 1.6vmin, 14px);
+    grid-template-columns: repeat(var(--n), 1fr);
+    grid-template-rows: repeat(var(--n), 1fr);
+  }
+  .lamp {
+    padding: 0; min-height: 0; width: 100%; height: 100%;
+    border-radius: 28%;
+    background: var(--lamp-off); border: 3px solid var(--lamp-off-edge);
+    position: relative;
+    transition: background .25s, box-shadow .25s, border-color .25s;
+  }
+  .lamp:hover { background: #2f3873; }
+  .lamp.on {
+    background: radial-gradient(circle at 50% 40%, #fff3c4 0%, var(--lamp-on) 55%, var(--lamp-glow) 100%);
+    border-color: #ffe39a;
+    box-shadow: 0 0 28px 6px rgba(255,170,70,.55);
+  }
+  .lamp.hint::after {
+    content: ""; position: absolute; inset: -8px; border-radius: 34%;
+    border: 5px solid var(--hint); animation: pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .5; } }
+
+  .bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .moves { font-size: clamp(1.1rem, 2.8vh, 1.6rem); color: var(--text-soft); min-width: 7em; text-align: center; }
+  .moves strong { color: var(--text); }
+
+  /* Gewinn-Anzeige */
+  #win {
+    position: fixed; inset: 0; z-index: 10; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(8,10,30,.72);
+  }
+  #win.show { display: flex; }
+  .win-card {
+    background: linear-gradient(180deg, #2b3270, #1a1f4a);
+    border: 3px solid var(--lamp-on); border-radius: 28px;
+    padding: 28px 32px; text-align: center; max-width: 560px;
+    box-shadow: 0 0 60px rgba(255,200,87,.35);
+    animation: pop .4s ease-out;
+  }
+  .win-card h2 { margin: 0 0 8px; font-size: clamp(1.6rem, 5vh, 2.6rem); }
+  .win-card p { margin: 0 0 20px; color: var(--text-soft); font-size: clamp(1.1rem, 2.8vh, 1.5rem); }
+  .win-card .bar { margin-top: 4px; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .shoot { position: fixed; width: 4px; height: 4px; border-radius: 50%; background: var(--lamp-on); z-index: 11; pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .star, .lamp.hint::after, .win-card { animation: none; }
+    .lamp, button { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stars" aria-hidden="true"></div>
+
+<main>
+  <h1>Laternenabend</h1>
+  <p class="rule">Tippe eine Laterne an: Sie und ihre Nachbarn (oben, unten, links, rechts) wechseln zwischen an und aus. Löscht alle Laternen!</p>
+
+  <div class="levels" role="group" aria-label="Schwierigkeit">
+    <button type="button" data-level="leicht" aria-pressed="true">Leicht (3×3)</button>
+    <button type="button" data-level="mittel" aria-pressed="false">Mittel (4×4)</button>
+    <button type="button" data-level="knifflig" aria-pressed="false">Knifflig (5×5)</button>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" role="grid" aria-label="Spielfeld"></div>
+  </div>
+
+  <div class="bar">
+    <div class="moves" aria-live="polite">Züge: <strong id="moves">0</strong></div>
+    <button type="button" id="btn-hint">Tipp</button>
+    <button type="button" id="btn-reset">Von vorn</button>
+    <button type="button" id="btn-new">Neues Rätsel</button>
+  </div>
+</main>
+
+<div id="win" role="dialog" aria-modal="true" aria-labelledby="win-title">
+  <div class="win-card">
+    <h2 id="win-title">Alle Laternen sind aus!</h2>
+    <p id="win-text">Gut gemacht.</p>
+    <div class="bar">
+      <button type="button" id="btn-win-new">Neues Rätsel</button>
+      <button type="button" id="btn-win-next">Nächste Stufe</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Anzahl der Zufallsklicks beim Erzeugen. Je mehr, desto knobeliger.
+  // Jedes Feld wird höchstens einmal gewählt, daher ist die Lösung mit
+  // genau diesen Feldern immer möglich.
+  const LEVELS = {
+    leicht:   { n: 3, minClicks: 3, maxClicks: 4 },
+    mittel:   { n: 4, minClicks: 5, maxClicks: 6 },
+    knifflig: { n: 5, minClicks: 7, maxClicks: 9 }
+  };
+  const ORDER = ["leicht", "mittel", "knifflig"];
+
+  let levelName = "leicht";
+  let n = 3;
+  let lit = [];        // aktueller Zustand (true = Laterne an)
+  let initial = [];    // Startbild, für "Von vorn"
+  let solution = [];   // Felder, mit denen das Rätsel erzeugt wurde (true = Klick nötig)
+  let played = [];     // Parität der bisherigen Klicks pro Feld
+  let moves = 0;
+  let won = false;
+
+  const board = document.getElementById("board");
+  const movesEl = document.getElementById("moves");
+  const winEl = document.getElementById("win");
+  let cells = [];
+
+  /* ---------- Hilfsfunktionen ---------- */
+
+  // Schaltet Feld i und seine Nachbarn im Array arr um.
+  function applyClick(arr, i) {
+    const r = Math.floor(i / n), c = i % n;
+    const targets = [[r, c], [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+    for (const [rr, cc] of targets) {
+      if (rr >= 0 && rr < n && cc >= 0 && cc < n) {
+        const k = rr * n + cc;
+        arr[k] = !arr[k];
+      }
+    }
+  }
+
+  function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+
+  /* ---------- Rätsel erzeugen (rückwärts => immer lösbar) ---------- */
+
+  function newPuzzle() {
+    const { minClicks, maxClicks } = LEVELS[levelName];
+    n = LEVELS[levelName].n;
+    const total = n * n;
+
+    let attempts = 0;
+    do {
+      lit = new Array(total).fill(false);
+      solution = new Array(total).fill(false);
+      const k = randInt(minClicks, maxClicks);
+      const idx = [...Array(total).keys()];
+      // Fisher-Yates: die ersten k Felder sind die Klicks
+      for (let i = total - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [idx[i], idx[j]] = [idx[j], idx[i]];
+      }
+      for (let t = 0; t < k; t++) {
+        solution[idx[t]] = true;
+        applyClick(lit, idx[t]);
+      }
+      attempts++;
+      // Das Startbild braucht mindestens 3 leuchtende Laternen, damit es kein
+      // (fast) fertiges Feld ist. Nach vielen Versuchen genügt 1.
+    } while (lit.filter(Boolean).length < (attempts < 50 ? 3 : 1));
+
+    initial = lit.slice();
+    played = new Array(total).fill(false);
+    moves = 0;
+    won = false;
+    buildBoard();
+    render();
+  }
+
+  function resetPuzzle() {
+    lit = initial.slice();
+    played = new Array(n * n).fill(false);
+    moves = 0;
+    won = false;
+    render();
+  }
+
+  /* ---------- Darstellung ---------- */
+
+  function buildBoard() {
+    board.style.setProperty("--n", n);
+    board.setAttribute("aria-rowcount", n);
+    board.setAttribute("aria-colcount", n);
+    board.innerHTML = "";
+    cells = [];
+    for (let i = 0; i < n * n; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "lamp";
+      b.setAttribute("role", "gridcell");
+      b.dataset.i = i;
+      b.addEventListener("click", () => onLamp(i));
+      board.appendChild(b);
+      cells.push(b);
+    }
+  }
+
+  function render() {
+    for (let i = 0; i < cells.length; i++) {
+      cells[i].classList.toggle("on", lit[i]);
+      cells[i].setAttribute("aria-label",
+        "Reihe " + (Math.floor(i / n) + 1) + ", Spalte " + (i % n + 1) + ": " + (lit[i] ? "an" : "aus"));
+    }
+    movesEl.textContent = moves;
+    document.querySelectorAll(".levels button").forEach(b =>
+      b.setAttribute("aria-pressed", b.dataset.level === levelName ? "true" : "false"));
+    document.getElementById("btn-hint").disabled = won;
+  }
+
+  function clearHint() { cells.forEach(c => c.classList.remove("hint")); }
+
+  /* ---------- Spielzüge ---------- */
+
+  function onLamp(i) {
+    if (won) return;
+    clearHint();
+    applyClick(lit, i);
+    played[i] = !played[i];
+    moves++;
+    render();
+    if (lit.every(v => !v)) win();
+  }
+
+  // Tipp: Welche Felder fehlen noch? Rest = Lösung XOR bisherige Klicks.
+  // Ein Klick auf jedes dieser Felder löscht garantiert alle Laternen.
+  function hint() {
+    if (won) return;
+    clearHint();
+    const needed = [];
+    for (let i = 0; i < n * n; i++) if (solution[i] !== played[i]) needed.push(i);
+    if (needed.length === 0) return;
+    const pick = needed[Math.floor(Math.random() * needed.length)];
+    cells[pick].classList.add("hint");
+  }
+
+  /* ---------- Gewinn ---------- */
+
+  function win() {
+    won = true;
+    render();
+    const text = document.getElementById("win-text");
+    text.textContent = "Geschafft in " + moves + (moves === 1 ? " Zug." : " Zügen.") +
+      " Jeder Weg zählt, auch ein Umweg.";
+    const nextBtn = document.getElementById("btn-win-next");
+    nextBtn.style.display = levelName === "knifflig" ? "none" : "";
+    setTimeout(() => {
+      winEl.classList.add("show");
+      sparkle();
+      document.getElementById("btn-win-new").focus();
+    }, 500);
+  }
+
+  function sparkle() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (let i = 0; i < 24; i++) {
+      const s = document.createElement("div");
+      s.className = "shoot";
+      const x0 = 50 + (Math.random() - .5) * 20, y0 = 50;
+      s.style.left = x0 + "vw"; s.style.top = y0 + "vh";
+      document.body.appendChild(s);
+      const dx = (Math.random() - .5) * 90, dy = (Math.random() - .8) * 70;
+      s.animate(
+        [{ transform: "translate(0,0) scale(1)", opacity: 1 },
+         { transform: "translate(" + dx + "vw," + dy + "vh) scale(.2)", opacity: 0 }],
+        { duration: 1400 + Math.random() * 800, easing: "ease-out" }
+      ).onfinish = () => s.remove();
+    }
+  }
+
+  function closeWin() { winEl.classList.remove("show"); }
+
+  /* ---------- Steuerung ---------- */
+
+  document.querySelectorAll(".levels button").forEach(b =>
+    b.addEventListener("click", () => { levelName = b.dataset.level; closeWin(); newPuzzle(); }));
+  document.getElementById("btn-hint").addEventListener("click", hint);
+  document.getElementById("btn-reset").addEventListener("click", () => { clearHint(); closeWin(); resetPuzzle(); });
+  document.getElementById("btn-new").addEventListener("click", () => { closeWin(); newPuzzle(); });
+  document.getElementById("btn-win-new").addEventListener("click", () => { closeWin(); newPuzzle(); });
+  document.getElementById("btn-win-next").addEventListener("click", () => {
+    levelName = ORDER[Math.min(ORDER.indexOf(levelName) + 1, ORDER.length - 1)];
+    closeWin(); newPuzzle();
+  });
+
+  /* ---------- Sternenhimmel ---------- */
+  const sky = document.getElementById("stars");
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement("span");
+    s.className = "star";
+    s.style.left = Math.random() * 100 + "%";
+    s.style.top = Math.random() * 100 + "%";
+    s.style.animationDelay = (Math.random() * 4) + "s";
+    s.style.animationDuration = (3 + Math.random() * 3) + "s";
+    const size = 2 + Math.random() * 2;
+    s.style.width = s.style.height = size + "px";
+    sky.appendChild(s);
+  }
+
+  newPuzzle();
+})();
+</script>
+</body>
+</html>
