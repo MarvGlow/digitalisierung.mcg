@@ -1,0 +1,664 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Unabhängigkeits-Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=STIX+Two+Text:wght@500&display=swap">
+<style>
+/* Layout: eine zentrierte Spalte mit Aufgabenblättern auf Karopapier, Schritt-Navigation oben */
+:root{
+  --paper:#f2f4f0; --sheet:#ffffff; --grid:rgba(47,69,181,.075);
+  --ink:#1b2233; --muted:#5a6375; --line:#d3d8e1;
+  --accent:#2f45b5; --accent-ink:#ffffff; --accent-soft:#e7eafa;
+  --a:#a8336a; --a-soft:#f8e6ef; --b:#0e7685; --b-soft:#ddf0f2;
+  --ok:#1d7a3c; --ok-soft:#e2f3e7; --bad:#b42318; --bad-soft:#fce8e5;
+  --f-disp:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#11141b; --sheet:#1a1f2a; --grid:rgba(140,160,255,.06);
+  --ink:#e8ebf2; --muted:#9ba4b6; --line:#323a4b;
+  --accent:#8fa0ff; --accent-ink:#11141b; --accent-soft:#252c4b;
+  --a:#f287b6; --a-soft:#3a2131; --b:#62c8d6; --b-soft:#163238;
+  --ok:#72d394; --ok-soft:#173120; --bad:#ff8c7c; --bad-soft:#3b1e1b;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --paper:#11141b; --sheet:#1a1f2a; --grid:rgba(140,160,255,.06);
+  --ink:#e8ebf2; --muted:#9ba4b6; --line:#323a4b;
+  --accent:#8fa0ff; --accent-ink:#11141b; --accent-soft:#252c4b;
+  --a:#f287b6; --a-soft:#3a2131; --b:#62c8d6; --b-soft:#163238;
+  --ok:#72d394; --ok-soft:#173120; --bad:#ff8c7c; --bad-soft:#3b1e1b;
+  color-scheme:dark }
+
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;
+  color:var(--ink); font:400 17px/1.55 var(--f-body);
+}
+.wrap{max-width:880px;margin:0 auto;padding-block:28px 72px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:22px}
+
+/* Kopf */
+.top{display:flex;flex-direction:column;gap:6px}
+.kicker{margin:0;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-disp);font-weight:800;font-size:clamp(2rem,6vw,3rem);line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.thesis{margin:2px 0 0;font-family:var(--f-math);font-size:clamp(1.05rem,2.6vw,1.3rem);color:var(--muted)}
+.inputhelp{margin:6px 0 0;font-size:.92rem;color:var(--muted)}
+.inputhelp code{font-family:var(--f-math);font-size:1.05em;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:0 6px}
+
+/* Navigation */
+.steps{display:flex;flex-wrap:wrap;gap:14px 28px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp-lab{font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative;min-width:46px;height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--sheet);color:var(--ink);font:700 1.05rem var(--f-body);cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.solved::after,.chip.shown::after{position:absolute;top:-7px;right:-7px;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:11px;line-height:1;color:var(--sheet)}
+.chip.solved::after{content:"✓";background:var(--ok)}
+.chip.shown::after{content:"L";background:var(--muted);font-weight:700}
+
+/* Aufgabenblatt */
+.task{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,4vw,32px);display:flex;flex-direction:column;gap:22px;min-width:0}
+.eyebrow{margin:0;font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h2{font-family:var(--f-disp);font-weight:800;font-size:clamp(1.4rem,3.4vw,1.9rem);line-height:1.15;margin:4px 0 0;text-wrap:balance}
+h3{font-family:var(--f-disp);font-weight:600;font-size:1.15rem;margin:0}
+.task-body{display:flex;flex-direction:column;gap:20px;min-width:0}
+.lead{margin:0;max-width:65ch}
+p{margin:0}
+
+.m{font-family:var(--f-math);font-size:1.07em;white-space:nowrap}
+.ov{text-decoration:overline;text-decoration-thickness:1.5px}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.84em;line-height:1.1;font-variant-numeric:tabular-nums;font-family:var(--f-math)}
+.fr>span:first-child{border-bottom:1.5px solid currentColor;padding:0 .22em}
+
+/* Urne */
+.urn-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.urn{display:inline-flex;gap:6px;padding:12px 14px 10px;border:2px solid var(--ink);border-top:none;border-radius:0 0 18px 18px}
+/* Kugelfarben bewusst fest (nicht theme-abhängig): schwarz bleibt schwarz, weiß bleibt weiß */
+.ball{width:22px;height:22px;border-radius:50%;border:2px solid #8a90a0;background:#ffffff}
+.ball.s{background:#111318;border-color:#8a90a0}
+.urn-cap{font-size:.92rem;color:var(--muted)}
+
+/* Baumdiagramm */
+.tree-wrap{overflow-x:auto;padding:4px 2px}
+.tree{position:relative;margin:0 auto}
+.tree svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tree line{stroke:var(--muted);stroke-width:2;vector-effect:non-scaling-stroke}
+.node{position:absolute;transform:translate(-50%,-50%);width:2.3em;height:2.3em;border-radius:50%;background:var(--sheet);border:2px solid var(--ink);display:grid;place-items:center;font-family:var(--f-math);font-size:1.05rem}
+.node.root{width:12px;height:12px;background:var(--ink)}
+.edge{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px}
+.path{position:absolute;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.cap{font-family:var(--f-math);font-size:.78rem;line-height:1.2;color:var(--muted);background:var(--sheet);padding:0 4px;border-radius:4px;white-space:nowrap}
+.given{display:inline-flex;align-items:center;justify-content:center;min-width:2.4em;padding:.2em .45em;border-radius:8px;background:var(--sheet);font-family:var(--f-math);font-variant-numeric:tabular-nums}
+.edge .given,.path .given{border:1px solid var(--line)}
+
+/* Eingaben */
+.inp{width:4.9em;height:2.35em;padding:0 .4em;border:1.5px solid var(--line);border-radius:8px;background:var(--sheet);color:var(--ink);font:500 16px var(--f-math);text-align:center;font-variant-numeric:tabular-nums}
+.inp::placeholder{color:var(--muted);opacity:.7}
+.inp:focus-visible,.btn:focus-visible,.chip:focus-visible,.choice button:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.inp.ok{border-color:var(--ok);background:var(--ok-soft)}
+.inp.bad{border-color:var(--bad);background:var(--bad-soft)}
+.inp.sol{border-color:var(--accent);background:var(--accent-soft)}
+
+/* Vierfeldertafel */
+.vft-wrap{overflow-x:auto}
+.vft{border-collapse:collapse;margin:0 auto;font-variant-numeric:tabular-nums}
+.vft th,.vft td{border:1.5px solid var(--line);padding:8px 10px;text-align:center;min-width:5.6em}
+.vft th{font-weight:400}
+.vft th .m{font-size:1.15em}
+.vft th small{display:block;font-size:.74rem;line-height:1.25;color:var(--muted);font-family:var(--f-body)}
+.vft thead th.cb{background:var(--b-soft);color:var(--b)}
+.vft tbody th.ra{background:var(--a-soft);color:var(--a)}
+.vft .sum{background:var(--paper);font-weight:700}
+.vft td .given{background:transparent}
+.vft td.sum .given{font-weight:700}
+
+/* Gleichungen und Auswahl */
+.eqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px 22px}
+.eq{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.eql{font-family:var(--f-math);font-size:1.07em}
+.q{display:flex;flex-direction:column;gap:9px}
+.q>p{max-width:65ch}
+.choice{display:flex;flex-wrap:wrap;gap:8px}
+.choice button{min-height:46px;padding:0 18px;border-radius:23px;border:1.5px solid var(--line);background:var(--sheet);color:var(--ink);font:700 1rem var(--f-body);cursor:pointer}
+.choice.stack{flex-direction:column;align-items:stretch;max-width:560px}
+.choice.stack button{border-radius:10px;text-align:left;padding:10px 16px;font-weight:400}
+.choice button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.choice.ok button[aria-pressed="true"]{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.choice.bad button[aria-pressed="true"]{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.choice.sol button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+.panels{display:grid;grid-template-columns:1fr;gap:16px}
+.panel{border:1px solid var(--line);border-radius:12px;padding:clamp(14px,3vw,20px);display:flex;flex-direction:column;gap:16px;min-width:0}
+.note{background:var(--accent-soft);border-radius:10px;padding:12px 16px;max-width:68ch}
+.note ul{margin:6px 0 0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.def{border:2px solid var(--ink);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;max-width:68ch}
+.def-lab{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.formula{font-family:var(--f-math);font-size:1.45rem;text-align:center;padding:4px 0}
+
+/* Würfel */
+.dice{display:flex;flex-wrap:wrap;gap:12px}
+.die-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+.die{width:52px;height:52px;border:2px solid var(--ink);border-radius:11px;background:var(--sheet);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:6px}
+.pip{width:9px;height:9px;border-radius:50%;background:var(--ink);place-self:center}
+.tags{display:flex;gap:4px}
+.tag{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:500 .85rem var(--f-math)}
+.tag.ta{background:var(--a-soft);color:var(--a)}
+.tag.tb{background:var(--b-soft);color:var(--b)}
+.tag.no{visibility:hidden}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.95rem}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+
+/* Rückmeldung und Knöpfe */
+.fb{border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.fb.err{background:var(--bad-soft);border:1px solid var(--bad)}
+.fb.okk{background:var(--ok-soft);border:1px solid var(--ok)}
+.fb.info{background:var(--accent-soft);border:1px solid var(--accent)}
+.fb-title{font-weight:700}
+.fb.err .fb-title{color:var(--bad)}
+.fb.okk .fb-title{color:var(--ok)}
+.fb.info .fb-title{color:var(--accent)}
+.fb ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.fb-more{font-size:.93rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{min-height:46px;padding:0 20px;border-radius:10px;border:1.5px solid var(--line);background:var(--sheet);color:var(--ink);font:700 1rem var(--f-body);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--muted);font-weight:400}
+.pager{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:16px}
+.pager .btn[data-hide="1"]{visibility:hidden}
+
+@media (min-width:760px){ .panels.two{grid-template-columns:1fr 1fr} }
+@media (prefers-reduced-motion:reduce){ *{scroll-behavior:auto!important;transition:none!important} }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="kicker">Mathematik · Klasse 9 · Stochastik</p>
+    <h1>Unabhängigkeits-Trainer</h1>
+    <p class="thesis">P(A ∩ B) = P(A) · P(B) ?</p>
+    <p class="inputhelp">Du kannst Ergebnisse als Bruch <code>3/5</code>, als Dezimalzahl <code>0,6</code> oder in Prozent <code>60 %</code> eingeben.</p>
+  </header>
+  <nav class="steps" aria-label="Aufgaben"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ---------- Bausteine für Mathe-Darstellung ---------- */
+const ov = s => `<span class="ov">${s}</span>`;
+const fr = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const m  = s => `<span class="m">${s}</span>`;
+const Ps = (a, b) => `P<sub>${a}</sub>(${b})`;           // bedingte Wahrscheinlichkeit P_a(b)
+const Mq = ov('M'), Gq = ov('G'), Aq = ov('A'), Bq = ov('B');
+
+/* Werte: v = Zahlwert, html = Anzeige, txt = Text für das Eingabefeld beim Lösung-Anzeigen */
+const Pf = (n, d) => ({ v: n / d, html: fr(n, d), txt: `${n}/${d}` });
+const Dc = x => { const t = String(x).replace('.', ','); return { v: x, html: t, txt: t }; };
+const Nm = k => ({ v: k, html: String(k), txt: String(k), kind: 'n' });
+
+/* Feld zum Ausfüllen. wrong: [[typischer Fehlwert, Hinweis], …]; hint: allgemeiner Hinweis */
+function F(id, val, o = {}) { return Object.assign({ id, kind: 'p', wrong: [], hint: 'Überprüfe deine Rechnung.' }, val, o); }
+/* vorgegebener Wert */
+const G = val => Object.assign({ given: true }, val);
+/* Entscheidung abhängig/unabhängig */
+const DEC = (id, v, lab, msg) => ({ id, kind: 'choice', lab, v,
+  opts: [{ k: 'unabh', html: 'unabhängig' }, { k: 'abh', html: 'abhängig' }], msgs: { unabh: msg, abh: msg } });
+const MEAN = (id, v, lab, msg) => ({ id, kind: 'choice', lab, v,
+  opts: [{ k: 'ja', html: 'Das Medikament wirkt.' }, { k: 'nein', html: 'Das Medikament wirkt nicht.' }], msgs: { ja: msg, nein: msg } });
+
+const strip = h => h.replace(/<[^>]+>/g, '');
+
+function fld(f) {
+  if (f.given) return `<span class="given">${f.html}</span>`;
+  if (f.kind === 'choice') {
+    return `<div class="choice${f.stack ? ' stack' : ''}" role="group" aria-label="${strip(f.lab)}" data-f="${f.id}">` +
+      f.opts.map(o => `<button type="button" aria-pressed="false" data-k="${o.k}">${o.html}</button>`).join('') + `</div>`;
+  }
+  return `<input class="inp" id="${f.id}" data-f="${f.id}" type="text" placeholder="?" ` +
+    `inputmode="${f.kind === 'n' ? 'numeric' : 'text'}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${strip(f.lab)}">`;
+}
+const eq = (label, f) => `<div class="eq"><span class="eql">${label} =</span>${fld(f)}</div>`;
+const q  = (text, f) => `<div class="q"><p>${text}</p>${fld(f)}</div>`;
+
+/* ---------- Baumdiagramm: Linien als SVG, Beschriftungen/Eingaben als HTML darüber ---------- */
+function tree(spec) {
+  const H = 800, W = spec.paths ? 1000 : 760;
+  const R = [50, 400], L1 = [[360, 175], [360, 625]], L2 = [[680, 70], [680, 280], [680, 520], [680, 730]];
+  const pos = (x, y) => `left:${(x / W * 100).toFixed(2)}%;top:${(y / H * 100).toFixed(2)}%`;
+  const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  const line = (p, q) => `<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}"/>`;
+  const edge = (pt, s) => `<div class="edge" style="${pos(...pt)}">${s.cap ? `<span class="cap">${s.cap}</span>` : ''}${fld(s.e)}</div>`;
+  const node = (pt, n) => `<div class="node" style="${pos(...pt)}">${n}</div>`;
+  let lines = '', els = `<div class="node root" style="${pos(...R)}"></div>`;
+  L1.forEach((p, i) => { lines += line(R, p); els += node(p, spec.l1[i].n) + edge(mid(R, p), spec.l1[i]); });
+  L2.forEach((p, j) => {
+    const par = L1[j >> 1], s = spec.l2[j >> 1][j & 1];
+    lines += line(par, p); els += node(p, s.n) + edge(mid(par, p), s);
+    if (spec.paths) els += `<div class="path" style="${pos(p[0] + 50, p[1])}"><span class="cap">${spec.paths[j].lab}</span>${fld(spec.paths[j].f)}</div>`;
+  });
+  return `<div class="tree-wrap"><div class="tree" style="aspect-ratio:${W}/${H};min-width:${spec.paths ? 540 : 420}px;max-width:${spec.paths ? 720 : 560}px">` +
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${els}</div></div>`;
+}
+
+/* ---------- Vierfeldertafel ---------- */
+function vft(rows, cols, cells) {
+  let html = `<div class="vft-wrap"><table class="vft"><thead><tr><th></th>` +
+    cols.map(c => `<th class="cb" scope="col">${c}</th>`).join('') + `<th class="sum" scope="col">Summe</th></tr></thead><tbody>`;
+  [...rows, 'Summe'].forEach((r, i) => {
+    html += `<tr><th scope="row" class="${i < 2 ? 'ra' : 'sum'}">${r}</th>` +
+      cells[i].map((c, j) => `<td class="${i === 2 || j === 2 ? 'sum' : ''}">${fld(c)}</td>`).join('') + `</tr>`;
+  });
+  return html + `</tbody></table></div>`;
+}
+
+/* ---------- Würfel und Urne ---------- */
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+function dice(A, B) {
+  return `<div class="dice">` + [1, 2, 3, 4, 5, 6].map(k =>
+    `<div class="die-col"><div class="die" role="img" aria-label="Augenzahl ${k}">` +
+    Array.from({ length: 9 }, (_, i) => PIPS[k].includes(i) ? '<span class="pip"></span>' : '<span></span>').join('') +
+    `</div><div class="tags"><span class="tag ta${A.includes(k) ? '' : ' no'}">A</span><span class="tag tb${B.includes(k) ? '' : ' no'}">B</span></div></div>`
+  ).join('') + `</div>`;
+}
+const urn = (s, w) => `<div class="urn-row"><div class="urn" role="img" aria-label="${s} schwarze und ${w} weiße Kugeln">` +
+  '<span class="ball s"></span>'.repeat(s) + '<span class="ball"></span>'.repeat(w) +
+  `</div><span class="urn-cap">${s} schwarze (S), ${w} weiße (W) Kugeln</span></div>`;
+
+/* ================= Aufgaben ================= */
+const ADD = 'Entlang eines Pfades wird multipliziert, nicht addiert (Pfadmultiplikationsregel).';
+
+/* --- Aufgabe 1 --- */
+const t1 = {
+  w1:  F('t1w1', Pf(2, 5), { lab: 'Ast W im 1. Zug', hint: `Die Äste, die von einem Punkt ausgehen, ergeben zusammen 1: 1 − ${fr(3, 5)}.` }),
+  ss:  F('t1ss', Pf(3, 5), { lab: 'Ast S nach S', wrong: [[2 / 4, 'Mit Zurücklegen kommt die schwarze Kugel zurück in die Urne. Es sind wieder 3 schwarze von 5 Kugeln.']],
+        hint: `Nach dem Zurücklegen ist die Urne wieder wie am Anfang. Außerdem gilt: ? + ${fr(2, 5)} = 1.` }),
+  ww:  F('t1ww', Pf(2, 5), { lab: 'Ast W nach W', wrong: [[1 / 4, 'Mit Zurücklegen kommt die weiße Kugel zurück. Es sind wieder 2 weiße von 5 Kugeln.']],
+        hint: `Die Äste ab diesem Punkt ergeben zusammen 1: ${fr(3, 5)} + ? = 1.` }),
+  pss: F('t1pss', Pf(9, 25), { lab: 'P(SS)', wrong: [[6 / 5, ADD]], hint: `Pfadregel: Multipliziere entlang des Pfades, also ${fr(3, 5)} · ${fr(3, 5)}.` }),
+  psw: F('t1psw', Pf(6, 25), { lab: 'P(SW)', wrong: [[1, ADD]], hint: `Pfadregel: ${fr(3, 5)} · ${fr(2, 5)}.` }),
+  pww: F('t1pww', Pf(4, 25), { lab: 'P(WW)', wrong: [[4 / 5, ADD]], hint: `Pfadregel: ${fr(2, 5)} · ${fr(2, 5)}.` }),
+};
+
+/* --- Aufgabe 2 --- */
+const IN = 'Innere Felder sind Schnittwahrscheinlichkeiten wie P(A ∩ B). Sie stehen im Baum am Ende der Pfade, nicht an den Ästen.';
+const t2 = {
+  ab:   F('t2ab', Pf(9, 25), { lab: m('P(A ∩ B)'), wrong: [[3 / 5, IN], [2 / 5, IN]], hint: 'A ∩ B heißt: 1. Kugel schwarz und 2. Kugel schwarz. Das ist der Pfad SS.' }),
+  abq:  F('t2abq', Pf(6, 25), { lab: m(`P(A ∩ ${Bq})`), wrong: [[3 / 5, IN], [2 / 5, IN]], hint: '1. Kugel schwarz, 2. Kugel weiß: Das ist der Pfad SW.' }),
+  aqb:  F('t2aqb', Pf(6, 25), { lab: m(`P(${Aq} ∩ B)`), wrong: [[3 / 5, IN], [2 / 5, IN]], hint: '1. Kugel weiß, 2. Kugel schwarz: Das ist der Pfad WS.' }),
+  aqbq: F('t2aqbq', Pf(4, 25), { lab: m(`P(${Aq} ∩ ${Bq})`), wrong: [[3 / 5, IN], [2 / 5, IN]], hint: '1. Kugel weiß, 2. Kugel weiß: Das ist der Pfad WW.' }),
+  a:    F('t2a', Pf(3, 5), { lab: m('P(A)'), hint: `Zeilensumme: P(A ∩ B) + P(A ∩ ${Bq}) = P(A).` }),
+  aq:   F('t2aq', Pf(2, 5), { lab: m(`P(${Aq})`), hint: `Zeilensumme: P(${Aq} ∩ B) + P(${Aq} ∩ ${Bq}) = P(${Aq}).` }),
+  b:    F('t2b', Pf(3, 5), { lab: m('P(B)'), hint: `Spaltensumme: P(A ∩ B) + P(${Aq} ∩ B) = P(B).` }),
+  bq:   F('t2bq', Pf(2, 5), { lab: m(`P(${Bq})`), hint: `Spaltensumme: P(A ∩ ${Bq}) + P(${Aq} ∩ ${Bq}) = P(${Bq}).` }),
+};
+
+/* --- Aufgabe 3 --- */
+const t3 = {
+  mng: F('t3mng', Nm(36), { lab: 'Medikament, nicht genesen', hint: 'Zeile „Medikament“: 84 + ? = 120.' }),
+  nm:  F('t3nm', Nm(80), { lab: 'Summe Placebo', hint: 'Alle Personen: 120 + ? = 200.' }),
+  nmg: F('t3nmg', Nm(32), { lab: 'Placebo, genesen', hint: 'Zeile „Placebo“: ? + 48 = 80. Bestimme zuerst die Zeilensumme.' }),
+  g:   F('t3g', Nm(116), { lab: 'Summe genesen', hint: 'Spalte „genesen“: 84 + 32.' }),
+  ng:  F('t3ng', Nm(84), { lab: 'Summe nicht genesen', hint: 'Spalte „nicht genesen“: 36 + 48. Probe: 116 + ? = 200.' }),
+  rel: F('t3rel', Dc(0.42), { lab: m('P(M ∩ G)'),
+        wrong: [[0.7, '84/120 ist der Anteil unter den Personen mit Medikament. Gesucht ist der Anteil an allen 200 Personen.'],
+                [84, 'Gesucht ist eine Wahrscheinlichkeit, keine Anzahl. Teile durch die Gesamtzahl 200.']],
+        hint: 'Relative Häufigkeit = Anzahl ÷ Gesamtzahl, also 84/200.' }),
+};
+const ROWS_M = [`${m('M')}<small>Medikament</small>`, `${m(Mq)}<small>Placebo</small>`];
+const COLS_G = [`${m('G')}<small>genesen</small>`, `${m(Gq)}<small>nicht genesen</small>`];
+
+/* --- Aufgabe 4 --- */
+const t4 = {
+  pm:    F('t4pm', Dc(0.6), { lab: m('P(M)'), wrong: [[0.42, '0,42 ist P(M ∩ G), ein inneres Feld. Für den ersten Ast brauchst du die Randsumme: 120 von 200.']],
+          hint: 'Anteil der Personen mit Medikament: 120 von 200.' }),
+  pmq:   F('t4pmq', Dc(0.4), { lab: m(`P(${Mq})`), hint: 'Die beiden Äste ergeben zusammen 1. Oder: 80 von 200.' }),
+  pmg:   F('t4pmg', Dc(0.7), { lab: m(Ps('M', 'G')),
+          wrong: [[0.42, `Falsche Bezugsgröße. Bei ${m(Ps('M', 'G'))} zählen nur die 120 Personen mit Medikament: 84/120.`],
+                  [84 / 116, `Das ist ${m(Ps('G', 'M'))}. Bei ${m(Ps('M', 'G'))} ist M die Bedingung: 84 von 120.`]],
+          hint: 'Von 120 Personen mit Medikament sind 84 genesen.' }),
+  pmgq:  F('t4pmgq', Dc(0.3), { lab: m(Ps('M', Gq)), wrong: [[0.18, 'Falsche Bezugsgröße. Es zählen nur die 120 Personen mit Medikament: 36/120.']],
+          hint: `36 von 120. Oder: 1 − ${m(Ps('M', 'G'))}.` }),
+  pmqg:  F('t4pmqg', Dc(0.4), { lab: m(Ps(Mq, 'G')), wrong: [[0.16, 'Falsche Bezugsgröße. Hier zählen nur die 80 Placebo-Personen: 32/80.']],
+          hint: '32 von 80 Placebo-Personen sind genesen.' }),
+  pmqgq: F('t4pmqgq', Dc(0.6), { lab: m(Ps(Mq, Gq)), wrong: [[0.24, 'Falsche Bezugsgröße. Hier zählen nur die 80 Placebo-Personen: 48/80.']],
+          hint: `48 von 80. Oder: 1 − ${m(Ps(Mq, 'G'))}.` }),
+  pgm:   F('t4pgm', { v: 84 / 116, txt: '84/116' }, { lab: m(Ps('G', 'M')),
+          wrong: [[0.7, `Das ist ${m(Ps('M', 'G'))}. Jetzt ist G die Bedingung: Von den 116 Genesenen, wie viele hatten das Medikament?`],
+                  [0.42, 'Bezugsgröße sind nur die 116 Genesenen, nicht alle 200 Personen.']],
+          hint: `${m(Ps('G', 'M'))} = Anzahl „M und G“ ÷ Anzahl G = 84/116. Runde auf zwei Nachkommastellen.` }),
+};
+
+/* --- Aufgabe 5 --- */
+const t5 = {
+  pab:  F('t5pab', Pf(1, 2), { lab: m(Ps('A', 'B')), wrong: [[3 / 5, 'Ohne Zurücklegen fehlt nach dem 1. Zug eine schwarze Kugel. Es sind noch 2 schwarze von 4 Kugeln.']],
+         hint: 'Nach einer schwarzen Kugel liegen noch 2 schwarze und 2 weiße Kugeln in der Urne.' }),
+  pb:   F('t5pb', Pf(3, 5), { lab: m('P(B)'),
+         wrong: [[1 / 2, `Das ist ${m(Ps('A', 'B'))}. P(B) ist die Wahrscheinlichkeit für schwarz im 2. Zug, egal was im 1. Zug kam.`],
+                 [3 / 10, `Das ist nur der Pfad SS. Zu B gehört auch der Pfad WS: ${fr(3, 5)} · ${fr(2, 4)} + ${fr(2, 5)} · ${fr(3, 4)}.`]],
+         hint: 'Addiere alle Pfade, die im 2. Zug mit schwarz enden: P(SS) + P(WS).' }),
+  mit:  DEC('t5mit', 'unabh', 'Mit Zurücklegen', `Vergleiche ${m(Ps('A', 'B'))} mit P(B). Sind beide gleich, ändert der 1. Zug nichts am 2. Zug.`),
+  ohne: DEC('t5ohne', 'abh', 'Ohne Zurücklegen', `Vergleiche deine Werte: Ist ${m(Ps('A', 'B'))} gleich P(B)? Wenn nicht, beeinflusst der 1. Zug den 2. Zug.`),
+};
+
+/* --- Aufgabe 6 --- */
+const t6 = {
+  pa:   F('t6pa', Pf(1, 2), { lab: m('P(A)'), hint: 'Gerade Zahlen: 2, 4, 6. Das sind 3 von 6 Ergebnissen.' }),
+  pb:   F('t6pb', Pf(1, 3), { lab: m('P(B)'), wrong: [[1 / 6, '„Höchstens 2“ heißt: 1 oder 2. Das sind zwei Ergebnisse.']], hint: 'Höchstens 2: die 1 und die 2, also 2 von 6.' }),
+  pab:  F('t6pab', Pf(1, 6), { lab: m('P(A ∩ B)'),
+         wrong: [[0, 'A und B können gemeinsam eintreten: Die 2 ist gerade und höchstens 2.'], [2 / 3, 'Gesucht ist „A und B“ (beide gleichzeitig), nicht „A oder B“.']],
+         hint: 'Welche Zahl ist gerade und höchstens 2? Nur die 2.' }),
+  prod: F('t6prod', Pf(1, 6), { lab: m('P(A) · P(B)'), wrong: [[5 / 6, 'Hier wird multipliziert, nicht addiert.']], hint: `${fr(1, 2)} · ${fr(1, 3)}` }),
+  dec:  DEC('t6dec', 'unabh', 'Entscheidung', 'Vergleiche P(A ∩ B) mit P(A) · P(B). Nur wenn beide gleich sind, sind A und B unabhängig.'),
+  con:  { id: 't6con', kind: 'choice', stack: true, lab: 'Bedeutung', v: 'b',
+          opts: [{ k: 'a', html: 'A und B können nicht gleichzeitig eintreten.' },
+                 { k: 'b', html: 'Ob A eintritt, ändert nichts an der Wahrscheinlichkeit von B.' },
+                 { k: 'c', html: 'A und B haben dieselbe Wahrscheinlichkeit.' }],
+          msgs: { a: 'Das beschreibt „unvereinbar“ (A ∩ B = ∅). Hier können A und B gemeinsam eintreten (bei der 2) und sind trotzdem unabhängig.',
+                  c: `Gleiche Wahrscheinlichkeiten haben mit Unabhängigkeit nichts zu tun. Hier ist P(A) = ${fr(1, 2)} und P(B) = ${fr(1, 3)}, trotzdem sind A und B unabhängig.` } },
+};
+
+/* --- Aufgabe 7 --- */
+const t7 = {
+  pa:   F('t7pa', Pf(1, 2), { lab: m('P(A)'), hint: 'Gerade Zahlen: 2, 4, 6. Das sind 3 von 6 Ergebnissen.' }),
+  pb:   F('t7pb', Pf(1, 2), { lab: m('P(B)'), wrong: [[1 / 3, '„Mindestens 4“ schließt die 4 mit ein: 4, 5 und 6.']], hint: 'Mindestens 4: 4, 5 und 6, also 3 von 6.' }),
+  pab:  F('t7pab', Pf(1, 3), { lab: m('P(A ∩ B)'),
+         wrong: [[1 / 4, 'Das ist P(A) · P(B). Zähle direkt: Welche Zahlen sind gerade und mindestens 4?'],
+                 [1 / 6, 'Es gibt zwei passende Zahlen: die 4 und die 6.'],
+                 [2 / 3, 'Gesucht ist „A und B“ (beide gleichzeitig), nicht „A oder B“.']],
+         hint: 'Gerade und mindestens 4: die 4 und die 6.' }),
+  prod: F('t7prod', Pf(1, 4), { lab: m('P(A) · P(B)'), wrong: [[1, 'Hier wird multipliziert, nicht addiert.']], hint: `${fr(1, 2)} · ${fr(1, 2)}` }),
+  dec:  DEC('t7dec', 'abh', 'Entscheidung', 'Vergleiche P(A ∩ B) mit P(A) · P(B). Nur wenn beide gleich sind, sind A und B unabhängig.'),
+  pba:  F('t7pba', Pf(2, 3), { lab: m(Ps('B', 'A')),
+         wrong: [[1 / 3, 'Falsche Bezugsgröße. Es zählen nur die 3 Ergebnisse von B (4, 5, 6), nicht alle 6.'],
+                 [1 / 2, 'Das ist P(A) ohne Bedingung. Unter der Bedingung B (4, 5, 6) sind 2 von 3 Zahlen gerade.']],
+         hint: 'Es zählen nur die Würfe mit B: 4, 5, 6. Wie viele davon sind gerade?' }),
+};
+
+/* --- Aufgabe 8 --- */
+const t8 = {
+  xpmg:  F('t8xpmg', Dc(0.7), { lab: `X: ${m(Ps('M', 'G'))}`, wrong: [[0.42, 'Falsche Bezugsgröße. Es zählen nur die 120 Personen mit Medikament: 84/120.']],
+          hint: '84 von 120 Personen mit Medikament sind genesen.' }),
+  xpg:   F('t8xpg', Dc(0.58), { lab: `X: ${m('P(G)')}`, wrong: [[116, 'Gesucht ist eine Wahrscheinlichkeit: 116 ÷ 200.']], hint: 'Alle Genesenen geteilt durch alle Personen: 116/200.' }),
+  xdec:  DEC('t8xdec', 'abh', 'X: Entscheidung', `Vergleiche ${m(Ps('M', 'G'))} mit ${m('P(G)')}. Nur wenn beide gleich sind, sind M und G unabhängig.`),
+  xmean: MEAN('t8xmean', 'ja', 'X: Bedeutung', 'Mit Medikament werden 70 % gesund, insgesamt nur 58 % und mit Placebo nur 40 %. Das Medikament macht also einen Unterschied.'),
+  ypmg:  F('t8ypmg', Dc(0.4), { lab: `Y: ${m(Ps('M', 'G'))}`, wrong: [[0.24, 'Falsche Bezugsgröße. Es zählen nur die 150 Personen mit Medikament: 60/150.']],
+          hint: '60 von 150 Personen mit Medikament sind genesen.' }),
+  ypg:   F('t8ypg', Dc(0.4), { lab: `Y: ${m('P(G)')}`, wrong: [[100, 'Gesucht ist eine Wahrscheinlichkeit: 100 ÷ 250.']], hint: 'Alle Genesenen geteilt durch alle Personen: 100/250.' }),
+  ydec:  DEC('t8ydec', 'unabh', 'Y: Entscheidung', `Vergleiche ${m(Ps('M', 'G'))} mit ${m('P(G)')}. Nur wenn beide gleich sind, sind M und G unabhängig.`),
+  ymean: MEAN('t8ymean', 'nein', 'Y: Bedeutung', 'Mit Medikament werden genauso viele gesund wie insgesamt, nämlich 40 %. Das Medikament macht keinen Unterschied.'),
+};
+
+const TASKS = [
+  { grp: 'Teil 1 · Wiederholung', num: '1', title: 'Baumdiagramm vervollständigen', fields: Object.values(t1),
+    body: `<p class="lead">In einer Urne liegen Kugeln. Es wird zweimal <strong>mit Zurücklegen</strong> gezogen. Ergänze die fehlenden Astwahrscheinlichkeiten und die Pfadwahrscheinlichkeiten am Ende jedes Pfades.</p>
+      ${urn(3, 2)}
+      ${tree({ l1: [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: t1.w1 }],
+               l2: [[{ n: 'S', e: t1.ss }, { n: 'W', e: G(Pf(2, 5)) }], [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: t1.ww }]],
+               paths: [{ lab: 'P(SS)', f: t1.pss }, { lab: 'P(SW)', f: t1.psw }, { lab: 'P(WS)', f: G(Pf(6, 25)) }, { lab: 'P(WW)', f: t1.pww }] })}`,
+    take: `Mit Zurücklegen stehen in der 2. Stufe überall dieselben Werte (${fr(3, 5)} und ${fr(2, 5)}). Pfadwahrscheinlichkeiten erhältst du durch Multiplizieren entlang des Pfades.` },
+
+  { grp: 'Teil 1 · Wiederholung', num: '2', title: 'Vom Baum zur Vierfeldertafel', fields: Object.values(t2),
+    body: `<p class="lead">Hier ist der vollständige Baum aus Aufgabe 1. Übertrage ihn in die Vierfeldertafel.<br>
+      ${m('A')}: „1. Kugel schwarz“ &nbsp;·&nbsp; ${m('B')}: „2. Kugel schwarz“</p>
+      ${tree({ l1: [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }],
+               l2: [[{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }], [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }]],
+               paths: [{ lab: 'P(SS)', f: G(Pf(9, 25)) }, { lab: 'P(SW)', f: G(Pf(6, 25)) }, { lab: 'P(WS)', f: G(Pf(6, 25)) }, { lab: 'P(WW)', f: G(Pf(4, 25)) }] })}
+      ${vft([`${m('A')}<small>1. schwarz</small>`, `${m(Aq)}<small>1. weiß</small>`], [`${m('B')}<small>2. schwarz</small>`, `${m(Bq)}<small>2. weiß</small>`],
+            [[t2.ab, t2.abq, t2.a], [t2.aqb, t2.aqbq, t2.aq], [t2.b, t2.bq, G({ v: 1, html: '1', txt: '1' })]])}`,
+    take: 'Die inneren Felder der Vierfeldertafel sind genau die Pfadwahrscheinlichkeiten. Am Rand stehen die Wahrscheinlichkeiten der einzelnen Ereignisse, und alles zusammen ergibt 1.' },
+
+  { grp: 'Teil 1 · Wiederholung', num: '3', title: 'Vierfeldertafel einer Medikamentenstudie', fields: Object.values(t3),
+    body: `<p class="lead">In einer Studie bekamen 200 Erkrankte entweder das neue Medikament X (${m('M')}) oder ein Placebo (${m(Mq)}), also eine Tablette ohne Wirkstoff. Nach zwei Wochen wurde festgestellt, wer genesen ist (${m('G')}). Ergänze die fehlenden Anzahlen.</p>
+      ${vft(ROWS_M, COLS_G, [[G(Nm(84)), t3.mng, G(Nm(120))], [t3.nmg, G(Nm(48)), t3.nm], [t3.g, t3.ng, G(Nm(200))]])}
+      <div class="q"><p>Wie groß ist die relative Häufigkeit, dass eine zufällig gewählte Person das Medikament bekam <em>und</em> genesen ist?</p>
+      <div class="eqs">${eq('P(M ∩ G)', t3.rel)}</div></div>`,
+    take: 'In jeder Zeile und jeder Spalte ergeben die inneren Felder zusammen den Wert am Rand. Aus Anzahlen werden Wahrscheinlichkeiten, indem du durch die Gesamtzahl teilst.' },
+
+  { grp: 'Teil 1 · Wiederholung', num: '4', title: 'Von der Vierfeldertafel zum Baum', fields: Object.values(t4),
+    body: `<p class="lead">Aus der Vierfeldertafel von Aufgabe 3 lässt sich ein Baum erstellen. 1. Stufe: Medikament ja oder nein. 2. Stufe: genesen ja oder nein. Gib die Werte als Dezimalzahlen ein.</p>
+      <div class="note"><p><strong>Bedingte Wahrscheinlichkeit:</strong> ${m(Ps('M', 'G'))} ist die Wahrscheinlichkeit für ${m('G')}, wenn man schon weiß, dass ${m('M')} eingetreten ist. Man liest: „P von G unter der Bedingung M“. In manchen Büchern steht dafür auch ${m('P(G|M)')}.</p></div>
+      ${vft(ROWS_M, COLS_G, [[G(Nm(84)), G(Nm(36)), G(Nm(120))], [G(Nm(32)), G(Nm(48)), G(Nm(80))], [G(Nm(116)), G(Nm(84)), G(Nm(200))]])}
+      ${tree({ l1: [{ n: 'M', e: t4.pm, cap: 'P(M)' }, { n: Mq, e: t4.pmq, cap: `P(${Mq})` }],
+               l2: [[{ n: 'G', e: t4.pmg, cap: Ps('M', 'G') }, { n: Gq, e: t4.pmgq, cap: Ps('M', Gq) }],
+                    [{ n: 'G', e: t4.pmqg, cap: Ps(Mq, 'G') }, { n: Gq, e: t4.pmqgq, cap: Ps(Mq, Gq) }]],
+               paths: [{ lab: 'P(M ∩ G)', f: G(Dc(0.42)) }, { lab: `P(M ∩ ${Gq})`, f: G(Dc(0.18)) }, { lab: `P(${Mq} ∩ G)`, f: G(Dc(0.16)) }, { lab: `P(${Mq} ∩ ${Gq})`, f: G(Dc(0.24)) }] })}
+      <div class="q"><h3>Umgekehrt gefragt</h3><p>Eine Person ist genesen. Mit welcher Wahrscheinlichkeit hat sie das Medikament bekommen?</p>
+      <div class="eqs">${eq(Ps('G', 'M'), t4.pgm)}</div></div>`,
+    take: `${m(Ps('M', 'G'))} = 0,7 und ${m(Ps('G', 'M'))} ≈ 0,72 sind verschiedene Wahrscheinlichkeiten. Entscheidend ist die Bezugsgröße: 120 Personen mit Medikament oder 116 Genesene.` },
+
+  { grp: 'Teil 2 · Unabhängigkeit', num: 'i', title: 'Was heißt stochastisch unabhängig?', info: true, fields: [],
+    body: `<p class="lead">Jetzt geht es um die Frage: Verändert das Eintreten eines Ereignisses die Wahrscheinlichkeit eines anderen?</p>
+      <div class="def">
+        <p class="def-lab">Definition</p>
+        <p>Zwei Ereignisse ${m('A')} und ${m('B')} heißen <strong>stochastisch unabhängig</strong>, wenn das Eintreten von ${m('A')} die Wahrscheinlichkeit von ${m('B')} nicht verändert:</p>
+        <p class="formula">${Ps('A', 'B')} = P(B)</p>
+        <p>Gleichwertig dazu ist die <strong>Produktregel</strong>:</p>
+        <p class="formula">P(A ∩ B) = P(A) · P(B)</p>
+        <p>Gilt das nicht, heißen ${m('A')} und ${m('B')} <strong>stochastisch abhängig</strong>.</p>
+      </div>
+      <div class="note"><p><strong>Gut zu wissen</strong></p><ul>
+        <li><strong>Warum gleichwertig?</strong> Nach der Pfadregel gilt ${m(`P(A ∩ B) = P(A) · ${Ps('A', 'B')}`)}. Ist ${m(`${Ps('A', 'B')} = P(B)`)}, wird daraus ${m('P(A) · P(B)')}.</li>
+        <li><strong>Im Baumdiagramm</strong> erkennst du Unabhängigkeit daran, dass in der 2. Stufe in allen Teilbäumen dieselben Wahrscheinlichkeiten stehen. So war es in Aufgabe 1.</li>
+        <li><strong>Verwechslungsgefahr:</strong> „unabhängig“ heißt nicht „unvereinbar“. Unvereinbar bedeutet ${m('A ∩ B = ∅')}: A und B können nie gemeinsam eintreten.</li>
+      </ul></div>` },
+
+  { grp: 'Teil 2 · Unabhängigkeit', num: '5', title: 'Ziehen mit und ohne Zurücklegen', fields: Object.values(t5),
+    body: `<p class="lead">Dieselbe Urne, es wird zweimal gezogen. ${m('A')}: „1. Kugel schwarz“ &nbsp;·&nbsp; ${m('B')}: „2. Kugel schwarz“</p>
+      ${urn(3, 2)}
+      <div class="panels">
+        <section class="panel"><h3>Mit Zurücklegen</h3>
+          ${tree({ l1: [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }],
+                   l2: [[{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }], [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }]] })}
+          <p>Hier gilt ${m(Ps('A', 'B'))} = ${fr(3, 5)} und ${m('P(B)')} = ${fr(3, 5)} · ${fr(3, 5)} + ${fr(2, 5)} · ${fr(3, 5)} = ${fr(3, 5)}.</p>
+          ${q('Sind A und B abhängig oder unabhängig?', t5.mit)}
+        </section>
+        <section class="panel"><h3>Ohne Zurücklegen</h3>
+          ${tree({ l1: [{ n: 'S', e: G(Pf(3, 5)) }, { n: 'W', e: G(Pf(2, 5)) }],
+                   l2: [[{ n: 'S', e: t5.pab, cap: Ps('A', 'B') }, { n: 'W', e: G(Pf(2, 4)) }], [{ n: 'S', e: G(Pf(3, 4)) }, { n: 'W', e: G(Pf(1, 4)) }]] })}
+          <div class="eqs">${eq('P(B)', t5.pb)}</div>
+          ${q('Sind A und B abhängig oder unabhängig?', t5.ohne)}
+        </section>
+      </div>`,
+    take: `Mit Zurücklegen ist ${m(Ps('A', 'B'))} = P(B) = ${fr(3, 5)}, also unabhängig. Ohne Zurücklegen ist ${m(Ps('A', 'B'))} = ${fr(1, 2)} ≠ ${fr(3, 5)}, also abhängig. Überraschend: P(B) ist in beiden Fällen ${fr(3, 5)}.` },
+
+  { grp: 'Teil 2 · Unabhängigkeit', num: '6', title: 'Ein Würfelwurf, zwei Ereignisse', fields: Object.values(t6),
+    body: `<p class="lead">Ein Würfel wird einmal geworfen. Prüfe mit der Produktregel, ob A und B unabhängig sind.</p>
+      <div class="legend"><span><span class="tag ta">A</span> gerade Zahl</span><span><span class="tag tb">B</span> höchstens 2</span></div>
+      ${dice([2, 4, 6], [1, 2])}
+      <div class="eqs">${eq('P(A)', t6.pa)}${eq('P(B)', t6.pb)}${eq('P(A ∩ B)', t6.pab)}${eq('P(A) · P(B)', t6.prod)}</div>
+      ${q('Sind A und B abhängig oder unabhängig?', t6.dec)}
+      ${q('A und B können hier gemeinsam eintreten (bei der 2). Was bedeutet „unabhängig“ also?', t6.con)}`,
+    take: `P(A ∩ B) = ${fr(1, 6)} = P(A) · P(B), also unabhängig. Das gilt, obwohl A und B gemeinsam eintreten können. Unabhängig heißt: Das Wissen über A ändert die Chance für B nicht.` },
+
+  { grp: 'Teil 2 · Unabhängigkeit', num: '7', title: 'Gleicher Würfel, anderes Ergebnis', fields: Object.values(t7),
+    body: `<p class="lead">Wieder ein einzelner Wurf, aber B ist jetzt ein anderes Ereignis.</p>
+      <div class="legend"><span><span class="tag ta">A</span> gerade Zahl</span><span><span class="tag tb">B</span> mindestens 4</span></div>
+      ${dice([2, 4, 6], [4, 5, 6])}
+      <div class="eqs">${eq('P(A)', t7.pa)}${eq('P(B)', t7.pb)}${eq('P(A ∩ B)', t7.pab)}${eq('P(A) · P(B)', t7.prod)}</div>
+      ${q('Sind A und B abhängig oder unabhängig?', t7.dec)}
+      <div class="q"><p>Du weißt schon, dass mindestens eine 4 gefallen ist. Wie wahrscheinlich ist dann eine gerade Zahl?</p>
+      <div class="eqs">${eq(Ps('B', 'A'), t7.pba)}</div></div>`,
+    take: `P(A ∩ B) = ${fr(1, 3)}, aber P(A) · P(B) = ${fr(1, 4)}, also abhängig. Weiß man, dass mindestens 4 gefallen ist, steigt die Chance auf eine gerade Zahl von ${fr(1, 2)} auf ${fr(2, 3)}.` },
+
+  { grp: 'Teil 2 · Unabhängigkeit', num: '8', title: 'Wirkt das Medikament?', fields: Object.values(t8),
+    body: `<p class="lead">Zwei Medikamente wurden jeweils gegen ein Placebo getestet. Prüfe, ob „genesen“ (${m('G')}) und „Medikament genommen“ (${m('M')}) abhängig sind, und deute das Ergebnis. Gib die Werte als Dezimalzahlen ein.</p>
+      <div class="panels two">
+        <section class="panel"><h3>Medikament X</h3>
+          ${vft(ROWS_M, COLS_G, [[G(Nm(84)), G(Nm(36)), G(Nm(120))], [G(Nm(32)), G(Nm(48)), G(Nm(80))], [G(Nm(116)), G(Nm(84)), G(Nm(200))]])}
+          <div class="eqs">${eq(Ps('M', 'G'), t8.xpmg)}${eq('P(G)', t8.xpg)}</div>
+          ${q('Sind M und G abhängig oder unabhängig?', t8.xdec)}
+          ${q('Was bedeutet das?', t8.xmean)}
+        </section>
+        <section class="panel"><h3>Medikament Y</h3>
+          ${vft(ROWS_M, COLS_G, [[G(Nm(60)), G(Nm(90)), G(Nm(150))], [G(Nm(40)), G(Nm(60)), G(Nm(100))], [G(Nm(100)), G(Nm(150)), G(Nm(250))]])}
+          <div class="eqs">${eq(Ps('M', 'G'), t8.ypmg)}${eq('P(G)', t8.ypg)}</div>
+          ${q('Sind M und G abhängig oder unabhängig?', t8.ydec)}
+          ${q('Was bedeutet das?', t8.ymean)}
+        </section>
+      </div>`,
+    take: `Bei X ist ${m(Ps('M', 'G'))} = 0,7 ≠ P(G) = 0,58: abhängig, das Medikament macht einen Unterschied. Bei Y ist ${m(Ps('M', 'G'))} = P(G) = 0,4: unabhängig, das Medikament wirkt nicht besser als der Durchschnitt.` },
+];
+
+/* ================= Logik ================= */
+const ST = TASKS.map(() => ({ status: 'open', fails: 0 }));
+const main = document.getElementById('main');
+const nav = document.querySelector('.steps');
+let cur = 0;
+
+/* Navigation aufbauen */
+const groups = [...new Set(TASKS.map(t => t.grp))];
+nav.innerHTML = groups.map(g => `<div class="grp"><span class="grp-lab">${g}</span><div class="chips">` +
+  TASKS.map((t, i) => t.grp === g ? `<button type="button" class="chip" data-i="${i}" aria-label="${t.info ? 'Infokarte' : 'Aufgabe ' + t.num}: ${t.title}">${t.num}</button>` : '').join('') +
+  `</div></div>`).join('');
+
+/* Aufgabenblätter einmal rendern; danach nur ein-/ausblenden, damit Eingaben erhalten bleiben */
+main.innerHTML = TASKS.map((t, i) => `
+  <section class="task" data-i="${i}" hidden aria-labelledby="h-${i}">
+    <header><p class="eyebrow">${t.grp} · ${t.info ? 'Infokarte' : 'Aufgabe ' + t.num}</p><h2 id="h-${i}">${t.title}</h2></header>
+    <div class="task-body">${t.body}</div>
+    ${t.info ? '' : `<div class="fb" aria-live="polite" hidden></div>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="check">Prüfen</button>
+      <button type="button" class="btn" data-act="solve" hidden>Lösung anzeigen</button>
+      <button type="button" class="btn quiet" data-act="clear">Eingaben löschen</button>
+    </div>`}
+    <div class="pager">
+      <button type="button" class="btn" data-act="prev" data-hide="${i === 0 ? 1 : 0}">← Zurück</button>
+      <button type="button" class="btn${t.info ? ' primary' : ''}" data-act="next" data-hide="${i === TASKS.length - 1 ? 1 : 0}">Weiter →</button>
+    </div>
+  </section>`).join('');
+const SECS = [...main.querySelectorAll('.task')];
+
+function go(i) {
+  if (i < 0 || i >= TASKS.length) return;
+  cur = i;
+  SECS.forEach((s, k) => s.hidden = k !== i);
+  nav.querySelectorAll('.chip').forEach(c => { if (+c.dataset.i === i) c.setAttribute('aria-current', 'step'); else c.removeAttribute('aria-current'); });
+  if (SECS[i].getBoundingClientRect().top < 0) nav.scrollIntoView({ block: 'start' });
+}
+function updateChip(i) {
+  const c = nav.querySelector(`.chip[data-i="${i}"]`);
+  c.classList.toggle('solved', ST[i].status === 'solved');
+  c.classList.toggle('shown', ST[i].status === 'shown');
+}
+
+/* Eingabe lesen: Bruch, Dezimalzahl (Komma oder Punkt) oder Prozent. null = leer, NaN = unlesbar */
+function parseNum(raw) {
+  let s = raw.trim().replace(/\s+/g, '').replace(/,/g, '.');
+  if (!s) return null;
+  let pct = false;
+  if (s.endsWith('%')) { pct = true; s = s.slice(0, -1); }
+  let v;
+  if (s.includes('/')) {
+    const parts = s.split('/');
+    if (parts.length !== 2 || parts[0] === '' || parts[1] === '') return NaN;
+    v = Number(parts[0]) / Number(parts[1]);
+  } else v = s === '' ? NaN : Number(s);
+  if (!Number.isFinite(v)) return NaN;
+  return pct ? v / 100 : v;
+}
+/* Wahrscheinlichkeiten: auf zwei Nachkommastellen gerundete Eingaben gelten als richtig */
+const near = (x, v, kind) => kind === 'n' ? Math.abs(x - v) < 1e-9 : Math.abs(x - v) < 0.0051;
+const fmt = x => String(+x.toFixed(4)).replace('.', ',');
+
+function evalF(f, el) {
+  if (f.kind === 'choice') {
+    const s = el.dataset.sel;
+    if (!s) return { state: 'empty' };
+    return s === f.v ? { state: 'ok' } : { state: 'bad', msg: f.msgs[s] || 'Überlege noch einmal.' };
+  }
+  const x = parseNum(el.value);
+  if (x === null) return { state: 'empty' };
+  if (Number.isNaN(x)) return { state: 'bad', msg: 'Diese Eingabe kann ich nicht lesen. Schreibe zum Beispiel 3/5, 0,6 oder 60 %.' };
+  if (near(x, f.v, f.kind)) return { state: 'ok' };
+  for (const [w, msg] of f.wrong) if (near(x, w, 'p')) return { state: 'bad', msg };
+  if (f.kind === 'p' && x > 1) return { state: 'bad', msg: 'Wahrscheinlichkeiten liegen zwischen 0 und 1.' + (x <= 100 ? ` Meintest du ${fmt(x)} %? Dann schreibe das Prozentzeichen dazu.` : '') };
+  if (f.kind === 'n' && !Number.isInteger(x)) return { state: 'bad', msg: 'Hier ist eine Anzahl gesucht, also eine ganze Zahl.' };
+  return { state: 'bad', msg: f.hint };
+}
+
+function showFb(sec, type, html) {
+  const fb = sec.querySelector('.fb');
+  fb.className = 'fb ' + type; fb.innerHTML = html; fb.hidden = false;
+}
+const fieldEl = (sec, f) => sec.querySelector(`[data-f="${f.id}"]`);
+
+function check(i) {
+  const t = TASKS[i], sec = SECS[i];
+  const items = []; let empty = 0, wrong = 0;
+  for (const f of t.fields) {
+    const el = fieldEl(sec, f);
+    el.classList.remove('ok', 'bad', 'sol');
+    const r = evalF(f, el);
+    if (r.state === 'empty') { empty++; continue; }
+    if (r.state === 'ok') { el.classList.add('ok'); continue; }
+    wrong++; el.classList.add('bad'); items.push({ lab: f.lab, msg: r.msg });
+  }
+  if (!wrong && !empty) {
+    ST[i].status = 'solved'; updateChip(i);
+    showFb(sec, 'okk', `<p class="fb-title">Alles richtig!</p><p>${t.take}</p>`);
+    return;
+  }
+  if (wrong) ST[i].fails++;
+  if (ST[i].fails >= 2) sec.querySelector('[data-act="solve"]').hidden = false;
+
+  const seen = new Set();
+  const uniq = items.filter(x => !seen.has(x.msg) && seen.add(x.msg));
+  let html = `<p class="fb-title">${wrong ? (wrong === 1 ? 'Ein Feld stimmt noch nicht.' : `${wrong} Felder stimmen noch nicht.`) : 'Fast geschafft.'}</p>`;
+  if (uniq.length) html += `<ul>${uniq.slice(0, 3).map(x => `<li><strong>${x.lab}:</strong> ${x.msg}</li>`).join('')}</ul>`;
+  if (uniq.length > 3) html += `<p class="fb-more">Korrigiere zuerst diese Felder und prüfe dann erneut.</p>`;
+  if (empty) html += `<p class="fb-more">${empty === 1 ? 'Ein Feld ist noch leer.' : `${empty} Felder sind noch leer.`}</p>`;
+  showFb(sec, wrong ? 'err' : 'info', html);
+}
+
+function selectChoice(group, k) {
+  group.dataset.sel = k;
+  group.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
+}
+
+function solve(i) {
+  const t = TASKS[i], sec = SECS[i];
+  for (const f of t.fields) {
+    const el = fieldEl(sec, f);
+    if (f.kind === 'choice') selectChoice(el, f.v); else el.value = f.txt;
+    el.classList.remove('ok', 'bad'); el.classList.add('sol');
+  }
+  if (ST[i].status !== 'solved') { ST[i].status = 'shown'; updateChip(i); }
+  showFb(sec, 'info', `<p class="fb-title">Lösung eingetragen</p><p>${t.take}</p><p class="fb-more">Vergleiche die blau markierten Felder mit deinen eigenen Rechnungen.</p>`);
+}
+
+function clearTask(i) {
+  const t = TASKS[i], sec = SECS[i];
+  for (const f of t.fields) {
+    const el = fieldEl(sec, f);
+    if (f.kind === 'choice') { delete el.dataset.sel; el.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', 'false')); }
+    else el.value = '';
+    el.classList.remove('ok', 'bad', 'sol');
+  }
+  sec.querySelector('.fb').hidden = true;
+}
+
+/* Ereignisse */
+document.addEventListener('click', e => {
+  const cb = e.target.closest('.choice button');
+  if (cb) { const g = cb.parentElement; selectChoice(g, cb.dataset.k); g.classList.remove('ok', 'bad', 'sol'); return; }
+  const chip = e.target.closest('.chip');
+  if (chip) { go(+chip.dataset.i); return; }
+  const act = e.target.closest('[data-act]');
+  if (!act) return;
+  const i = +act.closest('.task').dataset.i;
+  ({ check, solve, clear: clearTask, prev: () => go(i - 1), next: () => go(i + 1) })[act.dataset.act](i);
+});
+document.addEventListener('input', e => { if (e.target.classList.contains('inp')) e.target.classList.remove('ok', 'bad', 'sol'); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.classList.contains('inp')) { e.preventDefault(); check(+e.target.closest('.task').dataset.i); }
+});
+
+go(0);
+</script>
+
+</body></html>
