@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oktett-Werkstatt – Moleküle bauen</title>
+<style>
+:root{
+  --ink:#1B2A49; --muted:#56647E; --page:#E6ECF5; --paper:#FFFFFF; --line:#C8D5EA; --grid:#D6E3F7;
+  --accent:#F2A900; --blue:#2C5CD3; --ok:#0B7A4B; --warn:#E8590C;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{font-size:clamp(15px,.8vw + 9px,21px);-webkit-text-size-adjust:100%}
+html.pres{font-size:clamp(19px,1.25vw + 12px,32px)}
+body{margin:0;min-height:100vh;background:var(--page);color:var(--ink);line-height:1.45;
+  font-family:"Segoe UI Variable","Segoe UI","Avenir Next",Nunito,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif}
+h2{margin:0;font-size:1.35rem;line-height:1.2}
+p{margin:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Kopfzeile */
+.top{display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;background:var(--ink);color:#fff;position:sticky;top:0;z-index:5}
+.top h1{margin:0;font-size:1.15rem;font-weight:800;flex:1}
+.top .btn{min-height:2.5rem;padding:.25rem .8rem;font-size:.9rem;background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.top .btn[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.total{font-weight:800;color:var(--accent);font-size:1.05rem;white-space:nowrap}
+main{max-width:1500px;margin:0 auto;padding:1rem}
+html.pres main{max-width:none}
+
+/* Bedienelemente */
+.btn{font:inherit;font-weight:700;min-height:3rem;padding:.45rem 1.1rem;border-radius:.8rem;border:2px solid var(--ink);
+  background:#fff;color:var(--ink);cursor:pointer}
+.btn:hover:not(:disabled){background:#EEF3FB}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.primary:hover:not(:disabled){background:#2A3F6C}
+.btn.big{min-height:3.4rem;font-size:1.1rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:.5rem}
+.row .btn{flex:1 1 auto}
+
+.stars{color:#CFD6E3;letter-spacing:.08em;white-space:nowrap}
+.stars .on{color:var(--accent)}
+
+/* Atom-Scheiben (Tasten und Chips) */
+.disc{display:inline-grid;place-items:center;border-radius:50%;border:3px solid var(--s);background:var(--f);color:var(--t);
+  font-weight:800;width:3.3rem;height:3.3rem;font-size:1.2rem;padding:0}
+button.disc{font:inherit;font-weight:800;font-size:1.2rem;cursor:pointer}
+button.disc:hover{filter:brightness(.94)}
+.pal .disc{width:3.8rem;height:3.8rem;font-size:1.4rem}
+.chip{display:inline-flex;align-items:center;gap:.35rem;font-weight:800;margin:0 .8rem .3rem 0}
+.chip .disc{width:2.1rem;height:2.1rem;font-size:.95rem;border-width:2px}
+
+/* Startseite */
+.home h2{font-size:1.7rem}
+.lead{margin:.4rem 0 1.1rem;color:var(--muted);max-width:60ch}
+.path{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem}
+.lvl{display:flex;flex-direction:column;width:100%;height:100%;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer;
+  background:#fff;border:2px solid var(--line);border-radius:1rem;overflow:hidden}
+.lvl:hover:not(:disabled){border-color:var(--ink)}
+.lvl:disabled{cursor:not-allowed}
+.lvl:disabled .lvl-art{opacity:.45}
+.lvl-art{display:block;background-color:#fff;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;border-bottom:2px solid var(--line)}
+.lvl-art svg{display:block;width:100%;height:auto}
+.lvl-body{display:flex;flex-direction:column;gap:.3rem;padding:.8rem 1rem 1rem;flex:1}
+.lvl-title{font-weight:800;font-size:1.1rem}
+.lvl-desc{color:var(--muted);font-size:.92rem;flex:1}
+.lvl-foot{font-weight:700;font-size:.95rem;margin-top:.3rem}
+.lvl-foot .lock{color:var(--muted)}
+.free{margin-top:1rem}
+.free .lvl{flex-direction:row;align-items:stretch}
+.free .lvl-art{width:min(18rem,42%);border-bottom:0;border-right:2px solid var(--line)}
+.teacher{margin-top:1.4rem;color:var(--muted);font-size:.92rem}
+.teacher summary{cursor:pointer;font-weight:700}
+.teacher .box{display:flex;flex-direction:column;gap:.6rem;align-items:flex-start;padding:.7rem 0 0}
+.teacher label{display:flex;gap:.5rem;align-items:center}
+.teacher input{width:1.1rem;height:1.1rem}
+
+/* Übersicht */
+.overview h2{font-size:1.6rem}
+.tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:.8rem}
+.tile{width:100%;display:flex;flex-direction:column;gap:.4rem;align-items:flex-start;padding:1rem;font:inherit;color:inherit;cursor:pointer;
+  background:#fff;border:2px solid var(--line);border-radius:1rem;text-align:left}
+.tile:hover{border-color:var(--ink)}
+.tile-name{font-weight:800;font-size:1.15rem}
+
+/* Aufgabenansicht */
+.task{display:grid;grid-template-columns:minmax(0,1fr) 21rem;gap:1rem;align-items:start}
+html.pres .task{grid-template-columns:minmax(0,1fr) 25rem}
+@media (max-width:860px){.task,html.pres .task{grid-template-columns:1fr}}
+.board{background-color:#fff;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;border:2px solid var(--line);border-radius:1rem;overflow:hidden}
+.board svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.board.locked .atom{pointer-events:none;cursor:default}
+.board-bar{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;align-items:center;margin:.6rem .2rem 0;color:var(--muted);font-size:.92rem}
+.hintline{flex:1 1 18rem}
+.legend{display:flex;gap:1rem;align-items:center}
+.legend i{display:inline-block;vertical-align:middle;margin-right:.35rem;background:var(--ink)}
+.legend .d{width:.7rem;height:.7rem;border-radius:50%}
+.legend .l{width:1.3rem;height:.3rem;border-radius:.2rem}
+.sw{display:flex;gap:.4rem;align-items:center;cursor:pointer}
+.sw input{width:1.1rem;height:1.1rem}
+
+.side{background:#fff;border:2px solid var(--line);border-radius:1rem;padding:1rem;display:flex;flex-direction:column;gap:.9rem}
+.side .lab{font-weight:700;margin-bottom:.4rem}
+.steps{display:flex;gap:.5rem;list-style:none;padding:0;margin:0;counter-reset:s}
+.steps li{counter-increment:s;flex:1;padding:.35rem .6rem;border-radius:.6rem;background:#EEF2F8;color:var(--muted);font-weight:700;font-size:.88rem}
+.steps li::before{content:counter(s) ". "}
+.steps li.on{background:var(--ink);color:#fff}
+.steps li.done{background:var(--ok);color:#fff}
+.pot{font-size:.92rem;color:var(--muted)}
+.keys{display:flex;flex-wrap:wrap;gap:.45rem}
+.keys.nums{display:grid;grid-template-columns:repeat(6,1fr)}
+.k-num{width:100%;height:3rem;border-radius:.7rem;border:2px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-weight:800;font-size:1.2rem;cursor:pointer}
+.k-num:hover{background:#EEF3FB}
+.fdisp{min-height:4.4rem;display:flex;align-items:center;padding:.3rem .9rem;border:2px dashed var(--line);border-radius:.8rem;font-size:2.4rem;font-weight:800;letter-spacing:.02em}
+.fdisp.big{border-style:solid;border-color:var(--ok);background:#E1F5EA;color:var(--ok)}
+.fdisp .ph{font-size:1rem;font-weight:600;color:var(--muted);letter-spacing:0}
+sub{font-size:.62em;line-height:0;vertical-align:sub}
+.fb{border-left:6px solid;border-radius:.5rem;padding:.6rem .8rem;font-size:.98rem}
+.fb strong{display:block;margin-bottom:.1rem}
+.fb.hint{background:#E8EFFE;border-color:var(--blue)}
+.fb.tip{background:#FFF3D9;border-color:#D98A00}
+.fb.ok{background:#E1F5EA;border-color:var(--ok)}
+.fb.info{background:#EEF1F6;border-color:#8A97AD}
+.unlock{font-weight:800;color:var(--ok)}
+
+/* Einstieg: Fragen */
+.pips{display:flex;gap:.3rem;list-style:none;padding:0;margin:0}
+.pips li{flex:1;height:.5rem;border-radius:.3rem;background:#DCE4F1}
+.pips li.done{background:var(--ok)}
+.pips li.now{background:var(--ink)}
+.q{font-size:1.2rem;font-weight:700}
+.answers{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+.num{font-size:1.6rem;min-height:3.6rem;padding:0}
+.num.wrong{background:#EDEFF4;color:#9AA5B8;border-color:#D2D9E6;text-decoration:line-through}
+.num.right{background:var(--ok);border-color:var(--ok);color:#fff}
+.ref{width:100%;border-collapse:collapse;font-size:.95rem}
+.ref th,.ref td{padding:.4rem .5rem;border-bottom:1px solid var(--line);text-align:left}
+.ref th{font-weight:700;color:var(--muted)}
+
+/* SVG-Elemente */
+.bond{stroke:var(--ink);stroke-width:6;stroke-linecap:round}
+.sym{font-weight:800;font-size:32px;text-anchor:middle;font-family:inherit}
+.e-dot{fill:var(--ink)}
+.e-line{stroke:var(--ink);stroke-width:5;stroke-linecap:round}
+.badge-t{font-size:15px;font-weight:800;fill:#fff;text-anchor:middle;font-family:inherit}
+.atom{cursor:grab}
+.lbl{font-size:15px;font-weight:700;fill:var(--muted);text-anchor:middle;font-family:inherit}
+
+@media (prefers-reduced-motion:no-preference){
+  .fb{animation:pop .18s ease-out}
+  @keyframes pop{from{transform:translateY(3px);opacity:.5}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="btn" id="btnHome" type="button">‹ Menü</button>
+  <h1>Oktett-Werkstatt</h1>
+  <span class="total" id="total" aria-label="Gesammelte Sterne">★ 0</span>
+  <button class="btn" id="btnPres" type="button" aria-pressed="false">Präsentationsmodus</button>
+</header>
+<main id="app"></main>
+
+<!-- ============ Teil 1: Daten und reine Logik (ohne DOM) ============ -->
+<script id="logic">
+'use strict';
+
+/* Elemente: v = Außenelektronen (= Hauptgruppe), s0 = Einzelelektronen (= mögliche Bindungen),
+   p0 = freie Elektronenpaare im Grundzustand, target = Ziel (Oktett 8, Wasserstoff Duett 2). */
+const EL = {
+  H: {sym:'H', name:'Wasserstoff', group:1, v:1, target:2, fill:'#F4F7FB', stroke:'#7B8AA3', text:'#1B2A49'},
+  C: {sym:'C', name:'Kohlenstoff', group:4, v:4, target:8, fill:'#3C4658', stroke:'#222A38', text:'#FFFFFF'},
+  N: {sym:'N', name:'Stickstoff',  group:5, v:5, target:8, fill:'#3F6EDB', stroke:'#2549A6', text:'#FFFFFF'},
+  O: {sym:'O', name:'Sauerstoff',  group:6, v:6, target:8, fill:'#D9483F', stroke:'#A52F28', text:'#FFFFFF'},
+  Cl:{sym:'Cl',name:'Chlor',       group:7, v:7, target:8, fill:'#2E9E5E', stroke:'#1B7040', text:'#FFFFFF'}
+};
+// Lewis-Regel: erst jede Seite mit einem Einzelelektron besetzen (max. 4), ab dem 5. Elektron entstehen Paare.
+Object.values(EL).forEach(e => { e.s0 = e.v <= 4 ? e.v : 8 - e.v; e.p0 = (e.v - e.s0) / 2; });
+
+// Moleküle: f = Summenformel in üblicher Reihenfolge, atoms = vorgegebene Atome (zentrales Atom zuerst)
+const MOL = {
+  H2:   {name:'Wasserstoff',       f:[['H',2]],                 atoms:['H','H']},
+  HCl:  {name:'Chlorwasserstoff',  f:[['H',1],['Cl',1]],        atoms:['Cl','H']},
+  H2O:  {name:'Wasser',            f:[['H',2],['O',1]],         atoms:['O','H','H']},
+  NH3:  {name:'Ammoniak',          f:[['N',1],['H',3]],         atoms:['N','H','H','H']},
+  CH4:  {name:'Methan',            f:[['C',1],['H',4]],         atoms:['C','H','H','H','H']},
+  Cl2:  {name:'Chlor',             f:[['Cl',2]],                atoms:['Cl','Cl']},
+  CH3Cl:{name:'Chlormethan',       f:[['C',1],['H',3],['Cl',1]],atoms:['C','H','H','H','Cl']},
+  CCl4: {name:'Tetrachlormethan',  f:[['C',1],['Cl',4]],        atoms:['C','Cl','Cl','Cl','Cl']},
+  O2:   {name:'Sauerstoff',        f:[['O',2]],                 atoms:['O','O']},
+  N2:   {name:'Stickstoff',        f:[['N',2]],                 atoms:['N','N']},
+  CO2:  {name:'Kohlenstoffdioxid', f:[['C',1],['O',2]],         atoms:['C','O','O']},
+  C2H4: {name:'Ethen',             f:[['C',2],['H',4]],         atoms:['C','C','H','H','H','H']},
+  C2H2: {name:'Ethin',             f:[['C',2],['H',2]],         atoms:['C','C','H','H']}
+};
+
+const SUBS = '₀₁₂₃₄₅₆₇₈₉';
+const sub = n => String(n).replace(/\d/g, d => SUBS[d]);
+const fHTML = f => f.map(([e,n]) => e + (n > 1 ? '<sub>' + n + '</sub>' : '')).join('');
+const fText = f => f.map(([e,n]) => e + (n > 1 ? sub(n) : '')).join('');
+const compOf = mol => { const c = {}; mol.f.forEach(([e,n]) => { c[e] = (c[e] || 0) + n; }); return c; };
+const compKey = c => Object.keys(c).filter(k => c[k] > 0).sort().map(k => k + c[k]).join('');
+const countEls = atoms => { const c = {}; atoms.forEach(a => { c[a.el] = (c[a.el] || 0) + 1; }); return c; };
+Object.keys(MOL).forEach(id => { MOL[id].id = id; MOL[id].key = compKey(compOf(MOL[id])); });
+const MOL_BY_KEY = {}; Object.values(MOL).forEach(m => { MOL_BY_KEY[m.key] = m; });
+
+// Elektronenbilanz pro Atom: Bindungselektronen zählen für beide Partner.
+function statusMap(atoms, bonds) {
+  const bs = {};
+  atoms.forEach(a => { bs[a.id] = 0; });
+  bonds.forEach(b => { if (b.a in bs) bs[b.a] += b.order; if (b.b in bs) bs[b.b] += b.order; });
+  const st = {};
+  atoms.forEach(a => {
+    const E = EL[a.el], b = bs[a.id];
+    const singles = Math.max(0, E.s0 - b);          // noch ungebundene Einzelelektronen
+    const count = 2 * b + 2 * E.p0 + singles;      // Elektronen rund um das Atom
+    st[a.id] = {b, singles, count, target:E.target, ok:count === E.target, over:b > E.s0};
+  });
+  return st;
+}
+
+function components(atoms, bonds) {
+  const adj = new Map();
+  atoms.forEach(a => adj.set(a.id, []));
+  bonds.forEach(b => { if (adj.has(b.a) && adj.has(b.b)) { adj.get(b.a).push(b.b); adj.get(b.b).push(b.a); } });
+  const seen = new Set(), comps = [];
+  atoms.forEach(a => {
+    if (seen.has(a.id)) return;
+    const c = [], stack = [a.id];
+    seen.add(a.id);
+    while (stack.length) {
+      const x = stack.pop(); c.push(x);
+      adj.get(x).forEach(y => { if (!seen.has(y)) { seen.add(y); stack.push(y); } });
+    }
+    comps.push(c);
+  });
+  return comps;
+}
+
+// Prüfung der gebauten Struktur gegen die Aufgabe
+function checkBuildTask(atoms, bonds, mol) {
+  if (!atoms.length) return {type:'empty'};
+  if (compKey(countEls(atoms)) !== mol.key) return {type:'comp'};
+  const st = statusMap(atoms, bonds);
+  const bad = atoms.filter(a => !st[a.id].ok);
+  if (bad.length) return {type:'octet', st, bad};
+  if (components(atoms, bonds).length > 1) return {type:'conn', st};
+  return {type:'ok', st};
+}
+
+// Summenformel-Eingabe: Tokens {t:'el',v:'H'} und {t:'n',v:'2'}
+function parseTokens(tokens) {
+  const g = [];
+  tokens.forEach(t => {
+    if (t.t === 'el') g.push({el:t.v, n:null});
+    else if (g.length) g[g.length - 1].n = Number(t.v);
+  });
+  return g;
+}
+function checkFormula(tokens, mol) {
+  const g = parseTokens(tokens);
+  if (!g.length) return {type:'empty'};
+  if (g.some(x => x.n === 1)) return {type:'one'};
+  const seen = new Set();
+  for (const x of g) { if (seen.has(x.el)) return {type:'dup'}; seen.add(x.el); }
+  const got = {}; g.forEach(x => { got[x.el] = x.n || 1; });
+  if (compKey(got) !== mol.key) return {type:'count'};
+  if (g.map(x => x.el).join(',') !== mol.f.map(x => x[0]).join(',')) return {type:'order'};
+  return {type:'ok'};
+}
+
+// Platzierung der Elektronen: Seiten weg von Bindungen zuerst belegen
+const SIDES = [[0,-1],[1,0],[0,1],[-1,0]]; // oben, rechts, unten, links
+function sideOrder(dirs) {
+  if (!dirs.length) return SIDES.slice();
+  const info = SIDES.map(s => ({s, d:Math.max(...dirs.map(v => s[0]*v[0] + s[1]*v[1]))}));
+  const prio = [[0,-1],[0,1],[1,0],[-1,0]];
+  const rank = s => prio.findIndex(p => p[0] === s[0] && p[1] === s[1]);
+  const free = info.filter(x => x.d < 0.35).sort((a,b) => rank(a.s) - rank(b.s));
+  const rest = info.filter(x => x.d >= 0.35).sort((a,b) => a.d - b.d);
+  return free.concat(rest).map(x => x.s);
+}
+
+// SVG-Markup der Spielfläche (Atome, Bindungen, Elektronen, Zähler)
+const R = 40;
+function sceneMarkup(atoms, bonds, o) {
+  o = o || {};
+  const f1 = n => (+n).toFixed(1);
+  const byId = {}, bs = {}, dirs = {};
+  atoms.forEach(a => { byId[a.id] = a; bs[a.id] = 0; dirs[a.id] = []; });
+  let out = '';
+  bonds.forEach(b => {
+    const A = byId[b.a], B = byId[b.b];
+    if (!A || !B) return;
+    const dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
+    const ux = dx / L, uy = dy / L, px = -uy, py = ux;
+    bs[A.id] += b.order; bs[B.id] += b.order;
+    dirs[A.id].push([ux, uy]); dirs[B.id].push([-ux, -uy]);
+    (b.order === 1 ? [0] : b.order === 2 ? [-8, 8] : [-15, 0, 15]).forEach(off => {
+      out += '<line class="bond" x1="' + f1(A.x + px*off) + '" y1="' + f1(A.y + py*off) +
+             '" x2="' + f1(B.x + px*off) + '" y2="' + f1(B.y + py*off) + '"/>';
+    });
+  });
+  atoms.forEach(a => {
+    const E = EL[a.el], b = bs[a.id], singles = Math.max(0, E.s0 - b);
+    const objs = [];
+    for (let i = 0; i < E.p0; i++) objs.push('p');
+    for (let i = 0; i < singles; i++) objs.push('s');
+    const sides = sideOrder(dirs[a.id]);
+    const st = o.status && o.status[a.id];
+    const x = f1(a.x), y = f1(a.y);
+    let g = '<g class="atom" data-atom="' + a.id + '"><title>' + E.name + '-Atom</title>';
+    g += '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 24) + '" fill="rgba(0,0,0,0)"/>';
+    if (a.id === o.selected) {
+      g += '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 4) + '" fill="none" stroke="#F2A900" stroke-width="6"/>';
+    } else if (st && !o.hide) {
+      g += '<circle cx="' + x + '" cy="' + y + '" r="' + (R + 4) + '" fill="none" stroke="' + (st.ok ? '#0B7A4B' : '#E8590C') + '" stroke-width="5"/>';
+    }
+    g += '<circle cx="' + x + '" cy="' + y + '" r="' + R + '" fill="' + E.fill + '" stroke="' + E.stroke + '" stroke-width="3"/>';
+    g += '<text class="sym" x="' + x + '" y="' + y + '" dy="0.35em" fill="' + E.text + '">' + E.sym + '</text>';
+    if (!o.hide) {
+      objs.forEach((t, i) => {
+        const s = sides[i], d = R + 12;
+        const ex = a.x + s[0]*d, ey = a.y + s[1]*d, tx = -s[1], ty = s[0];
+        if (t === 's') {
+          g += '<circle class="e-dot" cx="' + f1(ex) + '" cy="' + f1(ey) + '" r="5.5"/>';
+        } else if (o.dots) {
+          g += '<circle class="e-dot" cx="' + f1(ex - tx*7) + '" cy="' + f1(ey - ty*7) + '" r="5"/>' +
+               '<circle class="e-dot" cx="' + f1(ex + tx*7) + '" cy="' + f1(ey + ty*7) + '" r="5"/>';
+        } else {
+          g += '<line class="e-line" x1="' + f1(ex - tx*12) + '" y1="' + f1(ey - ty*12) + '" x2="' + f1(ex + tx*12) + '" y2="' + f1(ey + ty*12) + '"/>';
+        }
+      });
+      if (st) {
+        const bx = a.x + (R + 6) * 0.72, by = a.y - (R + 6) * 0.72;
+        g += '<rect x="' + f1(bx - 30) + '" y="' + f1(by - 13) + '" width="60" height="26" rx="13" fill="' + (st.ok ? '#0B7A4B' : '#E8590C') + '"/>';
+        g += '<text class="badge-t" x="' + f1(bx) + '" y="' + f1(by) + '" dy="0.35em">' + st.count + '/' + st.target + (st.ok ? ' ✓' : '') + '</text>';
+      }
+    }
+    out += g + '</g>';
+  });
+  return out;
+}
+</script>
+
+<!-- ============ Teil 2: Oberfläche ============ -->
+<script id="ui">
+'use strict';
+
+const W = 900, H = 560;
+const $ = (s, r) => (r || document).querySelector(s);
+const app = $('#app');
+
+/* ---------- Fortschritt (nur im Browser dieses Geräts) ---------- */
+const KEY = 'oktett-werkstatt-v1';
+let P = {stars:{}, unlockAll:false, pres:false, dots:false};
+try {
+  const s = JSON.parse(localStorage.getItem(KEY));
+  if (s && typeof s === 'object') P = Object.assign(P, s);
+  if (!P.stars || typeof P.stars !== 'object') P.stars = {};
+} catch (e) { /* Speicher nicht verfügbar: Spiel läuft trotzdem */ }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} }
+
+/* ---------- Level ---------- */
+const LEVELS = [
+  {id:'intro', title:'Außenelektronen', desc:'Wie viele Elektronen hat ein Atom außen, und wie viele Bindungen kann es eingehen?', tasks:['intro']},
+  {id:'l1', title:'Level 1: Einfache Moleküle', desc:'Die Atome sind vorgegeben. Verbinde sie und schreibe die Summenformel.', given:true, tasks:['H2','HCl','H2O','NH3','CH4']},
+  {id:'l2', title:'Level 2: Selbst auswählen', desc:'Nur der Name ist bekannt. Wähle die Atome selbst und baue das Molekül.', tasks:['H2O','NH3','CH4','Cl2','CH3Cl','CCl4']},
+  {id:'l3', title:'Level 3: Mehrfachbindungen', desc:'Doppel- und Dreifachbindungen, zum Beispiel bei O₂, N₂ und CO₂.', showEl:true, tasks:['O2','N2','CO2','C2H4','C2H2']}
+];
+const MINI = {
+  intro:{atoms:[{id:1,el:'N',x:210,y:125}], bonds:[]},
+  l1:{atoms:[{id:1,el:'O',x:210,y:75},{id:2,el:'H',x:90,y:185},{id:3,el:'H',x:330,y:185}], bonds:[{a:1,b:2,order:1},{a:1,b:3,order:1}]},
+  l2:{atoms:[{id:1,el:'N',x:210,y:70},{id:2,el:'H',x:80,y:185},{id:3,el:'H',x:210,y:200},{id:4,el:'H',x:340,y:185}], bonds:[{a:1,b:2,order:1},{a:1,b:3,order:1},{a:1,b:4,order:1}]},
+  l3:{atoms:[{id:1,el:'O',x:65,y:125},{id:2,el:'C',x:210,y:125},{id:3,el:'O',x:355,y:125}], bonds:[{a:1,b:2,order:2},{a:2,b:3,order:2}]},
+  free:{atoms:[{id:1,el:'H',x:90,y:125},{id:2,el:'O',x:210,y:125},{id:3,el:'C',x:330,y:125}], bonds:[]}
+};
+
+const tKey = (lvl, mol) => lvl.id + ':' + mol;
+const starsOf = (lvl, mol) => P.stars[tKey(lvl, mol)] || 0;
+const levelStars = lvl => lvl.tasks.reduce((s, m) => s + starsOf(lvl, m), 0);
+const needed = lvl => Math.ceil(0.6 * 3 * lvl.tasks.length);
+function isUnlocked(i) {
+  if (P.unlockAll || i <= 1) return true;
+  const prev = LEVELS[i - 1];
+  return levelStars(prev) >= needed(prev);
+}
+function starsHTML(n, max) {
+  max = max || 3;
+  let s = '';
+  for (let i = 1; i <= max; i++) s += '<span class="' + (i <= n ? 'on' : '') + '">★</span>';
+  return '<span class="stars" role="img" aria-label="' + n + ' von ' + max + ' Sternen">' + s + '</span>';
+}
+function updateTotal() {
+  const n = Object.values(P.stars).reduce((a, b) => a + b, 0);
+  $('#total').textContent = '★ ' + n;
+  $('#total').setAttribute('aria-label', n + ' Sterne gesammelt');
+}
+const discStyle = el => '--f:' + EL[el].fill + ';--s:' + EL[el].stroke + ';--t:' + EL[el].text;
+const plural = (n, one, many) => n === 1 ? one : many;
+function compText(mol) {
+  const items = mol.f.map(([e, n]) => n + ' ' + e + '-Atom' + (n > 1 ? 'en' : ''));
+  return items.length === 1 ? items[0] : items.slice(0, -1).join(', ') + ' und ' + items[items.length - 1];
+}
+const legendHTML = '<span class="legend"><span><i class="d"></i>1 Elektron</span><span><i class="l"></i>Elektronenpaar (2 Elektronen)</span></span>';
+const dotsSwitch = () => '<label class="sw"><input type="checkbox" id="dotsSw"' + (P.dots ? ' checked' : '') + '> Paare als zwei Punkte zeigen</label>';
+
+/* ---------- Zustände ---------- */
+let V = 'home';   // home | overview | intro | task
+let OV = null;    // Level in der Übersicht
+let T = null;     // Aufgabe oder Freies Bauen
+let Q = null;     // Einstiegsrunde
+let drag = null;
+
+/* ================= Startseite ================= */
+function renderHome() {
+  V = 'home'; T = null; Q = null;
+  const cards = LEVELS.map((l, i) => {
+    const un = isUnlocked(i), max = 3 * l.tasks.length, s = levelStars(l);
+    const art = MINI[l.id];
+    let foot;
+    if (!un) {
+      const prev = LEVELS[i - 1];
+      foot = '<span class="lock">Gesperrt: noch ' + (needed(prev) - levelStars(prev)) + ' ' + plural(needed(prev) - levelStars(prev), 'Stern', 'Sterne') + ' in ' + prev.title.split(':')[0] + ' sammeln</span>';
+    } else {
+      foot = starsHTML(s > 0 ? Math.min(3, Math.round(s / l.tasks.length)) : 0) + ' ' + s + ' von ' + max;
+    }
+    return '<li><button class="lvl" type="button" data-act="openLevel" data-level="' + l.id + '"' + (un ? '' : ' disabled') + '>' +
+      '<span class="lvl-art"><svg viewBox="0 0 420 250" aria-hidden="true">' + sceneMarkup(art.atoms, art.bonds) + '</svg></span>' +
+      '<span class="lvl-body"><span class="lvl-title">' + l.title + '</span><span class="lvl-desc">' + l.desc + '</span><span class="lvl-foot">' + foot + '</span></span></button></li>';
+  }).join('');
+  const fr = MINI.free;
+  app.innerHTML =
+    '<section class="home"><h2>Moleküle bauen mit der Oktettregel</h2>' +
+    '<p class="lead">Verbinde Atome, bis jedes die Edelgaskonfiguration erreicht hat, und schreibe danach die Summenformel. Für jede Aufgabe gibt es bis zu drei Sterne.</p>' +
+    '<ol class="path">' + cards + '</ol>' +
+    '<div class="free"><button class="lvl" type="button" data-act="openLevel" data-level="free">' +
+    '<span class="lvl-art"><svg viewBox="0 0 420 250" aria-hidden="true">' + sceneMarkup(fr.atoms, fr.bonds) + '</svg></span>' +
+    '<span class="lvl-body"><span class="lvl-title">Freies Bauen</span><span class="lvl-desc">Probiere aus, was entsteht. Das Programm erkennt bekannte Moleküle. Kein Auftrag, keine Sterne.</span></span></button></div>' +
+    '<details class="teacher"><summary>Für Lehrkräfte</summary><div class="box">' +
+    '<label><input type="checkbox" id="unlockSw"' + (P.unlockAll ? ' checked' : '') + '> Alle Level freischalten</label>' +
+    '<button class="btn" type="button" data-act="resetProgress">Fortschritt auf diesem Gerät zurücksetzen</button>' +
+    '<p>Der Fortschritt wird nur im Browser dieses Geräts gespeichert. Der Präsentationsmodus (oben rechts) vergrößert Schrift und Bedienelemente für das Smartboard.</p>' +
+    '</div></details></section>';
+  updateTotal();
+}
+
+/* ================= Übersicht eines Levels ================= */
+function renderOverview() {
+  V = 'overview';
+  const l = OV;
+  app.innerHTML = '<section class="overview"><h2>' + l.title + '</h2><p class="lead">' + l.desc + '</p><ul class="tiles">' +
+    l.tasks.map(m => '<li><button class="tile" type="button" data-act="startTask" data-level="' + l.id + '" data-mol="' + m + '">' +
+      '<span class="tile-name">' + MOL[m].name + '</span>' + starsHTML(starsOf(l, m)) + '</button></li>').join('') +
+    '</ul></section>';
+}
+
+/* ================= Einstieg: Außenelektronen ================= */
+const INTRO = [
+  {t:'val', el:'O'}, {t:'val', el:'N'}, {t:'bind', el:'O'}, {t:'val', el:'Cl'}, {t:'miss', el:'C'},
+  {t:'bind', el:'N'}, {t:'val', el:'C'}, {t:'miss', el:'Cl'}, {t:'val', el:'H'}, {t:'miss', el:'H'}
+];
+const introAnswer = q => { const E = EL[q.el]; return q.t === 'val' ? E.v : q.t === 'bind' ? E.s0 : E.target - E.v; };
+function introQuestion(q) {
+  const E = EL[q.el], who = E.name + '-Atom (' + E.sym + ')';
+  if (q.t === 'val') return 'Wie viele Außenelektronen hat ein ' + who + '?';
+  if (q.t === 'bind') return 'Wie viele Bindungen kann ein ' + who + ' eingehen?';
+  return 'Wie viele Elektronen fehlen einem ' + who + ' bis zur Edelgaskonfiguration?';
+}
+function pairsText(E) {
+  const parts = [];
+  if (E.p0) parts.push(E.p0 + ' ' + plural(E.p0, 'Elektronenpaar (Strich)', 'Elektronenpaare (Striche)'));
+  if (E.s0) parts.push(E.s0 + ' ' + plural(E.s0, 'Einzelelektron (Punkt)', 'Einzelelektronen (Punkte)'));
+  return parts.join(' und ');
+}
+function introExplain(q) {
+  const E = EL[q.el];
+  if (q.t === 'val') return E.name + ' steht in der ' + E.group + '. Hauptgruppe und hat deshalb ' + E.v + ' Außenelektron' + (E.v > 1 ? 'en' : '') + ': ' + pairsText(E) + '.';
+  if (q.t === 'bind') return 'Nur ungepaarte Elektronen können Bindungen bilden. ' + E.name + ' hat ' + E.s0 + ' ' + plural(E.s0, 'Einzelelektron', 'Einzelelektronen') + ' und kann deshalb ' + E.s0 + ' ' + plural(E.s0, 'Bindung', 'Bindungen') + ' eingehen.';
+  return 'Ziel sind ' + E.target + ' Elektronen (' + (E.target === 2 ? 'Duett, wie Helium' : 'Oktett, wie ein Edelgas') + '). ' + E.name + ' hat ' + E.v + ', es ' + plural(E.target - E.v, 'fehlt', 'fehlen') + ' also ' + (E.target - E.v) + '. Die fehlenden Elektronen kommen durch gemeinsame Elektronenpaare dazu.';
+}
+function introFb(q) {
+  const E = EL[q.el], first = Q.qErr === 1;
+  let html;
+  if (q.t === 'val') html = first
+    ? 'Schau im Periodensystem: In welcher Hauptgruppe steht ' + E.name + '? Die Nummer der Hauptgruppe verrät die Zahl der Außenelektronen.'
+    : E.name + ' steht in der ' + E.group + '. Hauptgruppe, also gibt es ' + E.v + ' Außenelektronen.';
+  else if (q.t === 'bind') html = first
+    ? 'Zähle nur die einzelnen Punkte. Nur ungepaarte Elektronen können eine Bindung bilden, ein Strich ist schon ein Paar.'
+    : E.name + ' hat ' + E.s0 + ' ' + plural(E.s0, 'Einzelelektron', 'Einzelelektronen') + '. Jedes davon kann eine Bindung bilden.';
+  else html = first
+    ? 'Ziel ist das Oktett (8 Elektronen), bei Wasserstoff das Duett (2). Wie viele Außenelektronen hat ' + E.name + ' schon?'
+    : E.name + ' hat ' + E.v + ' Außenelektronen, das Ziel sind ' + E.target + ': ' + E.target + ' − ' + E.v + ' = ' + (E.target - E.v) + '.';
+  return {kind:first ? 'hint' : 'tip', title:first ? 'Denkanstoß' : 'Tipp', html};
+}
+function startIntro() { Q = {i:0, errors:0, qErr:0, wrong:[], answered:false, fb:null, finished:false}; V = 'intro'; renderIntro(); }
+function renderIntro() {
+  if (Q.finished) return renderIntroDone();
+  const q = INTRO[Q.i], E = EL[q.el];
+  const showE = q.t === 'bind' || Q.answered;
+  const scene = sceneMarkup([{id:1, el:q.el, x:150, y:115}], [], {hide:!showE, dots:P.dots});
+  const pips = INTRO.map((_, i) => '<li class="' + (i < Q.i || (i === Q.i && Q.answered) ? 'done' : i === Q.i ? 'now' : '') + '"></li>').join('');
+  let ans = '';
+  for (let n = 1; n <= 8; n++) {
+    const wrong = Q.wrong.includes(n), right = Q.answered && n === introAnswer(q);
+    ans += '<button class="btn num' + (wrong ? ' wrong' : '') + (right ? ' right' : '') + '" type="button" data-act="ans" data-n="' + n + '"' + (Q.answered || wrong ? ' disabled' : '') + '>' + n + '</button>';
+  }
+  const last = Q.i === INTRO.length - 1;
+  app.innerHTML = '<section class="task"><div class="stage"><div class="board"><svg viewBox="0 0 300 240" style="max-height:62vh" role="img" aria-label="' + E.name + '-Atom">' +
+    '<g transform="translate(150 115) scale(1.5) translate(-150 -115)">' + scene + '</g>' +
+    '<text class="lbl" x="150" y="228">' + E.name + '</text></svg></div>' +
+    '<div class="board-bar">' + legendHTML + dotsSwitch() + '</div></div>' +
+    '<aside class="side"><ol class="pips" aria-label="Fortschritt">' + pips + '</ol>' +
+    '<h2>Frage ' + (Q.i + 1) + ' von ' + INTRO.length + '</h2><p class="q">' + introQuestion(q) + '</p>' +
+    '<div class="answers">' + ans + '</div>' +
+    (Q.fb ? '<div class="fb ' + Q.fb.kind + '" role="status"><strong>' + Q.fb.title + '</strong>' + Q.fb.html + '</div>' : '') +
+    (Q.answered ? '<button class="btn primary big" type="button" data-act="introNext">' + (last ? 'Fertig' : 'Weiter') + '</button>' : '') +
+    '</aside></section>';
+}
+function answerIntro(n) {
+  const q = INTRO[Q.i];
+  if (Q.answered || Q.wrong.includes(n)) return;
+  if (n === introAnswer(q)) { Q.answered = true; Q.fb = {kind:'ok', title:'Richtig!', html:introExplain(q)}; }
+  else { Q.wrong.push(n); Q.errors++; Q.qErr++; Q.fb = introFb(q); }
+  renderIntro();
+}
+function introNext() {
+  if (Q.i < INTRO.length - 1) { Q.i++; Q.qErr = 0; Q.wrong = []; Q.answered = false; Q.fb = null; renderIntro(); return; }
+  Q.stars = Q.errors <= 1 ? 3 : Q.errors <= 4 ? 2 : 1;
+  const k = 'intro:intro';
+  P.stars[k] = Math.max(P.stars[k] || 0, Q.stars); save(); updateTotal();
+  Q.finished = true; renderIntroDone();
+}
+function renderIntroDone() {
+  const rows = Object.keys(EL).map(k => { const E = EL[k];
+    return '<tr><td><span class="chip"><span class="disc" style="' + discStyle(k) + '">' + k + '</span></span></td><td>' + E.group + '. Hauptgruppe</td><td>' + E.v + '</td><td>' + E.s0 + '</td></tr>'; }).join('');
+  app.innerHTML = '<section class="overview"><h2>Geschafft!</h2><p class="lead">' + starsHTML(Q.stars) + ' &nbsp;Fehlversuche in dieser Runde: ' + Q.errors + '</p>' +
+    '<div class="side" style="max-width:36rem"><p class="lab">Merkhilfe</p><table class="ref"><thead><tr><th>Atom</th><th>Stellung</th><th>Außenelektronen</th><th>Bindungen</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="row"><button class="btn primary" type="button" data-act="openLevel" data-level="l1">Weiter zu Level 1</button>' +
+    '<button class="btn" type="button" data-act="startIntro">Nochmal üben</button><button class="btn" type="button" data-act="home">Menü</button></div></div></section>';
+}
+
+/* ================= Bauen und Summenformel ================= */
+function layoutGiven(list) {
+  const n = list.length, cx = 450, cy = 280;
+  if (n === 2) return [{id:1, el:list[0], x:300, y:cy}, {id:2, el:list[1], x:600, y:cy}];
+  const out = [{id:1, el:list[0], x:cx, y:cy}], k = n - 1;
+  for (let i = 1; i < n; i++) {
+    const deg = k === 2 ? [150, 30][i - 1] : -60 + (360 / k) * (i - 1);   // k=2: gewinkelt statt gestreckt
+    const ang = deg * Math.PI / 180;
+    out.push({id:i + 1, el:list[i], x:cx + 210 * Math.cos(ang), y:cy + 210 * Math.sin(ang)});
+  }
+  return out;
+}
+function newBoard(over) {
+  return Object.assign({atoms:[], bonds:[], nid:1, sel:null, phase:'build', errors:0, fb:null, status:null, tokens:[]}, over);
+}
+function startTask(levelId, molId) {
+  const lvl = LEVELS.find(l => l.id === levelId);
+  T = newBoard({mode:'task', lvl, molId, mol:MOL[molId]});
+  if (lvl.given) { T.atoms = layoutGiven(T.mol.atoms); T.nid = T.atoms.length + 1; }
+  V = 'task'; renderTask();
+}
+function startSandbox() { T = newBoard({mode:'sandbox', lvl:null, mol:null}); V = 'task'; renderTask(); }
+
+function hintText() {
+  if (T.phase === 'build') return 'Tippe zwei Atome nacheinander an, um sie zu verbinden. Tippe dasselbe Paar noch einmal an für eine Doppel- oder Dreifachbindung. Atome lassen sich verschieben.';
+  if (T.phase === 'formula') return 'Das Molekül ist fertig gebaut. Schreibe jetzt die Summenformel.';
+  return 'Aufgabe geschafft.';
+}
+function renderTask() {
+  app.innerHTML = '<section class="task"><div class="stage"><div class="board" id="boardBox"><svg id="board" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Spielfläche"></svg></div>' +
+    '<div class="board-bar"><p class="hintline">' + hintText() + '</p>' + legendHTML + dotsSwitch() + '</div></div><aside class="side" id="side"></aside></section>';
+  renderBoard(); renderSide();
+}
+function renderBoard() {
+  const svg = $('#board'); if (!svg) return;
+  svg.innerHTML = sceneMarkup(T.atoms, T.bonds, {selected:T.sel, status:T.status, dots:P.dots});
+  $('#boardBox').classList.toggle('locked', T.phase !== 'build');
+}
+function fbHTML() { return T.fb ? '<div class="fb ' + T.fb.kind + '" role="status"><strong>' + T.fb.title + '</strong>' + T.fb.html + '</div>' : ''; }
+function stepsHTML() {
+  const b = T.phase === 'build';
+  return '<ol class="steps"><li class="' + (b ? 'on' : 'done') + '">Molekül bauen</li><li class="' + (T.phase === 'formula' ? 'on' : T.phase === 'done' ? 'done' : '') + '">Summenformel</li></ol>';
+}
+function chipsHTML(mol) { return mol.f.map(([e, n]) => '<span class="chip"><span class="disc" style="' + discStyle(e) + '">' + e + '</span>× ' + n + '</span>').join(''); }
+function tokensHTML(tokens) {
+  if (!tokens.length) return '<span class="ph">Tippe auf die Tasten, um die Formel zu schreiben.</span>';
+  return tokens.map(t => t.t === 'el' ? '<span>' + t.v + '</span>' : '<sub>' + t.v + '</sub>').join('');
+}
+
+function renderSide() {
+  const side = $('#side'); if (!side) return;
+  const sb = T.mode === 'sandbox';
+  let h = '';
+  if (T.phase === 'build') {
+    if (sb) h += '<h2>Freies Bauen</h2><p>Setze Atome ein und verbinde sie. Mit „Prüfen“ siehst du, ob ein stimmiges Molekül entstanden ist.</p>';
+    else {
+      h += stepsHTML() + '<h2>' + T.mol.name + '</h2>';
+      if (T.lvl.given) h += '<p>Verbinde die vorgegebenen Atome zu einem Molekül:</p><div>' + chipsHTML(T.mol) + '</div>';
+      else if (T.lvl.showEl) h += '<p>Baue ein Molekül des Stoffes ' + T.mol.name + '. Es besteht aus: ' + [...new Set(T.mol.f.map(x => EL[x[0]].name))].join(' und ') + '.</p>';
+      else h += '<p>Baue ein Molekül des Stoffes ' + T.mol.name + '. Wähle die passenden Atome selbst aus.</p>';
+    }
+    if (sb || !T.lvl.given) {
+      h += '<div class="pal"><p class="lab">Atome einsetzen</p><div class="keys">' +
+        Object.keys(EL).map(k => '<button class="disc" type="button" style="' + discStyle(k) + '" data-act="addAtom" data-el="' + k + '" aria-label="' + EL[k].name + '-Atom einsetzen">' + k + '</button>').join('') + '</div></div>';
+    }
+    h += '<div class="row">' + ((sb || !T.lvl.given) ? '<button class="btn" type="button" data-act="delAtom"' + (T.sel == null ? ' disabled' : '') + '>Atom entfernen</button>' : '') +
+      '<button class="btn" type="button" data-act="resetBoard">Neu anfangen</button></div>';
+    h += '<button class="btn primary big" type="button" data-act="checkBuild">Prüfen</button>';
+    if (!sb) h += '<p class="pot">Mögliche Sterne: ' + starsHTML(3 - Math.min(T.errors, 2)) + '</p>';
+    h += fbHTML();
+  } else if (T.phase === 'formula') {
+    h += stepsHTML() + '<h2>Summenformel</h2><p>Schreibe die Summenformel für <strong>' + T.mol.name + '</strong>.</p>' +
+      '<div class="fdisp" aria-live="polite">' + tokensHTML(T.tokens) + '</div>' +
+      '<div class="keys">' + Object.keys(EL).map(k => '<button class="disc" type="button" style="' + discStyle(k) + '" data-act="key" data-k="' + k + '" aria-label="Symbol ' + k + '">' + k + '</button>').join('') + '</div>' +
+      '<div class="keys nums">' + [1,2,3,4,5,6].map(n => '<button class="k-num" type="button" data-act="key" data-k="' + n + '" aria-label="Index ' + n + '">' + n + '</button>').join('') + '</div>' +
+      '<div class="row"><button class="btn" type="button" data-act="back">⌫ Zurück</button><button class="btn" type="button" data-act="clear">Alles löschen</button></div>' +
+      '<button class="btn primary big" type="button" data-act="checkFormula">Prüfen</button>' +
+      '<p class="pot">Mögliche Sterne: ' + starsHTML(3 - Math.min(T.errors, 2)) + '</p>' + fbHTML();
+  } else {
+    const idx = T.lvl.tasks.indexOf(T.molId), hasNext = idx + 1 < T.lvl.tasks.length;
+    h += stepsHTML() + '<h2>Geschafft!</h2><div class="fdisp big">' + fHTML(T.mol.f) + '</div><p>' + T.mol.name + ' &nbsp;' + starsHTML(T.stars) + '</p>' +
+      '<p>Der Index sagt, wie viele Atome dieser Sorte im Molekül stecken. Steht keine Zahl da, ist es genau ein Atom.</p>' +
+      (T.unlockMsg ? '<p class="unlock">' + T.unlockMsg + '</p>' : '') +
+      '<div class="row">' + (hasNext ? '<button class="btn primary big" type="button" data-act="nextTask">Nächste Aufgabe</button>' : '') +
+      '<button class="btn' + (hasNext ? '' : ' primary big') + '" type="button" data-act="overview">Zur Übersicht</button></div>';
+  }
+  side.innerHTML = h;
+}
+
+/* ---------- Interaktion auf der Spielfläche ---------- */
+function touch() { T.status = null; T.fb = null; }
+function cycleBond(a, b) {
+  const i = T.bonds.findIndex(x => (x.a === a && x.b === b) || (x.a === b && x.b === a));
+  if (i < 0) T.bonds.push({a, b, order:1});
+  else if (T.bonds[i].order < 3) T.bonds[i].order++;
+  else T.bonds.splice(i, 1);
+}
+function tapAtom(id) {
+  if (T.sel == null) T.sel = id;
+  else if (T.sel === id) T.sel = null;
+  else { cycleBond(T.sel, id); T.sel = null; touch(); }
+  renderBoard(); renderSide();
+}
+function freeSpot() {
+  const cand = [];
+  for (const y of [110, 280, 450]) for (const x of [130, 270, 410, 550, 690, 830]) cand.push([x, y]);
+  cand.sort((p, q) => Math.hypot(p[0] - 450, p[1] - 280) - Math.hypot(q[0] - 450, q[1] - 280));
+  for (const [x, y] of cand) if (T.atoms.every(a => Math.hypot(a.x - x, a.y - y) >= 110)) return [x, y];
+  return [60 + Math.random() * 780, 60 + Math.random() * 440];
+}
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function toSvg(svg, e) {
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+app.addEventListener('pointerdown', e => {
+  const svg = e.target.closest('#board');
+  if (!svg || !T || T.phase !== 'build') return;
+  const g = e.target.closest('[data-atom]');
+  if (!g) { if (T.sel != null) { T.sel = null; renderBoard(); renderSide(); } return; }
+  const id = +g.dataset.atom, a = T.atoms.find(x => x.id === id);
+  if (!a) return;
+  const p = toSvg(svg, e);
+  drag = {id, svg, sx:e.clientX, sy:e.clientY, dx:p.x - a.x, dy:p.y - a.y, moved:false, pid:e.pointerId};
+  try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+app.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 10) return;
+  drag.moved = true;
+  const a = T.atoms.find(x => x.id === drag.id), p = toSvg(drag.svg, e);
+  a.x = clamp(p.x - drag.dx, 60, W - 60); a.y = clamp(p.y - drag.dy, 60, H - 60);
+  renderBoard();
+});
+function endDrag(e) {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const d = drag; drag = null;
+  if (!d.moved && e.type === 'pointerup') tapAtom(d.id);
+}
+app.addEventListener('pointerup', endDrag);
+app.addEventListener('pointercancel', endDrag);
+
+/* ---------- Prüfen: Bauen ---------- */
+function buildFb(r) {
+  const first = T.errors === 1, mol = T.mol; let html = '';
+  if (r.type === 'comp') {
+    html = first ? 'Die Atome passen noch nicht zu ' + mol.name + '. Überlege, welche Atome sich verbinden und wie viele Bindungen jedes Atom braucht.'
+                 : 'Ein ' + mol.name + '-Molekül besteht aus ' + compText(mol) + '.';
+  } else if (r.type === 'octet') {
+    if (first) html = 'Noch hat nicht jedes Atom die Edelgaskonfiguration (Oktett, bei Wasserstoff Duett). Die Zähler zeigen, wie viele Elektronen jedes Atom um sich hat. Gemeinsame Elektronenpaare zählen für beide Atome.';
+    else {
+      const a = r.bad[0], s = r.st[a.id], E = EL[a.el], more = r.bad.length - 1;
+      html = s.over
+        ? 'Das ' + E.name + '-Atom hat zu viele Bindungen: Es hat nur ' + E.s0 + ' ' + plural(E.s0, 'Einzelelektron', 'Einzelelektronen') + ' und kann höchstens ' + E.s0 + ' ' + plural(E.s0, 'Bindung', 'Bindungen') + ' eingehen.'
+        : 'Das ' + E.name + '-Atom hat noch ' + s.singles + ' ' + plural(s.singles, 'Einzelelektron', 'Einzelelektronen') + ' übrig. Es braucht noch ' + s.singles + ' ' + plural(s.singles, 'Bindung', 'Bindungen') + '.';
+      if (more > 0) html += ' ' + (more === 1 ? 'Ein weiteres Atom ist' : more + ' weitere Atome sind') + ' ebenfalls noch nicht fertig.';
+    }
+  } else {
+    html = first ? 'Die Atome sind noch nicht alle miteinander verbunden. Ein Molekül ist eine zusammenhängende Gruppe von Atomen.'
+                 : 'Verbinde die getrennten Gruppen so, dass jedes Atom über Bindungen mit allen anderen zusammenhängt.';
+  }
+  return {kind:first ? 'hint' : 'tip', title:first ? 'Denkanstoß' : 'Tipp', html};
+}
+function checkSandbox() {
+  if (!T.atoms.length) { T.fb = {kind:'info', title:'Hinweis', html:'Setze zuerst Atome auf die Fläche.'}; return; }
+  const st = statusMap(T.atoms, T.bonds); T.status = st;
+  const bad = T.atoms.filter(a => !st[a.id].ok);
+  if (bad.length) {
+    T.fb = {kind:'hint', title:'Noch nicht fertig', html:plural(bad.length, 'Ein Atom hat', bad.length + ' Atome haben') + ' die Edelgaskonfiguration noch nicht erreicht (orange markiert). Die Zähler zeigen Elektronen und Ziel. Ändere Bindungen oder füge Atome hinzu.'};
+    return;
+  }
+  const names = components(T.atoms, T.bonds).map(c => {
+    const m = MOL_BY_KEY[compKey(countEls(T.atoms.filter(a => c.includes(a.id))))];
+    return m ? '<strong>' + fHTML(m.f) + '</strong> (' + m.name + ')' : 'ein stimmiges Molekül, das in dieser Liste nicht vorkommt';
+  });
+  T.fb = {kind:'ok', title:'Stimmig!', html:names.length === 1
+    ? 'Alle Atome haben die Edelgaskonfiguration erreicht. Das ist ' + names[0] + '.'
+    : 'Alle Atome sind zufrieden. Du hast ' + names.length + ' getrennte Moleküle gebaut: ' + names.join(', ') + '.'};
+}
+function checkBuildAction() {
+  if (T.mode === 'sandbox') { checkSandbox(); renderBoard(); renderSide(); return; }
+  const r = checkBuildTask(T.atoms, T.bonds, T.mol);
+  if (r.type === 'empty') { T.fb = {kind:'info', title:'Hinweis', html:'Setze zuerst Atome auf die Fläche.'}; renderSide(); return; }
+  if (r.type === 'ok') {
+    T.status = r.st; T.sel = null; T.phase = 'formula'; T.tokens = [];
+    T.fb = {kind:'ok', title:'Richtig gebaut!', html:'Jedes Atom hat jetzt die Edelgaskonfiguration: 8 Elektronen, bei Wasserstoff 2. Gemeinsame Elektronenpaare zählen für beide Atome.'};
+    renderTask(); return;
+  }
+  T.errors++; T.status = (r.type === 'comp') ? null : r.st; T.fb = buildFb(r);
+  renderBoard(); renderSide();
+}
+
+/* ---------- Prüfen: Summenformel ---------- */
+function formulaFb(r) {
+  const first = T.errors === 1, mol = T.mol; let html = '';
+  if (r.type === 'one') html = 'Den Index 1 schreibt man nicht. Ein einzelnes Atom steht ohne Zahl.';
+  else if (r.type === 'dup') html = 'Jede Atomsorte steht nur einmal in der Formel. Die Anzahl kommt als tiefgestellte Zahl dahinter, zum Beispiel H<sub>2</sub> statt HH.';
+  else if (r.type === 'count') html = first ? 'Die Anzahl der Atome stimmt noch nicht. Zähle im gebauten Molekül jede Atomsorte einzeln.'
+                                            : 'Das Molekül enthält ' + compText(mol) + '. Die Anzahl steht als Index hinter dem Symbol.';
+  else html = first ? 'Die Atome stimmen, aber die Reihenfolge nicht. Wie schreibt man diese Verbindung üblicherweise?'
+                    : 'Die Formel beginnt mit ' + mol.f[0][0] + '.';
+  return {kind:first ? 'hint' : 'tip', title:first ? 'Denkanstoß' : 'Tipp', html};
+}
+function checkFormulaAction() {
+  const r = checkFormula(T.tokens, T.mol);
+  if (r.type === 'empty') { T.fb = {kind:'info', title:'Hinweis', html:'Setze die Formel zuerst mit den Tasten zusammen.'}; renderSide(); return; }
+  if (r.type === 'ok') {
+    T.stars = 3 - Math.min(T.errors, 2);
+    const i = LEVELS.indexOf(T.lvl), wasOpen = i + 1 < LEVELS.length ? isUnlocked(i + 1) : true;
+    const k = tKey(T.lvl, T.molId);
+    P.stars[k] = Math.max(P.stars[k] || 0, T.stars); save(); updateTotal();
+    T.unlockMsg = (!wasOpen && isUnlocked(i + 1)) ? LEVELS[i + 1].title.split(':')[0] + ' ist freigeschaltet!' : '';
+    T.phase = 'done'; T.fb = null; renderTask(); return;
+  }
+  T.errors++; T.fb = formulaFb(r); renderSide();
+}
+
+/* ---------- Aktionen (Klicks) ---------- */
+const A = {
+  home() { renderHome(); },
+  openLevel(d) {
+    if (d.level === 'intro') return startIntro();
+    if (d.level === 'free') return startSandbox();
+    const i = LEVELS.findIndex(l => l.id === d.level);
+    if (!isUnlocked(i)) return;
+    OV = LEVELS[i]; renderOverview();
+  },
+  startTask(d) { startTask(d.level, d.mol); },
+  startIntro() { startIntro(); },
+  ans(d) { answerIntro(+d.n); },
+  introNext() { introNext(); },
+  addAtom(d) {
+    if (T.phase !== 'build') return;
+    if (T.atoms.length >= 12) { T.fb = {kind:'info', title:'Hinweis', html:'Mehr als 12 Atome passen nicht auf die Fläche.'}; return renderSide(); }
+    const [x, y] = freeSpot();
+    T.atoms.push({id:T.nid++, el:d.el, x, y}); touch(); renderBoard(); renderSide();
+  },
+  delAtom() {
+    if (T.sel == null) return;
+    T.atoms = T.atoms.filter(a => a.id !== T.sel);
+    T.bonds = T.bonds.filter(b => b.a !== T.sel && b.b !== T.sel);
+    T.sel = null; touch(); renderBoard(); renderSide();
+  },
+  resetBoard() {
+    T.bonds = []; T.sel = null;
+    if (T.lvl && T.lvl.given) { T.atoms = layoutGiven(T.mol.atoms); T.nid = T.atoms.length + 1; }
+    else { T.atoms = []; T.nid = 1; }
+    touch(); renderBoard(); renderSide();
+  },
+  checkBuild() { checkBuildAction(); },
+  key(d) {
+    const k = d.k, last = T.tokens[T.tokens.length - 1];
+    if (EL[k]) T.tokens.push({t:'el', v:k});
+    else if (last && last.t === 'el') T.tokens.push({t:'n', v:k});   // Index nur direkt hinter einem Symbol
+    T.fb = null; renderSide();
+  },
+  back() { T.tokens.pop(); T.fb = null; renderSide(); },
+  clear() { T.tokens = []; T.fb = null; renderSide(); },
+  checkFormula() { checkFormulaAction(); },
+  nextTask() { startTask(T.lvl.id, T.lvl.tasks[T.lvl.tasks.indexOf(T.molId) + 1]); },
+  overview() { OV = T.lvl; renderOverview(); },
+  resetProgress() {
+    if (confirm('Alle Sterne auf diesem Gerät wirklich löschen?')) { P.stars = {}; save(); renderHome(); }
+  }
+};
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const fn = A[el.dataset.act];
+  if (fn) fn(el.dataset);
+});
+app.addEventListener('change', e => {
+  if (e.target.id === 'dotsSw') {
+    P.dots = e.target.checked; save();
+    if (V === 'task') renderBoard(); else if (V === 'intro') renderIntro();
+  } else if (e.target.id === 'unlockSw') {
+    P.unlockAll = e.target.checked; save(); renderHome();
+    const d = $('.teacher'); if (d) d.open = true;
+  }
+});
+
+/* ---------- Kopfzeile ---------- */
+$('#btnHome').addEventListener('click', renderHome);
+function applyPres() { document.documentElement.classList.toggle('pres', !!P.pres); $('#btnPres').setAttribute('aria-pressed', String(!!P.pres)); }
+$('#btnPres').addEventListener('click', () => { P.pres = !P.pres; save(); applyPres(); });
+applyPres();
+renderHome();
+</script>
+</body>
+</html>
