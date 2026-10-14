@@ -1,0 +1,855 @@
+<title>Klammer-Werkstatt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam&family=Lexend:wght@400;500;600&display=swap">
+<style>
+/* Layout: eine Heftseite auf Karopapier; Stationen als senkrechter Lernpfad, Aufgaben mit Ziffernblock rechts (iPad quer) bzw. darunter */
+:root{
+  --bg:#F4F7FA; --grid:#E1E8EF; --card:#FFFFFF; --ink:#1E2733; --muted:#5A6676; --line:#D2DBE5; --soft:#EEF2F6;
+  --plus:#2461C7; --minus:#D1392E; --chip-ink:#FFFFFF;
+  --mark:#FFE14D; --mark-ink:#352C00;
+  --ok:#1B7A45; --okbg:#E2F3E9; --bad:#B3301D; --badbg:#FBE8E4; --info:#2C4868; --infobg:#E7EEF6;
+  --btn:#1E2733; --btn-ink:#FFFFFF; --focus:#1E2733;
+  --skin:#F1C39C; --skin-line:#B57A50; --star:#F2B90C; --star-off:#D2DBE5;
+  --f-ui:"Lexend", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-hand:"Kalam", "Marker Felt", "Segoe Print", "Comic Sans MS", cursive;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151C; --grid:#19212B; --card:#171F29; --ink:#E6ECF3; --muted:#9AA8B8; --line:#2C3846; --soft:#1F2934;
+    --plus:#4C88EE; --minus:#EE5D55; --chip-ink:#FFFFFF;
+    --mark:#E6C836; --mark-ink:#2A2300;
+    --ok:#5CCB8A; --okbg:#16301F; --bad:#FF7D69; --badbg:#3A1D18; --info:#A9C3E3; --infobg:#1C2A3A;
+    --btn:#E6ECF3; --btn-ink:#10151C; --focus:#E6ECF3;
+    --skin:#D9A47C; --skin-line:#9E6A44; --star:#F2B90C; --star-off:#2C3846;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151C; --grid:#19212B; --card:#171F29; --ink:#E6ECF3; --muted:#9AA8B8; --line:#2C3846; --soft:#1F2934;
+  --plus:#4C88EE; --minus:#EE5D55; --chip-ink:#FFFFFF;
+  --mark:#E6C836; --mark-ink:#2A2300;
+  --ok:#5CCB8A; --okbg:#16301F; --bad:#FF7D69; --badbg:#3A1D18; --info:#A9C3E3; --infobg:#1C2A3A;
+  --btn:#E6ECF3; --btn-ink:#10151C; --focus:#E6ECF3;
+  --skin:#D9A47C; --skin-line:#9E6A44; --star:#F2B90C; --star-off:#2C3846;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;
+  color:var(--ink);font-family:var(--f-ui);font-size:17px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;
+  -webkit-text-size-adjust:100%;
+}
+#main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+button{font:inherit;color:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2{font-weight:600;line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.9rem,5vw,2.6rem);letter-spacing:-.01em;cursor:default;-webkit-user-select:none;user-select:none}
+h2{font-size:1.4rem}
+p{margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px}
+
+/* Startseite */
+.hero{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.logo{display:flex;align-items:center;gap:6px}
+.logo .lb{font-size:2.2rem;font-weight:500;line-height:1}
+.lead{color:var(--muted)}
+.path{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.path li{position:relative}
+.path li:not(:last-child)::after{content:"";position:absolute;left:35px;top:100%;height:14px;border-left:3px dotted var(--muted)}
+.st{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.st:hover:not(:disabled){border-color:var(--ink)}
+.st:disabled{cursor:default;opacity:.55}
+.num{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:600;background:var(--card);border:2px solid var(--ink);font-variant-numeric:tabular-nums}
+.st.done .num{background:var(--mark);color:var(--mark-ink);border-color:var(--mark-ink)}
+.st-text{display:flex;flex-direction:column;min-width:0}
+.st-name{font-weight:600;font-size:1.1rem}
+.st-sub{color:var(--muted);font-size:.95rem}
+.go{font-weight:500;padding:6px 16px;border-radius:999px;background:var(--btn);color:var(--btn-ink);font-size:.95rem}
+.lock svg{width:24px;height:24px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round}
+.stars{display:inline-flex;gap:2px}
+.stars svg{width:22px;height:22px;fill:var(--star-off)}
+.stars svg.on{fill:var(--star)}
+.stars.big svg{width:52px;height:52px}
+.foot{color:var(--muted);font-size:.95rem;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.msg{background:var(--infobg);color:var(--info);border-radius:10px;padding:8px 12px}
+
+/* Kopfzeile in Stationen */
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.back{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.95rem}
+.bar-title{font-weight:600;flex:1;min-width:0}
+.dots{display:flex;gap:6px}
+.dot{width:13px;height:13px;border-radius:50%;border:2px solid var(--ink);background:var(--card)}
+.dot.on{background:var(--ink)}
+.dot.cur{box-shadow:0 0 0 3px var(--mark)}
+
+/* Merkkasten wie im Heft */
+.rule{background:var(--card);border:2px solid var(--ink);border-radius:6px;padding:10px 14px}
+.rule summary{font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;font-size:.82rem}
+.rule-body{font-family:var(--f-hand);font-size:1.25rem;line-height:1.45;margin-top:6px}
+.rule-body b{font-weight:400;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.ex{display:inline-block;margin-top:6px;background:var(--mark);color:var(--mark-ink);padding:0 6px;border-radius:3px}
+
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:2px solid var(--ink);background:var(--card);border-radius:12px;padding:10px 18px;font-weight:500}
+.btn.primary{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.btn.big{width:100%;padding:14px;font-size:1.1rem}
+
+/* Aufgaben */
+.task-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lv{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.pip{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;display:inline-block}
+.pip.on{background:currentColor}
+.count{color:var(--muted);font-size:.95rem}
+.prompt{font-size:1.08rem}
+.note{color:var(--muted)}
+.task-body{display:grid;gap:18px}
+@media (min-width:860px){.task-body{grid-template-columns:minmax(0,1fr) 270px;align-items:start}}
+.work{display:flex;flex-direction:column;gap:14px;min-width:0}
+.side{display:flex;flex-direction:column;gap:12px}
+.exprwrap{position:relative}
+.exprwrap.witharrows{padding-top:66px}
+.arrows{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.expr{display:flex;flex-wrap:wrap;align-items:center;gap:.3em;font-size:clamp(1.6rem,4.6vw,2.3rem);font-weight:500;font-variant-numeric:tabular-nums}
+.tx.or{margin-right:-.22em}
+.tx.cl{margin-left:-.22em}
+.tgt{padding:0 .05em}
+.tapnum{position:relative;border:2px dashed var(--muted);background:var(--card);border-radius:10px;padding:0 .2em;font-weight:500;line-height:1.3}
+.tapnum:disabled{opacity:1;color:var(--ink);cursor:default}
+.tapnum.factor{border-color:var(--ink)}
+.tapnum.factor.on{border-style:solid;background:var(--mark);color:var(--mark-ink)}
+.tapnum.sel{border-style:solid;border-color:var(--ink);background:var(--soft)}
+.tapnum.rest{border-color:transparent;background:var(--mark);color:var(--mark-ink)}
+.tapnum.covered{border-color:transparent}
+.handc{position:absolute;inset:-5px;display:flex;align-items:center;justify-content:center;background:var(--card);border-radius:10px;animation:drop .35s ease-out}
+.tapnum:not(.covered) .handc{display:none}
+.hand{height:1.3em;width:auto}
+.hs rect{fill:var(--skin);stroke:var(--skin-line);stroke-width:1}
+.darr{fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;animation:draw .6s ease-out forwards;animation-delay:var(--d)}
+.darr.still{animation:none;stroke-dashoffset:0}
+.ahd{fill:var(--ink)}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes drop{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
+
+.rows{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:.3em;font-size:clamp(1.3rem,3.6vw,1.8rem);font-variant-numeric:tabular-nums}
+.slot{min-width:2.7em;min-height:1.6em;padding:0 .35em;border:2px solid var(--line);border-radius:10px;background:var(--card);font-weight:500;line-height:1.4;white-space:nowrap}
+.slot:disabled{cursor:default;opacity:1;color:var(--ink)}
+.slot.empty{border-style:dashed;border-color:var(--muted)}
+.slot.focus{border-color:var(--ink);box-shadow:0 0 0 4px var(--mark)}
+.slot.ok{border-color:var(--ok);background:var(--okbg);color:var(--ok)}
+.slot.bad{border-color:var(--bad);background:var(--badbg);color:var(--bad)}
+.slot.given{border-color:var(--muted);background:var(--soft);color:var(--muted)}
+.fb{padding:8px 12px;border-radius:10px;font-size:1rem}
+.fb:empty{padding:0}
+.fb.ok{background:var(--okbg);color:var(--ok)}
+.fb.bad{background:var(--badbg);color:var(--bad)}
+.fb.info{background:var(--infobg);color:var(--info)}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.key{min-height:56px;border-radius:12px;border:1px solid var(--line);background:var(--soft);font-size:1.45rem;font-weight:500;-webkit-user-select:none;user-select:none}
+.key:active{transform:scale(.96)}
+.key.small{font-size:1rem}
+.key.primary{grid-column:span 2;background:var(--btn);color:var(--btn-ink);border-color:var(--btn);font-size:1.1rem}
+.post{display:flex;flex-direction:column;gap:10px}
+
+/* Plättchen und Zahlengerade */
+.board{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:66px;padding:10px;border:1px dashed var(--line);border-radius:12px;background:var(--soft)}
+.board .bk{font-size:2.4rem;line-height:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.board:not(.bracket) .chips{flex:1}
+.chip{width:46px;height:46px;padding:0;border:0;background:none;border-radius:50%;perspective:300px;flex:none}
+.chip.sm{width:30px;height:30px;display:inline-block}
+.logo .chip.sm{width:34px;height:34px}
+.ci{position:relative;display:block;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.chip.fl .ci{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:1.4rem;color:var(--chip-ink);-webkit-backface-visibility:hidden;backface-visibility:hidden;border:2px solid rgba(0,0,0,.18)}
+.chip.sm .face{font-size:1rem}
+.bk2{transform:rotateY(180deg)}
+.chip.p .fr,.chip.n .bk2{background:var(--plus)}
+.chip.n .fr,.chip.p .bk2{background:var(--minus)}
+.chip.sel{outline:3px solid var(--ink);outline-offset:3px}
+.chip.leave{animation:leave .28s forwards}
+@keyframes leave{to{transform:scale(.2);opacity:0}}
+.empty-note{color:var(--muted)}
+.nl{overflow-x:auto}
+.nlsvg{width:100%;height:auto;display:block;min-width:420px}
+.nlsvg text{font-family:var(--f-ui);font-size:13px;fill:var(--muted)}
+.nlsvg text.z{fill:var(--ink);font-weight:600}
+.ax,.tk{stroke:var(--ink);stroke-width:1.5}
+.ap{stroke:var(--plus);stroke-width:3;stroke-linecap:round}
+.an{stroke:var(--minus);stroke-width:3;stroke-linecap:round}
+.aph{fill:var(--plus)} .anh{fill:var(--minus)}
+.cn{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:3 3}
+.end{fill:var(--mark);stroke:var(--ink);stroke-width:1.5}
+
+/* Einführungen */
+.intro-body{display:flex;flex-direction:column;gap:12px}
+.legend{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.legend li{display:flex;align-items:center;gap:10px}
+.mini{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;color:var(--chip-ink);font-weight:600;font-size:.9rem;flex:none}
+.mini.p{background:var(--plus)} .mini.n{background:var(--minus)}
+.expr-line,.calc{font-size:1.3rem;font-weight:500;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted);font-size:1rem;font-weight:400}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.segb{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.segb.on{border-color:var(--ink);background:var(--mark);color:var(--mark-ink)}
+.groups{display:flex;flex-wrap:wrap;gap:10px}
+.grp{display:flex;align-items:center;gap:4px;padding:6px 8px;border:1px dashed var(--line);border-radius:10px;background:var(--soft)}
+.grp .bk{font-size:1.6rem}
+.tablewrap{overflow-x:auto}
+.konto{border-collapse:collapse;width:100%;font-size:.98rem;font-variant-numeric:tabular-nums}
+.konto th,.konto td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left}
+.konto th{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.konto .num{text-align:right;white-space:nowrap}
+.konto .neg{color:var(--bad)} .konto .pos{color:var(--ok)}
+.konto tr.st td{background:var(--soft)}
+.done-card{align-items:center;text-align:center}
+@media (max-width:520px){.card{padding:16px}.chip{width:40px;height:40px}}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+  .darr{stroke-dashoffset:0}
+}
+</style>
+
+<div id="main"></div>
+
+<script>
+'use strict';
+/* ===== Teil 1: Aufgaben-Logik (ohne DOM) ===== */
+const M = '−';                                   // echtes Minuszeichen
+const r3 = x => Math.round(x * 1000) / 1000;          // Rundung gegen Gleitkomma-Reste (z. B. 0,1·3)
+function fmt(n){ n = r3(n); return (n < 0 ? M : '') + String(Math.abs(n)).replace('.', ','); }
+function fmtP(n){ return r3(n) < 0 ? '(' + fmt(n) + ')' : fmt(n); }
+function sumStr(a){ return a.map((v,i) => i === 0 ? fmt(v) : (v < 0 ? ' ' + M + ' ' + fmt(-v) : ' + ' + fmt(v))).join(''); }
+function parse(s){ if (!s || s === M) return NaN; return Number(s.replace(M, '-').replace(',', '.')); }
+const eq = (a,b) => Math.abs(a - b) < 1e-9;
+const total = a => r3(a.reduce((x,y) => x + y, 0));
+const slot = (ans, disp, role, ctx) => ({ slot:true, ans:r3(ans), disp:disp || 'plain', role:role || 'val', ctx:ctx || {} });
+const expand = s => { const o = []; s.forEach(v => { for (let i = 0; i < Math.abs(v); i++) o.push(v > 0 ? 1 : -1); }); return o; };
+
+// disp: 'plain' = Zahl wie getippt, 'summand' = mit Rechenzeichen (+ 5 / − 5), 'paren' = negativ in Klammern
+function tChips(s, lv){
+  return { type:'chips', lv, expr:sumStr(s), signs:expand(s),
+    prompt:'Entferne Nullpaare: Tippe ein blaues und ein rotes Plättchen an. Welche Zahl bleibt übrig?',
+    rows:[['=', slot(total(s), 'plain', 'sum')]],
+    tip:'Ein blaues und ein rotes Plättchen heben sich auf. Zähle, welche Plättchen übrig bleiben.' };
+}
+function tMinus(pre, inner, lv, extra){
+  const expr = (pre === null ? M : fmt(pre) + ' ' + M + ' ') + '(' + sumStr(inner) + ')';
+  const r1 = ['='];
+  if (pre !== null) r1.push(fmt(pre));
+  inner.forEach((v,i) => r1.push(slot(-v, (i === 0 && pre === null) ? 'plain' : 'summand', 'flip', { o:v })));
+  const res = r3((pre || 0) - total(inner));
+  return Object.assign({ type:'minus', lv, expr,
+    prompt: pre === null ? 'Löse die Minusklammer auf und rechne aus.' : 'Löse die Klammer auf und rechne aus.',
+    rows:[r1, ['=', slot(res, 'plain', 'sum')]],
+    tip:'Lass die Klammer weg und dreh jedes Vorzeichen in der Klammer um: aus + wird ' + M + ', aus ' + M + ' wird +.' }, extra || {});
+}
+function tDist(f, inner, lv, extra){
+  const r1 = ['='];
+  inner.forEach((v,i) => { if (i > 0) r1.push('+'); r1.push(slot(f, i === 0 ? 'plain' : 'paren', 'factor')); r1.push('· ' + fmtP(v)); });
+  const r2 = ['='];
+  inner.forEach((v,i) => r2.push(slot(f * v, i === 0 ? 'plain' : 'summand', 'prod', { a:f, b:v })));
+  return Object.assign({ type:'dist', lv, gate:'dist', f, inner,
+    prompt:'Tippe auf den Faktor vor der Klammer, um ihn zu verteilen. Rechne dann Schritt für Schritt.',
+    rows:[r1, r2, ['=', slot(f * total(inner), 'plain', 'sum')]],
+    tip:'Multipliziere den Faktor mit jedem Summanden in der Klammer. Das Vorzeichen gehört zum Faktor.' }, extra || {});
+}
+function tFactor(prods, fi, lv, extra){
+  const f = prods[0][fi[0]], rests = prods.map((p,i) => p[1 - fi[i]]), S = total(rests);
+  const r1 = ['=', slot(f, 'plain', 'cfactor'), '· ('];
+  rests.forEach((r,i) => r1.push(slot(r, i === 0 ? 'plain' : 'summand', 'rest', { f, o:r3(f * r) })));
+  r1.push(')');
+  return Object.assign({ type:'factor', lv, gate:'factor', f, fi, prods,
+    prompt:'Decke in beiden Produkten den gleichen Faktor ab: Tippe ihn jeweils an.',
+    rows:[r1, ['= ' + fmtP(f) + ' ·', slot(S, 'plain', 'bsum'), '=', slot(f * S, 'plain', 'sum')]],
+    tip:'Schreibe den gemeinsamen Faktor vor die Klammer. In die Klammer kommt, was übrig bleibt.',
+    post:'Geschickt gerechnet: ' + fmtP(f) + ' · ' + fmtP(S) + ' = ' + fmt(f * S) + ' geht im Kopf.' }, extra || {});
+}
+function tGiven(terms, f, lv, extra){
+  const rests = terms.map(t => r3(t / f)), S = total(rests);
+  const r1 = ['= ' + fmt(f) + ' · ('];
+  rests.forEach((r,i) => r1.push(slot(r, i === 0 ? 'plain' : 'summand', 'rest', { f, o:terms[i] })));
+  r1.push(')');
+  return Object.assign({ type:'given', lv, expr:sumStr(terms),
+    prompt:'Klammere ' + fmtP(f) + ' aus und rechne aus.',
+    rows:[r1, ['= ' + fmtP(f) + ' ·', slot(S, 'plain', 'bsum'), '=', slot(f * S, 'plain', 'sum')]],
+    tip:'Teile jede Zahl durch ' + fmtP(f) + '. Prüfe durch Ausmultiplizieren.',
+    post:'Probe: ' + fmtP(f) + ' · ' + fmtP(S) + ' = ' + fmt(f * S) + '. Das stimmt mit ' + sumStr(terms) + ' überein.' }, extra || {});
+}
+
+// Kontoauszug für die Anwendungsaufgaben
+const eur = n => n.toFixed(2).replace('.', ',') + ' €';
+function statement(rows){
+  return '<div class="tablewrap"><table class="konto"><thead><tr><th>Datum</th><th>Buchung</th><th class="num">Betrag</th></tr></thead><tbody>' +
+    rows.map(r => '<tr class="' + (r[3] || '') + '"><td>' + r[0] + '</td><td>' + r[1] + '</td><td class="num ' + (r[2] < 0 ? 'neg' : 'pos') + '">' + (r[2] < 0 ? M : '+') + eur(Math.abs(r[2])) + '</td></tr>').join('') +
+    '</tbody></table></div>';
+}
+function story1(){
+  const t = tMinus(null, [40, -15], 'leicht');
+  t.story = '<p>Lena verkauft Tom ihr altes Fahrrad für 40 € und kauft ihm einen Helm für 15 € ab. Auf Lenas Kontoauszug steht:</p>' +
+    statement([['12.10.', 'Verkauf Fahrrad an Tom', 40], ['12.10.', 'Kauf Helm von Tom', -15]]);
+  t.prompt = 'Am nächsten Tag machen beide alles rückgängig. Die Bank storniert beide Buchungen. Um wie viel Euro ändert sich Lenas Kontostand?';
+  t.rows[t.rows.length - 1].push('€');
+  t.postHTML = '<p>Der Kontostand sinkt um 25 €. Auf dem Auszug stehen jetzt zwei neue Zeilen:</p>' +
+    statement([['13.10.', 'Storno: Verkauf Fahrrad', -40, 'st'], ['13.10.', 'Storno: Kauf Helm', 15, 'st']]);
+  return t;
+}
+function story2(){
+  const t = tMinus(50, [-12, -8], 'mittel');
+  t.story = '<p>Ben hat 50 € auf dem Konto. Ein Handy-Abo, das er nie bestellt hat, bucht zweimal ab: 12 € und 8 €. Die Bank storniert beide Abbuchungen.</p>' +
+    statement([['01.10.', 'Kontostand', 50], ['03.10.', 'Abo Teil 1', -12], ['03.10.', 'Abo Teil 2', -8]]);
+  t.prompt = 'Berechne Bens Kontostand nach der Stornierung.';
+  t.rows[t.rows.length - 1].push('€');
+  t.postHTML = '<p>Beide Abbuchungen werden erstattet. Bens Kontostand ist wieder 50 € + 12 € + 8 € = 70 €.</p>';
+  return t;
+}
+
+// Zufallsaufgaben für das Training
+const ri = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+const nz = (a,b) => { let v; do { v = ri(a,b); } while (v === 0); return v; };
+const pick = a => a[ri(0, a.length - 1)];
+function genTask(lv){
+  const kind = pick(['minus', 'dist', 'factor']);
+  if (lv === 'leicht'){
+    if (kind === 'minus') return tMinus(null, [ri(2,9), pick([1,-1]) * ri(1,9)], lv);
+    if (kind === 'dist') return tDist(ri(2,9), [ri(2,9), -ri(1,9)], lv);
+    const f = ri(2,9), k = ri(1,8), T = pick([10,20]);
+    return tFactor([[f, T + k], [f, -k]], [0,0], lv);
+  }
+  if (lv === 'mittel'){
+    if (kind === 'minus') return Math.random() < .5 ? tMinus(null, [nz(-12,12), nz(-12,12)], lv) : tMinus(ri(2,15), [nz(-12,12), nz(-12,12)], lv);
+    if (kind === 'dist') return tDist(-ri(2,9), [nz(-12,12), nz(-12,12)], lv);
+    const f = -ri(2,9), T = pick([10,20,-10,-20]);
+    let k; do { k = nz(-9,9); } while (T - k === f || k === f || T - k === 0);
+    const a = ri(0,1), b = ri(0,1);
+    const mk = (r, pos) => pos === 0 ? [f, r] : [r, f];
+    return tFactor([mk(T - k, a), mk(k, b)], [a, b], lv);
+  }
+  if (kind === 'minus'){
+    if (Math.random() < .5) return tMinus(nz(-15,15), [nz(-12,12), nz(-12,12), nz(-12,12)], lv);
+    const h = () => pick([1,-1]) * (ri(1,9) + .5);
+    return tMinus(null, [h(), h()], lv);
+  }
+  if (kind === 'dist'){
+    if (Math.random() < .5) return tDist(pick([-0.5, -1.5]), [nz(-5,5) * 2, nz(-5,5) * 2, nz(-5,5) * 2], lv);
+    const f = -ri(2,9), k = nz(-9,9);
+    return tDist(f, [100, k], lv, { note:'So rechnest du ' + fmtP(f) + ' · ' + fmt(100 + k) + ' im Kopf.' });
+  }
+  const f = -ri(2,12), r1 = nz(-6,6); let r2; do { r2 = nz(-6,6); } while (r1 + r2 === 0);
+  return tGiven([f * r1, f * r2], f, lv);
+}
+
+// Kurze Fehlerdiagnose: erkennt die typischen Vorzeichenfehler
+function signRule(a,b){
+  if (a < 0 && b < 0) return 'Minus mal minus ergibt plus.';
+  if (a < 0 || b < 0) return 'Minus mal plus ergibt minus.';
+  return 'Plus mal plus ergibt plus.';
+}
+function diagnose(s, v){
+  const c = s.ctx;
+  switch (s.role){
+    case 'flip':
+      if (eq(v, c.o)) return 'Das Minus vor der Klammer dreht jedes Vorzeichen um, auch dieses.';
+      break;
+    case 'factor':
+      if (eq(v, -s.ans)) return s.ans < 0 ? 'Das Vorzeichen gehört zum Faktor und wird mit verteilt.' : 'Der Faktor ist positiv. Schreibe ihn ohne Minus ab.';
+      return 'Verteile denselben Faktor auf jeden Summanden in der Klammer.';
+    case 'prod':
+      if (eq(Math.abs(v), Math.abs(s.ans))) return signRule(c.a, c.b);
+      return 'Rechne ' + fmtP(c.a) + ' · ' + fmtP(c.b) + ' noch einmal.';
+    case 'cfactor':
+      if (eq(v, -s.ans)) return s.ans < 0 ? 'Der abgedeckte Faktor ist negativ. Das Minus gehört dazu.' : 'Der abgedeckte Faktor ist positiv. Schreibe ihn ohne Minus.';
+      return 'Vor die Klammer kommt der Faktor, den du abgedeckt hast.';
+    case 'rest':
+      if (eq(v, -s.ans)) return 'Probe: ' + fmtP(c.f) + ' · ' + fmtP(v) + ' = ' + fmt(c.f * v) + ', nicht ' + fmt(c.o) + '.';
+      return 'Welche Zahl ergibt mit ' + fmtP(c.f) + ' multipliziert ' + fmt(c.o) + '?';
+    case 'bsum':
+      return 'Fasse die Zahlen in der Klammer zusammen.';
+  }
+  if (eq(v, -s.ans)) return 'Fast: Achte auf das Vorzeichen.';
+  return 'Noch nicht richtig. Rechne diesen Schritt noch einmal.';
+}
+</script>
+
+<script>
+'use strict';
+/* ===== Teil 2: Oberfläche ===== */
+const main = document.getElementById('main');
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HAND = '<svg viewBox="0 0 40 46" class="hand" aria-hidden="true"><g class="hs"><rect x="11" y="3" width="5.5" height="22" rx="2.75"/><rect x="17" y="1" width="5.5" height="23" rx="2.75"/><rect x="23" y="2" width="5.5" height="22" rx="2.75"/><rect x="29" y="6" width="5" height="19" rx="2.5"/><rect x="2" y="20" width="5.5" height="16" rx="2.75" transform="rotate(-35 5 28)"/><rect x="9" y="17" width="26" height="26" rx="9"/></g></svg>';
+const STAR = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z';
+const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+function starsHTML(n, size){
+  return '<span class="stars ' + (size || '') + '" aria-label="' + n + ' von 3 Sternen">' +
+    [0,1,2].map(i => '<svg viewBox="0 0 24 24" class="' + (i < n ? 'on' : '') + '"><path d="' + STAR + '"/></svg>').join('') + '</span>';
+}
+function lvBadge(lv){
+  const n = { leicht:1, mittel:2, schwer:3 }[lv];
+  return '<span class="lv">' + [0,1,2].map(i => '<i class="pip' + (i < n ? ' on' : '') + '"></i>').join('') + ' ' + lv + '</span>';
+}
+function chipStatic(s){
+  return '<span class="chip sm ' + (s > 0 ? 'p' : 'n') + '"><span class="ci"><span class="face fr">' + (s > 0 ? '+' : M) + '</span><span class="face bk2">' + (s > 0 ? M : '+') + '</span></span></span>';
+}
+
+/* Zahlengerade: aufeinanderfolgende gleiche Plättchen = ein Pfeil, jeder Pfeil eine Etage höher */
+function numberLine(steps, R){
+  const W = 640, m = 24, u = (W - 2 * m) / (2 * R), X = v => m + (v + R) * u;
+  const g = [];
+  steps.forEach(s => { const l = g[g.length - 1]; if (l && l.s === s) l.n++; else g.push({ s, n:1 }); });
+  const base = 30 + g.length * 22, H = base + 34;
+  let o = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="nlsvg" role="img" aria-label="Zahlengerade mit Pfeilen">';
+  o += '<line class="ax" x1="' + (m - 12) + '" y1="' + base + '" x2="' + (W - m + 12) + '" y2="' + base + '"/>';
+  for (let v = -R; v <= R; v++){
+    const x = X(v), t = v === 0 ? 8 : 5;
+    o += '<line class="tk" x1="' + x + '" y1="' + (base - t) + '" x2="' + x + '" y2="' + (base + t) + '"/>';
+    o += '<text x="' + x + '" y="' + (base + 24) + '" text-anchor="middle"' + (v === 0 ? ' class="z"' : '') + '>' + (v < 0 ? M + (-v) : v) + '</text>';
+  }
+  let pos = 0, lastY = base;
+  g.forEach((gr, k) => {
+    const y = base - 20 - k * 22, start = pos, d = gr.s, cl = d > 0 ? 'ap' : 'an';
+    pos += d * gr.n;
+    const x1 = X(start), x2 = X(pos);
+    o += '<line class="cn" x1="' + x1 + '" y1="' + y + '" x2="' + x1 + '" y2="' + (k === 0 ? base : y + 22) + '"/>';
+    o += '<line class="' + cl + '" x1="' + x1 + '" y1="' + y + '" x2="' + (x2 - d * 7) + '" y2="' + y + '"/>';
+    o += '<polygon class="' + cl + 'h" points="' + x2 + ',' + y + ' ' + (x2 - d * 11) + ',' + (y - 6) + ' ' + (x2 - d * 11) + ',' + (y + 6) + '"/>';
+    for (let j = 1; j < gr.n; j++){ const xj = X(start + d * j); o += '<line class="' + cl + '" x1="' + xj + '" y1="' + (y - 4) + '" x2="' + xj + '" y2="' + (y + 4) + '"/>'; }
+    lastY = y;
+  });
+  if (g.length) o += '<line class="cn" x1="' + X(pos) + '" y1="' + lastY + '" x2="' + X(pos) + '" y2="' + base + '"/>';
+  o += '<circle class="end" cx="' + X(pos) + '" cy="' + base + '" r="6"/>';
+  return o + '</svg>';
+}
+
+/* Plättchenfeld mit zwei Modi: 'pairs' (Nullpaare entfernen) und 'flip' (Wenden) */
+function ChipBoard(host, signs, opt){
+  const chips = signs.map((s, id) => ({ s, id, gone:false, fl:false }));
+  let mode = opt.mode, sel = null, busy = false;
+  const nPos = signs.filter(s => s > 0).length, R = Math.max(5, Math.max(nPos, signs.length - nPos) + 1);
+  host.innerHTML = '<div class="board' + (opt.bracket ? ' bracket' : '') + '">' + (opt.bracket ? '<span class="bk">' + M + '(</span>' : '') +
+    '<div class="chips"></div>' + (opt.bracket ? '<span class="bk">)</span>' : '') + '</div><div class="nl"></div>';
+  const box = host.querySelector('.chips'), nl = host.querySelector('.nl');
+  const eff = c => c.fl ? -c.s : c.s;
+  const live = () => chips.filter(c => !c.gone);
+  function state(){
+    const e = live().map(eff);
+    return { value:e.reduce((a,b) => a + b, 0), pairsLeft:e.some(v => v > 0) && e.some(v => v < 0), allFlipped:chips.every(c => c.fl) };
+  }
+  const label = c => (eff(c) > 0 ? 'Plus' : 'Minus') + 'plättchen';
+  function drawLine(){ nl.innerHTML = numberLine(live().map(eff), R); }
+  function draw(){
+    box.innerHTML = live().map(c => '<button class="chip ' + (c.s > 0 ? 'p' : 'n') + (c.fl ? ' fl' : '') + (sel === c.id ? ' sel' : '') + '" data-c="' + c.id + '" aria-label="' + label(c) + '"><span class="ci"><span class="face fr">' + (c.s > 0 ? '+' : M) + '</span><span class="face bk2">' + (c.s > 0 ? M : '+') + '</span></span></button>').join('') ||
+      '<span class="empty-note">Keine Plättchen mehr: Der Wert ist 0.</span>';
+    drawLine();
+  }
+  box.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b || busy) return;
+    const c = chips[+b.dataset.c];
+    if (mode === 'flip'){
+      c.fl = !c.fl; b.classList.toggle('fl', c.fl); b.setAttribute('aria-label', label(c));
+      drawLine(); if (opt.onUpdate) opt.onUpdate(state()); return;
+    }
+    if (mode !== 'pairs') return;
+    if (sel === null){ sel = c.id; b.classList.add('sel'); return; }
+    if (sel === c.id){ sel = null; b.classList.remove('sel'); return; }
+    const o = chips[sel], ob = box.querySelector('[data-c="' + o.id + '"]');
+    if (eff(o) === eff(c)){
+      if (ob) ob.classList.remove('sel'); sel = c.id; b.classList.add('sel');
+      if (opt.onHint) opt.onHint('Ein Nullpaar braucht ein blaues und ein rotes Plättchen.');
+      return;
+    }
+    busy = true; if (ob) ob.classList.add('leave'); b.classList.add('leave');
+    setTimeout(() => { o.gone = c.gone = true; sel = null; busy = false; draw(); if (opt.onUpdate) opt.onUpdate(state()); }, reduceMotion ? 0 : 280);
+  });
+  draw();
+  return {
+    state,
+    setMode(m){ mode = m; sel = null; draw(); },
+    unbracket(){ host.querySelectorAll('.bk').forEach(el => el.hidden = true); host.querySelector('.board').classList.remove('bracket'); }
+  };
+}
+
+/* ----- Einführungen der Stationen ----- */
+function introWarm(h){
+  h.innerHTML = '<p>Auf der Zahlengeraden habt ihr mit Pfeilen gerechnet. Plättchen sind eine Kurzschrift für diese Pfeile:</p>' +
+    '<ul class="legend"><li><span class="mini p">+</span>ein Schritt nach rechts (+1)</li><li><span class="mini n">' + M + '</span>ein Schritt nach links (' + M + '1)</li></ul>' +
+    '<p>Hier liegen die Plättchen für 3 ' + M + ' 1. Tippe ein blaues und dann das rote Plättchen an.</p>' +
+    '<div class="board-host"></div><p class="fb info" role="status">Achte auf den gelben Punkt auf der Zahlengeraden.</p>';
+  const f = h.querySelector('.fb');
+  ChipBoard(h.querySelector('.board-host'), [1,1,1,-1], { mode:'pairs',
+    onHint:m => { f.className = 'fb info'; f.textContent = m; },
+    onUpdate:st => { if (!st.pairsLeft){ f.className = 'fb ok'; f.textContent = 'Ein Schritt vor, ein Schritt zurück: Der Punkt bleibt bei 2. Ein Nullpaar ist 0 wert.'; } } });
+}
+function introMinus(h){
+  h.innerHTML = '<p>Ein Minus vor der Klammer heißt: <b>Dreh jedes Plättchen in der Klammer um.</b> Auf der Zahlengeraden zeigt dann jeder Pfeil in die Gegenrichtung.</p>' +
+    '<p class="expr-line" data-line>' + M + '(4 ' + M + ' 2)</p><div class="board-host"></div>' +
+    '<div class="btnrow"><button class="btn" data-fertig>Fertig gewendet</button></div>' +
+    '<p class="fb info" role="status">Tippe jedes Plättchen an, um es umzudrehen.</p>';
+  const line = h.querySelector('[data-line]'), f = h.querySelector('.fb'), btn = h.querySelector('[data-fertig]');
+  let phase = 'flip';
+  const board = ChipBoard(h.querySelector('.board-host'), [1,1,1,1,-1,-1], { mode:'flip', bracket:true,
+    onHint:m => { f.className = 'fb info'; f.textContent = m; },
+    onUpdate:st => {
+      if (phase === 'flip' && st.allFlipped){ f.className = 'fb info'; f.textContent = 'Alle Plättchen sind gewendet. Tippe auf „Fertig gewendet“.'; }
+      if (phase === 'pairs' && !st.pairsLeft){
+        line.textContent = M + '(4 ' + M + ' 2) = ' + M + '4 + 2 = ' + M + '2';
+        f.className = 'fb ok'; f.textContent = 'Das Minus hat beide Vorzeichen umgedreht: Aus +4 wird ' + M + '4, aus ' + M + '2 wird +2.';
+      }
+    } });
+  btn.onclick = () => {
+    if (phase !== 'flip') return;
+    if (!board.state().allFlipped){ f.className = 'fb bad'; f.textContent = 'Da fehlen noch Plättchen. Das Minus gilt für die ganze Klammer, nicht nur für die erste Zahl.'; return; }
+    phase = 'pairs'; btn.hidden = true; board.unbracket(); board.setMode('pairs');
+    line.textContent = M + '(4 ' + M + ' 2) = ' + M + '4 + 2';
+    f.className = 'fb info'; f.textContent = 'Alle gewendet. Entferne jetzt die Nullpaare: Tippe ein rotes und ein blaues Plättchen an.';
+  };
+}
+function introKonto(h){
+  h.innerHTML = '<p>Auf einem Konto gibt es Gutschriften (+) und Abbuchungen (' + M + '). Wird ein ganzer Vorgang storniert, macht die Bank <b>jede</b> Buchung rückgängig:</p>' +
+    statement([['02.10.', 'Gutschrift', 4], ['02.10.', 'Abbuchung', -2], ['03.10.', 'Storno: Gutschrift', -4, 'st'], ['03.10.', 'Storno: Abbuchung', 2, 'st']]) +
+    '<p class="calc">' + M + '(4 ' + M + ' 2) = ' + M + '4 + 2</p>' +
+    '<p>Jedes Vorzeichen dreht sich um, genau wie beim Wenden der Plättchen.</p>';
+}
+function introDist(h){
+  const groups = [0,1,2].map(() => '<div class="grp"><span class="bk">(</span>' + [1,1,1,1,-1,-1].map(chipStatic).join('') + '<span class="bk">)</span></div>').join('');
+  h.innerHTML = '<p>Multiplizieren heißt wiederholt legen: 3 · (4 ' + M + ' 2) bedeutet, die Gruppe (4 ' + M + ' 2) dreimal zu legen.</p>' +
+    '<div class="seg" role="group" aria-label="Faktor wählen"><button class="segb on" data-f="3">3 · (4 ' + M + ' 2)</button><button class="segb" data-f="-3">(' + M + '3) · (4 ' + M + ' 2)</button></div>' +
+    '<div class="groups">' + groups + '</div><p class="calc"></p>' +
+    '<p>In den Aufgaben zeigst du das Verteilen mit Pfeilen: Tippe auf den Faktor vor der Klammer.</p>';
+  const calc = h.querySelector('.calc');
+  function set(f){
+    h.querySelectorAll('.segb').forEach(b => b.classList.toggle('on', +b.dataset.f === f));
+    h.querySelectorAll('.groups .chip').forEach(c => c.classList.toggle('fl', f < 0));
+    calc.innerHTML = f > 0
+      ? '3 · (4 ' + M + ' 2) = 3 · 4 + 3 · (' + M + '2) = 12 ' + M + ' 6 = 6'
+      : '(' + M + '3) · (4 ' + M + ' 2) = (' + M + '3) · 4 + (' + M + '3) · (' + M + '2) = ' + M + '12 + 6 = ' + M + '6<br><span class="muted">Negativer Faktor: dreimal legen und alle Plättchen wenden, wie bei der Minusklammer.</span>';
+  }
+  h.querySelectorAll('.segb').forEach(b => b.onclick = () => set(+b.dataset.f));
+  set(3);
+}
+function introFactor(h){
+  const tok = (v, cov, paren) => '<span class="tapnum ' + (cov ? 'covered' : 'rest') + '">' + (paren ? fmtP(v) : fmt(v)) + (cov ? '<span class="handc">' + HAND + '</span>' : '') + '</span>';
+  h.innerHTML = '<p>Ausklammern ist der Rückweg des Ausmultiplizierens. Decke in beiden Produkten den gleichen Faktor mit den Händen ab. Was übrig bleibt, wird markiert und kommt in die Klammer.</p>' +
+    '<div class="expr">' + tok(7, true) + '<span class="tx">·</span>' + tok(13) + '<span class="tx">+</span>' + tok(7, true) + '<span class="tx">·</span>' + tok(-3, false, true) + '</div>' +
+    '<p class="calc">= 7 · (13 ' + M + ' 3) = 7 · 10 = 70</p>' +
+    '<div class="btnrow"><button class="btn" data-hands>Hände wegnehmen</button></div>' +
+    '<p>Warum lohnt sich das? Einzeln gerechnet: 7 · 13 + 7 · (' + M + '3) = 91 ' + M + ' 21 = 70. Ausgeklammert reicht 7 · 10, und das geht im Kopf.</p>';
+  const b = h.querySelector('[data-hands]'), sevens = [...h.querySelectorAll('.expr .tapnum')].filter((_, i) => i % 2 === 0);
+  let on = true;
+  b.onclick = () => { on = !on; sevens.forEach(s => s.classList.toggle('covered', on)); b.textContent = on ? 'Hände wegnehmen' : 'Hände auflegen'; };
+}
+
+/* ----- Stationen ----- */
+const STATIONS = [
+  { name:'Aufwärmen', sub:'Plättchen und Zahlengerade', intro:introWarm,
+    rule:'Ein blaues und ein rotes Plättchen bilden ein <b>Nullpaar</b>. Es hat den Wert 0 und darf weggenommen werden.<br><span class="ex">3 ' + M + ' 1: drei Schritte vor, einer zurück. Ergebnis 2.</span>',
+    tasks:() => [tChips([2,-5], 'leicht'), tChips([-4,7], 'mittel'), tChips([-3,5,-6], 'schwer')] },
+  { name:'Minusklammer', sub:'Alle Plättchen wenden', intro:introMinus,
+    rule:'Steht ein Minuszeichen vor einer Klammer, kann man die Klammer weglassen, wenn man <b>alle</b> Vorzeichen in der Klammer umkehrt.<br><span class="ex">' + M + '(4 ' + M + ' 2) = ' + M + '4 + 2 = ' + M + '2</span>',
+    tasks:() => [tMinus(null,[3,5],'leicht'), tMinus(null,[6,-2],'leicht'), tMinus(null,[-4,7],'mittel'), tMinus(10,[6,-9],'mittel'), tMinus(null,[-2.5,-4.5],'schwer'), tMinus(8,[-3,5,-7],'schwer')] },
+  { name:'Anwendung', sub:'Stornierung auf dem Konto', intro:introKonto,
+    rule:'Eine Stornierung macht <b>jede</b> Buchung rückgängig: Aus einer Gutschrift wird eine Abbuchung und umgekehrt. Das ist eine Minusklammer.',
+    tasks:() => [story1(), story2()] },
+  { name:'Ausmultiplizieren', sub:'Den Faktor verteilen', intro:introDist,
+    rule:'<b>Distributivgesetz:</b> Man multipliziert die Zahl vor der Klammer mit jedem Summanden in der Klammer. Das Vorzeichen gehört zur Zahl und wird mit verteilt.<br><span class="ex">' + M + '6 · (2 + 3) = ' + M + '6 · 2 + (' + M + '6) · 3 = ' + M + '12 ' + M + ' 18 = ' + M + '30</span>',
+    tasks:() => [tDist(3,[5,-2],'leicht'), tDist(-6,[2,3],'leicht'), tDist(-5,[-4,2],'mittel'),
+      tDist(-4,[25,-3],'mittel',{ post:'Geschickt: ' + M + '4 · 25 = ' + M + '100 kannst du im Kopf rechnen.' }),
+      tDist(-0.5,[8,-6,4],'schwer'), tDist(-7,[100,2],'schwer',{ note:'So rechnest du (' + M + '7) · 102 im Kopf.' })] },
+  { name:'Ausklammern', sub:'Gleiche Faktoren abdecken', intro:introFactor,
+    rule:'<b>Ausklammern:</b> Kommt in beiden Produkten derselbe Faktor vor, schreibt man ihn einmal vor die Klammer. In die Klammer kommt, was übrig bleibt. Probe: wieder ausmultiplizieren.<br><span class="ex">7 · 13 + 7 · (' + M + '3) = 7 · (13 ' + M + ' 3) = 7 · 10 = 70</span>',
+    tasks:() => [tFactor([[7,13],[7,-3]],[0,0],'leicht'), tFactor([[14,12],[-4,12]],[1,1],'leicht'), tFactor([[-4,17],[-4,3]],[0,0],'mittel'),
+      tFactor([[3.5,-6],[3.5,-4]],[0,0],'mittel'), tGiven([-12,-18],-6,'schwer'), tGiven([24,-36],-12,'schwer')] },
+  { name:'Training', sub:'Gemischte Aufgaben in drei Niveaus', training:true }
+];
+
+const G = { done:STATIONS.map(() => false), stars:STATIONS.map(() => 0), all:false, msg:'' };
+let V = { screen:'home' };
+const unlocked = i => G.all || i === 0 || G.done[i - 1];
+const toTop = () => window.scrollTo(0, 0);
+
+/* ----- Startseite ----- */
+function renderHome(){
+  V = { screen:'home' };
+  main.innerHTML = '<header class="hero"><div class="logo" aria-hidden="true"><span class="lb">' + M + '(</span>' + chipStatic(1) + chipStatic(1) + chipStatic(-1) + '<span class="lb">)</span></div>' +
+    '<h1 id="appTitle">Klammer-Werkstatt</h1><p class="lead">Distributivgesetz mit rationalen Zahlen · Klasse 7</p></header>' +
+    (G.msg ? '<p class="msg">' + G.msg + '</p>' : '') +
+    '<ol class="path">' + STATIONS.map((s, i) => {
+      const u = unlocked(i), d = G.done[i];
+      const end = d ? starsHTML(G.stars[i]) : (u ? '<span class="go">Start</span>' : '<span class="lock" aria-label="gesperrt">' + LOCK + '</span>');
+      return '<li><button class="st' + (d ? ' done' : '') + '" data-open="' + i + '"' + (u ? '' : ' disabled') + '><span class="num">' + (i + 1) + '</span><span class="st-text"><span class="st-name">' + s.name + '</span><span class="st-sub">' + s.sub + '</span></span>' + end + '</button></li>';
+    }).join('') + '</ol>' +
+    '<p class="foot"><span class="mini p">+</span> = +1 <span class="mini n">' + M + '</span> = ' + M + '1 · Jede Station öffnet die nächste.</p>';
+  // Lehrkraft-Modus: 5× schnell auf den Titel tippen schaltet alle Stationen frei
+  let taps = [];
+  main.querySelector('#appTitle').addEventListener('click', () => {
+    const now = Date.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
+    if (taps.length >= 5 && !G.all){ G.all = true; G.msg = 'Lehrkraft-Modus: Alle Stationen sind freigeschaltet.'; renderHome(); }
+  });
+}
+
+/* ----- Station: Einführung, Aufgaben, Abschluss ----- */
+function openStation(i){
+  const s = STATIONS[i];
+  if (s.training){ V = { screen:'train', si:i, lv:'leicht', solved:{ leicht:0, mittel:0, schwer:0 } }; newTrainTask(); return; }
+  V = { screen:'intro', si:i, hints:0, ti:0, tasks:s.tasks() };
+  renderIntro();
+}
+function dotsHTML(){
+  if (!V.tasks) return '';
+  return V.tasks.map((t, k) => '<span class="dot' + ((k < V.ti || (k === V.ti && V.T && V.T.solved)) ? ' on' : '') + (V.screen === 'task' && k === V.ti ? ' cur' : '') + '"></span>').join('');
+}
+function bar(title){
+  return '<div class="bar"><button class="back" data-home>‹ Übersicht</button><span class="bar-title">' + title + '</span><span class="dots" aria-hidden="true">' + dotsHTML() + '</span></div>';
+}
+const stTitle = () => (V.si + 1) + ' · ' + STATIONS[V.si].name;
+function ruleHTML(s, open){ return '<details class="rule"' + (open ? ' open' : '') + '><summary>Merke</summary><div class="rule-body">' + s.rule + '</div></details>'; }
+
+function renderIntro(){
+  const s = STATIONS[V.si];
+  main.innerHTML = bar(stTitle()) + '<section class="card"><h2>' + s.name + '</h2><div class="intro-body"></div>' + ruleHTML(s, true) +
+    '<div class="btnrow"><button class="btn primary" data-act="start">Zu den Aufgaben</button></div></section>';
+  s.intro(main.querySelector('.intro-body'));
+}
+
+function prep(t){
+  const T = Object.assign({}, t, { vals:{}, st:{}, row:0, tipLevel:0, solved:false, gateOpen:!t.gate, sel:{}, slots:[] });
+  let id = 0;
+  T.rows = t.rows.map((r, ri2) => r.map(p => { if (typeof p === 'string') return p; const q = Object.assign({}, p, { id:id++, ri:ri2 }); T.slots.push(q); return q; }));
+  T.focus = T.slots[0].id;
+  return T;
+}
+function loadTask(){ V.T = prep(V.tasks[V.ti]); renderTask(); }
+
+function exprHTML(T){
+  if (T.type === 'dist'){
+    return '<button class="tapnum factor' + (T.gateOpen ? ' on' : '') + '" data-factor aria-label="Faktor ' + fmt(T.f) + ' verteilen">' + fmt(T.f) + '</button><span class="tx">·</span><span class="tx or">(</span>' +
+      T.inner.map((v, i) => (i > 0 ? '<span class="tx">' + (v < 0 ? M : '+') + '</span>' : '') + '<span class="tgt">' + (i === 0 ? fmt(v) : fmt(Math.abs(v))) + '</span>').join('') +
+      '<span class="tx cl">)</span>';
+  }
+  if (T.type === 'factor'){
+    return T.prods.map((p, i) => (i > 0 ? '<span class="tx">+</span>' : '') + p.map((v, k) => {
+      const cov = T.gateOpen && k === T.fi[i];
+      const cls = T.gateOpen ? (cov ? ' covered' : ' rest') : (T.sel[i] === k ? ' sel' : '');
+      return '<button class="tapnum' + cls + '" data-p="' + i + '" data-k="' + k + '"' + (T.gateOpen ? ' disabled' : '') + '>' + ((i === 0 && k === 0) ? fmt(v) : fmtP(v)) + (cov ? '<span class="handc">' + HAND + '</span>' : '') + '</button>';
+    }).join('<span class="tx">·</span>')).join('');
+  }
+  return '<span class="tx">' + T.expr + '</span>';
+}
+
+function renderTask(){
+  const T = V.T, tr = V.screen === 'train', s = STATIONS[V.si];
+  const head = tr ? trainHead() : bar(stTitle()) + ruleHTML(s, false);
+  const count = tr ? '' : 'Aufgabe ' + (V.ti + 1) + ' von ' + V.tasks.length;
+  main.innerHTML = head + '<section class="card task"><div class="task-head">' + lvBadge(T.lv) + '<span class="count">' + count + '</span></div>' +
+    (T.story || '') + '<p class="prompt">' + T.prompt + '</p>' + (T.note ? '<p class="note">' + T.note + '</p>' : '') +
+    '<div class="task-body"><div class="work">' +
+    '<div class="exprwrap' + (T.type === 'dist' ? ' witharrows' : '') + '"><svg class="arrows" aria-hidden="true"></svg><div class="expr">' + exprHTML(T) + '</div></div>' +
+    (T.type === 'chips' ? '<div class="board-host"></div>' : '') +
+    '<div class="rows"></div><p class="fb" role="status" aria-live="polite"></p></div><div class="side"></div></div></section>';
+  if (T.type === 'chips'){
+    ChipBoard(main.querySelector('.task .board-host'), T.signs, { mode:'pairs',
+      onHint:m => fb(m, 'info'),
+      onUpdate:st => { if (!st.pairsLeft && !V.T.solved) fb('Keine Nullpaare mehr. Welche Zahl bleibt übrig?', 'info'); } });
+  }
+  renderRows(); renderSide();
+  if (T.type === 'dist' && T.gateOpen) requestAnimationFrame(() => drawArrows(false));
+}
+
+function dispVal(v, d){
+  const neg = v.startsWith(M);
+  if (d === 'summand') return neg ? M + '&thinsp;' + v.slice(1) : '+&thinsp;' + v;
+  if (d === 'paren' && neg && v.length > 1) return '(' + v + ')';
+  return v;
+}
+function txt(p){
+  const t = p.trim();
+  return '<span class="tx' + (t.endsWith('(') ? ' or' : '') + (t.startsWith(')') ? ' cl' : '') + '">' + t + '</span>';
+}
+function slotHTML(T, p){
+  const v = T.vals[p.id] || '', st = T.st[p.id] || '', live = !T.solved && p.ri === T.row;
+  const cls = ['slot', st, v === '' ? 'empty' : '', live && T.focus === p.id ? 'focus' : ''].join(' ');
+  return '<button class="' + cls + '" data-slot="' + p.id + '"' + (live ? '' : ' disabled') + ' aria-label="Eingabefeld' + (v ? ': ' + v : '') + '">' + (v === '' ? '&nbsp;' : dispVal(v, p.disp)) + '</button>';
+}
+function renderRows(){
+  const T = V.T, el = main.querySelector('.rows'); if (!el) return;
+  if (!T.gateOpen){ el.innerHTML = ''; return; }
+  el.innerHTML = T.rows.map((row, ri2) => {
+    if (ri2 > T.row) return '';
+    return '<div class="row' + (ri2 < T.row ? ' done' : '') + '">' + row.map(p => typeof p === 'string' ? txt(p) : slotHTML(T, p)).join('') + '</div>';
+  }).join('');
+}
+function renderSide(){
+  const T = V.T, el = main.querySelector('.side'); if (!el) return;
+  if (T.solved){
+    const post = T.postHTML || (T.post ? '<p>' + T.post + '</p>' : '');
+    const last = V.screen !== 'train' && V.ti === V.tasks.length - 1;
+    el.innerHTML = (post ? '<div class="post">' + post + '</div>' : '') + '<button class="btn primary big" data-act="next">' + (last ? 'Station abschließen' : 'Nächste Aufgabe') + '</button>';
+    return;
+  }
+  const k = (key, label, aria, cls) => '<button class="key' + (cls ? ' ' + cls : '') + '" data-key="' + key + '"' + (aria ? ' aria-label="' + aria + '"' : '') + '>' + label + '</button>';
+  el.innerHTML = '<div class="pad">' +
+    k('7','7') + k('8','8') + k('9','9') + k('del','⌫','Löschen') +
+    k('4','4') + k('5','5') + k('6','6') + k('neg','+/' + M,'Vorzeichen wechseln','small') +
+    k('1','1') + k('2','2') + k('3','3') + k('comma',',','Komma') +
+    '<button class="key small" data-act="tip">Tipp</button>' + k('0','0') + '<button class="key primary" data-act="check">Prüfen</button></div>';
+}
+function fb(msg, kind){ const el = main.querySelector('.task .fb'); if (!el) return; el.className = 'fb ' + (kind || ''); el.textContent = msg; }
+function updateDots(){ const d = main.querySelector('.dots'); if (d) d.innerHTML = dotsHTML(); }
+
+/* Verteilpfeile vom Faktor zu jedem Summanden (Position aus dem Layout berechnet) */
+function drawArrows(animate){
+  const wrap = main.querySelector('.exprwrap.witharrows'); if (!wrap || !V.T || !V.T.gateOpen) return;
+  const svg = wrap.querySelector('svg.arrows'), B = wrap.getBoundingClientRect(), fr = wrap.querySelector('[data-factor]').getBoundingClientRect();
+  const fx = fr.left + fr.width / 2 - B.left, fy = fr.top - B.top;
+  svg.setAttribute('width', B.width); svg.setAttribute('height', B.height); svg.setAttribute('viewBox', '0 0 ' + B.width + ' ' + B.height);
+  let s = '<defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L8 5L1 9Z" class="ahd"/></marker></defs>';
+  wrap.querySelectorAll('.tgt').forEach((t, i) => {
+    const r = t.getBoundingClientRect(), tx = r.left + r.width / 2 - B.left, ty = r.top - B.top;
+    const peak = Math.max(6, Math.min(fy, ty) - 28 - i * 12);
+    s += '<path pathLength="100" class="darr' + (animate ? '' : ' still') + '" style="--d:' + (i * 0.18) + 's" marker-end="url(#ah)" d="M' + fx + ' ' + (fy - 2) + ' C ' + fx + ' ' + peak + ', ' + tx + ' ' + peak + ', ' + tx + ' ' + (ty - 4) + '"/>';
+  });
+  svg.innerHTML = s;
+}
+function openDist(){
+  const T = V.T; if (T.gateOpen) return;
+  T.gateOpen = true;
+  main.querySelector('[data-factor]').classList.add('on');
+  renderRows(); requestAnimationFrame(() => drawArrows(true));
+  fb('Der Faktor wird auf jeden Summanden verteilt. Fülle die Zeile aus.', 'info');
+}
+function tapFactor(p, k){
+  const T = V.T; if (T.gateOpen) return;
+  T.sel[p] = T.sel[p] === k ? undefined : k;
+  const chosen = T.prods.map((_, i) => T.sel[i]);
+  const ex = main.querySelector('.expr');
+  if (chosen.every(x => x !== undefined)){
+    if (chosen.every((x, i) => x === T.fi[i])){
+      T.gateOpen = true; ex.innerHTML = exprHTML(T); renderRows();
+      fb('Gut abgedeckt. Was übrig bleibt, kommt in die Klammer.', 'info'); return;
+    }
+    ex.innerHTML = exprHTML(T);
+    fb('Diese Zahlen sind verschieden. Suche die Zahl, die in beiden Produkten vorkommt.', 'bad');
+    setTimeout(() => { if (!T.gateOpen && V.T === T){ T.sel = {}; const e2 = main.querySelector('.expr'); if (e2) e2.innerHTML = exprHTML(T); } }, 900);
+    return;
+  }
+  ex.innerHTML = exprHTML(T);
+}
+
+/* Eingabe über den Ziffernblock */
+function key(k){
+  const T = V.T; if (!T || T.solved || !T.gateOpen) return;
+  const s = T.slots.find(x => x.id === T.focus);
+  if (!s || s.ri !== T.row || T.st[s.id] === 'given') return;
+  const v = T.vals[s.id] || '', neg = v.startsWith(M);
+  let body = neg ? v.slice(1) : v;
+  if (k === 'neg'){ T.vals[s.id] = (neg ? '' : M) + body; }
+  else {
+    if (k === 'del'){ if (body) body = body.slice(0, -1); else if (neg){ T.vals[s.id] = ''; after(); return; } }
+    else if (k === 'comma'){ if (!body.includes(',')) body = (body || '0') + ','; }
+    else { if (body.replace(',', '').length >= 6) return; body = body === '0' ? k : body + k; }
+    T.vals[s.id] = (neg ? M : '') + body;
+  }
+  after();
+  function after(){ if (T.st[s.id]) delete T.st[s.id]; renderRows(); }
+}
+
+function check(){
+  const T = V.T; if (T.solved) return;
+  if (!T.gateOpen){ fb(T.gate === 'dist' ? 'Tippe zuerst auf den Faktor vor der Klammer.' : 'Tippe zuerst in beiden Produkten den gleichen Faktor an.', 'info'); return; }
+  const cur = T.slots.filter(s => s.ri === T.row);
+  const empty = cur.find(s => isNaN(parse(T.vals[s.id] || '')));
+  if (empty){ T.focus = empty.id; renderRows(); fb('Fülle zuerst alle Kästchen dieser Zeile aus.', 'info'); return; }
+  let bad = null;
+  cur.forEach(s => {
+    const ok = eq(parse(T.vals[s.id]), s.ans);
+    if (T.st[s.id] !== 'given') T.st[s.id] = ok ? 'ok' : 'bad';
+    if (!ok && !bad) bad = s;
+  });
+  if (bad){ T.focus = bad.id; renderRows(); fb(diagnose(bad, parse(T.vals[bad.id])), 'bad'); return; }
+  T.row++;
+  if (T.row >= T.rows.length){ solve(); return; }
+  T.focus = T.slots.find(s => s.ri === T.row).id;
+  renderRows(); fb(pick(['Richtig. Weiter mit dem nächsten Schritt.', 'Stimmt. Jetzt der nächste Schritt.']), 'ok');
+}
+function solve(){
+  const T = V.T; T.solved = true;
+  renderRows(); renderSide(); updateDots();
+  fb(pick(['Richtig!', 'Super, das stimmt!', 'Genau so!']), 'ok');
+  if (V.screen === 'train'){ V.solved[V.lv]++; const c = main.querySelector('[data-lv="' + V.lv + '"] .cnt'); if (c) c.textContent = V.solved[V.lv] + ' gelöst'; }
+}
+
+/* Gestufte Hilfe: 1. Tipp als Text, danach je ein Kästchen ausfüllen */
+function tip(){
+  const T = V.T; if (T.solved) return;
+  if (!T.gateOpen){ fb(T.gate === 'dist' ? 'Tippe auf die Zahl vor der Klammer. Sie wird auf jeden Summanden verteilt.' : 'Suche die Zahl, die in beiden Produkten vorkommt, und tippe sie in beiden Produkten an.', 'info'); return; }
+  const cur = T.slots.filter(s => s.ri === T.row);
+  const s = cur.find(x => !eq(parse(T.vals[x.id] || ''), x.ans));
+  if (!s){ fb('Diese Zeile stimmt schon. Tippe auf „Prüfen“.', 'info'); return; }
+  if (V.screen !== 'train') V.hints++;
+  T.tipLevel++;
+  if (T.tipLevel === 1){ fb('Tipp: ' + T.tip, 'info'); return; }
+  T.vals[s.id] = fmt(s.ans); T.st[s.id] = 'given';
+  const nx = cur.find(x => x !== s && !eq(parse(T.vals[x.id] || ''), x.ans));
+  T.focus = nx ? nx.id : s.id;
+  renderRows(); fb('Ein Kästchen ist jetzt ausgefüllt.', 'info');
+}
+
+function next(){
+  if (V.screen === 'train'){ newTrainTask(); toTop(); return; }
+  if (V.ti < V.tasks.length - 1){ V.ti++; loadTask(); toTop(); return; }
+  const stars = V.hints <= 2 ? 3 : V.hints <= 5 ? 2 : 1;
+  G.done[V.si] = true; G.stars[V.si] = Math.max(G.stars[V.si], stars);
+  V.ti = V.tasks.length; V.screen = 'done';
+  const nx = STATIONS[V.si + 1];
+  main.innerHTML = bar(stTitle()) + '<section class="card done-card">' + starsHTML(stars, 'big') + '<h2>Station ' + (V.si + 1) + ' geschafft</h2>' +
+    '<p>' + (V.hints === 0 ? 'Ganz ohne Tipps.' : 'Du hast ' + V.hints + (V.hints === 1 ? ' Tipp' : ' Tipps') + ' genutzt.') + '</p>' +
+    '<div class="btnrow">' + (nx ? '<button class="btn primary" data-act="nextst">Weiter: ' + nx.name + '</button>' : '') + '<button class="btn" data-home>Zur Übersicht</button></div></section>';
+  toTop();
+}
+
+/* ----- Training ----- */
+function trainHead(){
+  return bar('6 · Training') + '<section class="card"><p class="prompt">Wähle dein Niveau. Die Aufgaben mischen Minusklammer, Ausmultiplizieren und Ausklammern.</p><div class="seg">' +
+    ['leicht', 'mittel', 'schwer'].map(l => '<button class="segb' + (V.lv === l ? ' on' : '') + '" data-act="lv" data-lv="' + l + '">' + lvBadge(l) + '<span class="cnt">' + V.solved[l] + ' gelöst</span></button>').join('') +
+    '</div></section>';
+}
+function newTrainTask(){ V.T = prep(genTask(V.lv)); renderTask(); }
+
+/* ----- Ereignisse ----- */
+main.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.home !== undefined){ renderHome(); toTop(); return; }
+  if (b.dataset.open !== undefined){ openStation(+b.dataset.open); toTop(); return; }
+  const a = b.dataset.act;
+  if (a === 'start'){ V.screen = 'task'; loadTask(); toTop(); return; }
+  if (a === 'check') return check();
+  if (a === 'tip') return tip();
+  if (a === 'next') return next();
+  if (a === 'nextst'){ openStation(V.si + 1); toTop(); return; }
+  if (a === 'lv'){ V.lv = b.dataset.lv; newTrainTask(); return; }
+  if (b.dataset.key) return key(b.dataset.key);
+  if (b.dataset.slot !== undefined){ V.T.focus = +b.dataset.slot; renderRows(); return; }
+  if (b.dataset.factor !== undefined) return openDist();
+  if (b.dataset.p !== undefined) return tapFactor(+b.dataset.p, +b.dataset.k);
+});
+// Tastatur (für Laptop/Whiteboard)
+document.addEventListener('keydown', e => {
+  if (!V.T || (V.screen !== 'task' && V.screen !== 'train') || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (/^[0-9]$/.test(k)) key(k);
+  else if (k === 'Backspace') key('del');
+  else if (k === '-') key('neg');
+  else if (k === ',' || k === '.') key('comma');
+  else if (k === 'Enter'){ if (V.T.solved) next(); else check(); }
+  else return;
+  e.preventDefault();
+});
+window.addEventListener('resize', () => drawArrows(false));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawArrows(false));
+
+renderHome();
+</script>
