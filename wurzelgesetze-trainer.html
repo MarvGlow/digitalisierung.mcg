@@ -1,0 +1,1457 @@
+<title>Wurzelgesetze-Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* Layout: hell = Schulheft mit Karopapier, dunkel = Tafel.
+   Aufgabenkarte oben, Wurzel-Tastatur darunter; im iPad-Querformat rechts daneben. */
+:root{
+  --paper:#f6f8fa; --grid:#e0e7ef; --surface:#ffffff; --ink:#172131; --muted:#576377; --line:#cdd6e2;
+  --accent:#2341b5; --accent-ink:#ffffff; --accent-soft:#e6ebfa;
+  --ok:#1b7646; --ok-soft:#e1f2e8; --bad:#b52f27; --bad-soft:#fbe5e2; --warn:#8a5d00; --warn-soft:#fbf0d6;
+  --key:#edf1f6; --key-op:#e2e8f6; --key-edge:#c4cedb;
+  --f-ui:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-math:"STIX Two Text","Times New Roman",Georgia,serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#14211c; --grid:#1b2a24; --surface:#1a2924; --ink:#edf1e9; --muted:#a2afa6; --line:#2e423a;
+    --accent:#efd06a; --accent-ink:#1d1a0c; --accent-soft:#2d3624;
+    --ok:#74d49c; --ok-soft:#1b392a; --bad:#ff9183; --bad-soft:#40231f; --warn:#f0c75a; --warn-soft:#3a3120;
+    --key:#21322c; --key-op:#283a2f; --key-edge:#0c1411;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14211c; --grid:#1b2a24; --surface:#1a2924; --ink:#edf1e9; --muted:#a2afa6; --line:#2e423a;
+  --accent:#efd06a; --accent-ink:#1d1a0c; --accent-soft:#2d3624;
+  --ok:#74d49c; --ok-soft:#1b392a; --bad:#ff9183; --bad-soft:#40231f; --warn:#f0c75a; --warn-soft:#3a3120;
+  --key:#21322c; --key-op:#283a2f; --key-edge:#0c1411;
+  color-scheme:dark;
+}
+html{ -webkit-text-size-adjust:100%; }
+[hidden]{ display:none !important; }
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink); font-family:var(--f-ui); font-size:17px; line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px 32px;
+}
+button{ font:inherit; color:inherit; touch-action:manipulation; -webkit-tap-highlight-color:transparent; cursor:pointer; }
+button:focus-visible,[tabindex]:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+.app{ max-width:1080px; margin:0 auto; }
+
+/* ---------- Mathe-Satz ---------- */
+.math,.mt{ font-family:var(--f-math); white-space:normal; }
+.mpart{ white-space:nowrap; display:inline-block; }
+.mv{ font-style:italic; padding-right:.04em; }
+.mo{ margin:0 .22em; }
+.meq{ margin:0 .1em; }
+.mneg{ margin-right:.05em; }
+.msup{ font-size:.66em; vertical-align:.58em; line-height:0; margin-left:.04em; }
+.msq{ display:inline-flex; align-items:stretch; vertical-align:baseline; margin:0 .06em; }
+.msq-h{ width:.6em; flex:none; align-self:stretch; height:auto; overflow:visible; }
+.msq-h path{ fill:none; stroke:currentColor; stroke-width:.065em; vector-effect:non-scaling-stroke; stroke-linejoin:round; stroke-linecap:round; }
+.msq-b{ align-self:baseline; border-top:.065em solid currentColor; padding:.1em .12em 0 .06em; }
+.mabs{ border-left:.065em solid currentColor; border-right:.065em solid currentColor; padding:0 .16em; margin:0 .1em; }
+.mfrac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; margin:0 .12em; font-size:.92em; }
+.mnum{ padding:0 .2em .08em; border-bottom:.06em solid currentColor; }
+.mden{ padding:.08em .2em 0; }
+.mp{ padding:0 .03em; }
+
+/* ---------- Start ---------- */
+.hero{ padding-block:8px 20px; }
+.brand{ font-family:var(--f-math); font-size:clamp(34px,7vw,56px); line-height:1.15; font-weight:600; margin:0; letter-spacing:-.01em; text-wrap:balance; }
+.brand .msq-b{ padding-top:.08em; }
+.brand-sub{ color:var(--muted); margin:6px 0 0; font-size:18px; }
+.modes{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:16px; margin-top:12px; }
+.mode{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px; display:flex; flex-direction:column; gap:14px; }
+.mode h2{ margin:0; font-size:22px; }
+.mode p{ margin:0; color:var(--muted); }
+.mode-meta{ font-family:var(--f-math); font-size:15px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+.lvl-pick{ display:flex; gap:8px; flex-wrap:wrap; }
+.lvl-pick button{ min-width:48px; min-height:48px; border-radius:10px; border:2px solid var(--line); background:var(--key); font-weight:700; font-size:18px; }
+.lvl-pick button[aria-pressed="true"]{ border-color:var(--accent); background:var(--accent-soft); color:var(--ink); }
+.lvl-label{ font-size:14px; color:var(--muted); margin-bottom:-6px; }
+.btn{ min-height:52px; border-radius:10px; border:0; padding:0 22px; font-weight:700; font-size:18px; }
+.btn-main{ background:var(--accent); color:var(--accent-ink); }
+.btn-ghost{ background:transparent; border:2px solid var(--line); }
+.mode .btn{ margin-top:auto; }
+.record{ font-size:16px; color:var(--ink); }
+.record b{ font-variant-numeric:tabular-nums; }
+.rules{ margin-top:20px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:4px 20px; }
+.rules summary{ cursor:pointer; font-weight:700; padding:14px 0; min-height:24px; }
+.rules dl{ display:grid; grid-template-columns:auto 1fr; gap:10px 18px; margin:0 0 16px; align-items:baseline; }
+.rules dt{ font-weight:700; }
+.rules dd{ margin:0; font-size:22px; }
+.rules .c{ font-family:var(--f-ui); font-size:15px; color:var(--muted); margin-left:8px; }
+@media (max-width:520px){ .rules dl{ grid-template-columns:1fr; gap:2px; } .rules dd{ margin-bottom:10px; } }
+
+/* ---------- Spiel ---------- */
+.hud{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); position:sticky; top:env(safe-area-inset-top,0px); z-index:5; }
+.hud-mode{ font-weight:700; }
+.meter{ display:flex; align-items:center; gap:8px; }
+.meter-label{ font-size:15px; color:var(--muted); white-space:nowrap; }
+.meter-label b{ color:var(--ink); }
+.bars{ display:flex; gap:3px; align-items:flex-end; }
+.bars span{ width:9px; border-radius:2px; background:var(--line); }
+.bars span:nth-child(1){height:8px}.bars span:nth-child(2){height:12px}.bars span:nth-child(3){height:16px}.bars span:nth-child(4){height:20px}.bars span:nth-child(5){height:24px}
+.bars span.on{ background:var(--accent); }
+.streak{ display:flex; gap:4px; align-items:center; }
+.streak i{ width:10px; height:10px; border-radius:50%; border:2px solid var(--accent); }
+.streak i.on{ background:var(--accent); }
+.hud-right{ margin-left:auto; display:flex; align-items:center; gap:16px; }
+.clock,.points{ font-variant-numeric:tabular-nums; font-weight:700; font-size:22px; }
+.clock.low{ color:var(--bad); }
+.points small{ font-size:14px; font-weight:400; color:var(--muted); margin-left:4px; }
+.btn-end{ min-height:44px; padding:0 14px; border-radius:10px; border:2px solid var(--line); background:transparent; font-weight:700; }
+
+.play{ display:grid; gap:16px; margin-top:16px; }
+.main-col{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+.task{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px 20px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+.task-head{ display:flex; justify-content:space-between; gap:10px; align-items:baseline; flex-wrap:wrap; }
+.task-kind{ margin:0; font-weight:700; font-size:18px; }
+.task-lvl{ font-size:14px; color:var(--muted); white-space:nowrap; }
+.task-term{ font-size:clamp(28px,6vw,40px); line-height:1.6; overflow-x:auto; padding:6px 0; text-align:center; }
+.task-cond{ margin:0; text-align:center; color:var(--muted); font-family:var(--f-math); font-size:20px; }
+
+/* Eingabefeld */
+.editor{ background:var(--surface); border:2px solid var(--accent); border-radius:var(--r); min-height:84px; padding:12px 16px; font-family:var(--f-math); font-size:clamp(28px,5.5vw,36px); line-height:1.6; display:flex; align-items:center; overflow-x:auto; cursor:text; }
+.editor.locked{ border-color:var(--line); cursor:default; }
+.editor.is-ok{ border-color:var(--ok); background:var(--ok-soft); }
+.editor.is-bad{ border-color:var(--bad); }
+.erow{ display:inline; white-space:nowrap; }
+.ec{ display:inline-block; }
+.ec.var{ font-style:italic; }
+.ec.op{ margin:0 .2em; }
+.ec.sq{ font-size:.66em; vertical-align:.58em; line-height:0; }
+.slot{ display:inline-block; min-width:.62em; height:.95em; border:1.5px dashed var(--muted); border-radius:3px; vertical-align:-.12em; position:relative; }
+.slot.on{ border-color:var(--accent); }
+.slot .caret{ position:absolute; left:50%; top:.08em; margin:0; }
+.caret{ display:inline-block; width:2px; height:1.05em; background:var(--accent); vertical-align:-.18em; margin:0 1px; animation:blink 1.05s steps(1) infinite; }
+.placeholder{ color:var(--muted); font-family:var(--f-ui); font-size:17px; margin-left:8px; }
+.editor-tip{ margin:8px 2px 0; color:var(--muted); font-size:14px; }
+@keyframes blink{ 50%{ opacity:0; } }
+
+/* Auswahl & Richtig/Falsch */
+.opts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.opt{ min-height:84px; border-radius:var(--r); border:2px solid var(--line); background:var(--surface); font-family:var(--f-math); font-size:clamp(24px,4.5vw,30px); padding:10px 12px; line-height:1.5; }
+.opt:not(:disabled):hover{ border-color:var(--accent); }
+.opt:disabled{ cursor:default; }
+.opt.is-ok{ border-color:var(--ok); background:var(--ok-soft); }
+.opt.is-bad{ border-color:var(--bad); background:var(--bad-soft); opacity:.85; }
+.opt.tf{ font-family:var(--f-ui); font-weight:700; font-size:22px; }
+@media (max-width:420px){ .opts.mc{ grid-template-columns:1fr; } }
+
+/* Rückmeldung */
+.fb{ border-radius:var(--r); padding:14px 18px; display:flex; flex-direction:column; gap:8px; border:1px solid transparent; }
+.fb:empty{ display:none; }
+.fb h3{ margin:0; font-size:19px; }
+.fb p{ margin:0; }
+.fb .chain{ font-size:24px; line-height:1.9; overflow-x:auto; }
+.fb .math{ font-size:1.12em; }
+.fb.ok{ background:var(--ok-soft); border-color:var(--ok); } .fb.ok h3{ color:var(--ok); }
+.fb.bad{ background:var(--bad-soft); border-color:var(--bad); } .fb.bad h3{ color:var(--bad); }
+.fb.hint{ background:var(--warn-soft); border-color:var(--warn); } .fb.hint h3{ color:var(--warn); }
+.fb.info{ background:var(--accent-soft); border-color:var(--line); }
+.fb .btn{ align-self:flex-start; margin-top:4px; }
+.label{ font-size:13px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+
+/* Tastatur */
+.pad{ display:grid; grid-template-columns:repeat(6,1fr); gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:10px; align-self:start; -webkit-user-select:none; user-select:none; }
+.key{ min-height:54px; border-radius:10px; border:0; background:var(--key); box-shadow:0 2px 0 var(--key-edge); font-size:22px; font-family:var(--f-math); display:flex; align-items:center; justify-content:center; padding:0; }
+.key:active{ transform:translateY(2px); box-shadow:none; }
+.key.op{ background:var(--key-op); }
+.key.var{ font-style:italic; }
+.key.ui{ font-family:var(--f-ui); font-size:20px; }
+.key.go{ grid-column:span 2; background:var(--accent); color:var(--accent-ink); font-family:var(--f-ui); font-weight:700; font-size:19px; box-shadow:0 2px 0 var(--key-edge); }
+.key .slot-s{ display:inline-block; width:.55em; height:.75em; border:1.5px dashed currentColor; border-radius:2px; opacity:.7; vertical-align:-.05em; }
+.key .msup .slot-s{ width:.45em; height:.6em; }
+.key .mfrac{ font-size:.75em; }
+.pad:has(.key:disabled) .key:disabled, .key:disabled{ opacity:.45; cursor:default; transform:none; }
+
+@media (min-width:900px) and (orientation:landscape){
+  .play.with-pad{ grid-template-columns:minmax(0,1.25fr) minmax(320px,1fr); align-items:start; }
+}
+
+/* Stufenwechsel-Hinweis */
+.toast{ position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 76px); transform:translate(-50%,-8px); background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:700; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:20; max-width:calc(100% - 32px); text-align:center; }
+.toast.show{ opacity:1; transform:translate(-50%,0); }
+
+/* Ende */
+.end{ max-width:640px; margin:0 auto; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:24px; display:flex; flex-direction:column; gap:18px; }
+.end h2{ margin:0; font-size:26px; }
+.big{ font-size:64px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+.big small{ font-size:20px; color:var(--muted); font-weight:400; margin-left:6px; }
+.newrec{ display:inline-block; background:var(--accent); color:var(--accent-ink); font-weight:700; padding:4px 12px; border-radius:999px; }
+.stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin:0; }
+.stats div{ border-top:2px solid var(--line); padding-top:8px; }
+.stats dt{ font-size:14px; color:var(--muted); }
+.stats dd{ margin:0; font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; }
+.end-actions{ display:flex; gap:12px; flex-wrap:wrap; }
+
+@media (prefers-reduced-motion: reduce){
+  .caret{ animation:none; } .toast{ transition:none; } .key:active{ transform:none; }
+}
+</style>
+<div class="app">
+
+  <!-- ================= START ================= -->
+  <section id="scr-start">
+    <header class="hero">
+      <h1 class="brand" id="brand">Wurzelgesetze-Trainer</h1>
+      <p class="brand-sub">Produktregel, Divisionsregel und Betrag üben · Klasse 9</p>
+    </header>
+
+    <div class="modes">
+      <article class="mode">
+        <span class="mode-meta">Ohne Zeitdruck</span>
+        <h2>Üben</h2>
+        <p>Die Aufgaben werden schwerer, wenn du sicher bist, und leichter, wenn es hakt. Bei einem Fehler bekommst du erst einen Tipp, dann den Lösungsweg.</p>
+        <div class="lvl-label" id="lvl-label">Startstufe</div>
+        <div class="lvl-pick" role="group" aria-labelledby="lvl-label" id="lvl-pick">
+          <button type="button" data-l="1" aria-pressed="true">1</button>
+          <button type="button" data-l="2" aria-pressed="false">2</button>
+          <button type="button" data-l="3" aria-pressed="false">3</button>
+          <button type="button" data-l="4" aria-pressed="false">4</button>
+          <button type="button" data-l="5" aria-pressed="false">5</button>
+        </div>
+        <button type="button" class="btn btn-main" id="go-practice">Üben starten</button>
+      </article>
+
+      <article class="mode">
+        <span class="mode-meta">2 Minuten</span>
+        <h2>Zeitchallenge</h2>
+        <p>So viele Aufgaben wie möglich. Jede richtige Aufgabe bringt 10 Punkte × Stufe. Du hast jeweils einen Versuch.</p>
+        <p class="record" id="record-start"></p>
+        <button type="button" class="btn btn-main" id="go-time">Challenge starten</button>
+      </article>
+    </div>
+
+    <details class="rules">
+      <summary>Regeln nachschlagen</summary>
+      <dl id="rules-list"></dl>
+    </details>
+  </section>
+
+  <!-- ================= SPIEL ================= -->
+  <section id="scr-game" hidden>
+    <div class="hud">
+      <span class="hud-mode" id="hud-mode">Üben</span>
+      <div class="meter">
+        <span class="meter-label">Stufe <b id="hud-level">1</b></span>
+        <span class="bars" id="hud-bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+      </div>
+      <div class="streak" id="hud-streak" title="Richtige Antworten in Folge bis zur nächsten Stufe"></div>
+      <div class="hud-right">
+        <span class="points" id="hud-points" hidden>0<small>Pkt.</small></span>
+        <span class="clock" id="hud-clock" hidden>2:00</span>
+        <button type="button" class="btn-end" id="btn-end">Beenden</button>
+      </div>
+    </div>
+
+    <div class="play" id="play">
+      <div class="main-col">
+        <article class="task">
+          <div class="task-head">
+            <p class="task-kind" id="task-kind"></p>
+            <span class="task-lvl" id="task-lvl"></span>
+          </div>
+          <div class="task-term math" id="task-term"></div>
+          <p class="task-cond" id="task-cond"></p>
+        </article>
+        <div id="answer"></div>
+        <div class="fb" id="fb" aria-live="polite"></div>
+      </div>
+      <div class="pad" id="pad" hidden></div>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+  </section>
+
+  <!-- ================= ENDE ================= -->
+  <section id="scr-end" hidden>
+    <div class="end" id="end"></div>
+  </section>
+</div>
+<script>
+/* =====================================================================
+   RECHENKERN: Parser, Auswertung, Darstellung, Aufgaben
+   Term-Syntax (intern):
+     r{...}        Wurzel          A{...}       Betrag
+     F{..}{..}     Bruch           x^{n}, x², x³ Potenzen
+     ·  :          Mal / Geteilt   Juxtaposition = implizites Mal (3x, 2r{3})
+   ===================================================================== */
+'use strict';
+
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const coin = () => Math.random() < 0.5;
+const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a));
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---------- Tokenizer ---------- */
+function tokenize(s) {
+  const t = [];
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === ' ') { i++; continue; }
+    if (/[0-9]/.test(c)) {
+      let j = i;
+      while (j < s.length && /[0-9]/.test(s[j])) j++;
+      t.push({ k: 'num', v: +s.slice(i, j) });
+      i = j; continue;
+    }
+    if (c === 'r' || c === 'A' || c === 'F') { t.push({ k: 'fn', v: c }); i++; continue; }
+    if ('xyab'.includes(c)) { t.push({ k: 'var', v: c }); i++; continue; }
+    if (c === '−') { t.push({ k: 'op', v: '-' }); i++; continue; }
+    if ('+-·*:/^(){}²³'.includes(c)) { t.push({ k: 'op', v: c }); i++; continue; }
+    throw new Error('Unbekanntes Zeichen: ' + c);
+  }
+  return t;
+}
+
+/* ---------- Parser (rekursiver Abstieg) ----------
+   Die Knoten behalten die Schreibweise (· vs. implizit, : vs. Bruch,
+   Klammern), damit dieselbe Struktur korrekt dargestellt UND
+   ausgewertet werden kann. */
+function parse(s) {
+  const t = tokenize(s);
+  let p = 0;
+  const isOp = v => t[p] && t[p].k === 'op' && t[p].v === v;
+  const expect = v => { if (!isOp(v)) throw new Error('Erwartet ' + v); p++; };
+  const group = () => { expect('{'); const e = expr(); expect('}'); return e; };
+
+  function expr() {
+    let n = term();
+    while (isOp('+') || isOp('-')) {
+      const o = t[p++].v;
+      n = { t: o === '+' ? 'add' : 'sub', a: n, b: term() };
+    }
+    return n;
+  }
+  function startsPrimary() {
+    const x = t[p];
+    if (!x) return false;
+    return x.k === 'num' || x.k === 'var' || x.k === 'fn' || (x.k === 'op' && (x.v === '(' || x.v === '{'));
+  }
+  function term() {
+    let n = factor();
+    for (;;) {
+      if (isOp('·') || isOp('*')) { p++; n = { t: 'mul', a: n, b: factor() }; }
+      else if (isOp(':')) { p++; n = { t: 'div', a: n, b: factor() }; }
+      else if (isOp('/')) { p++; n = { t: 'frac', a: n, b: factor() }; }
+      else if (startsPrimary()) { n = { t: 'imul', a: n, b: power() }; }
+      else break;
+    }
+    return n;
+  }
+  function factor() {
+    if (isOp('-')) { p++; return { t: 'neg', a: factor() }; }
+    return power();
+  }
+  function power() {
+    let n = primary();
+    for (;;) {
+      if (isOp('²')) { p++; n = { t: 'pow', a: n, b: { t: 'num', v: 2 } }; }
+      else if (isOp('³')) { p++; n = { t: 'pow', a: n, b: { t: 'num', v: 3 } }; }
+      else if (isOp('^')) {
+        p++;
+        const e = isOp('{') ? { t: 'grp', a: group() } : primary();
+        n = { t: 'pow', a: n, b: e };
+      } else break;
+    }
+    return n;
+  }
+  function primary() {
+    const x = t[p];
+    if (!x) throw new Error('Unerwartetes Ende');
+    if (x.k === 'num') { p++; return { t: 'num', v: x.v }; }
+    if (x.k === 'var') { p++; return { t: 'var', v: x.v }; }
+    if (x.k === 'fn') {
+      p++;
+      if (x.v === 'r') return { t: 'sqrt', a: group() };
+      if (x.v === 'A') return { t: 'abs', a: group() };
+      const a = group(), b = group();
+      return { t: 'frac', a, b };
+    }
+    if (isOp('(')) { p++; const e = expr(); expect(')'); return { t: 'par', a: e }; }
+    if (isOp('{')) return { t: 'grp', a: group() };
+    throw new Error('Unerwartetes Zeichen');
+  }
+  if (!t.length) throw new Error('Leer');
+  const n = expr();
+  if (p !== t.length) throw new Error('Rest übrig');
+  return n;
+}
+
+/* ---------- Auswertung ---------- */
+function ev(n, env) {
+  switch (n.t) {
+    case 'num': return n.v;
+    case 'var': return n.v in env ? env[n.v] : NaN;
+    case 'add': return ev(n.a, env) + ev(n.b, env);
+    case 'sub': return ev(n.a, env) - ev(n.b, env);
+    case 'mul': case 'imul': return ev(n.a, env) * ev(n.b, env);
+    case 'div': case 'frac': { const d = ev(n.b, env); return d === 0 ? NaN : ev(n.a, env) / d; }
+    case 'neg': return -ev(n.a, env);
+    case 'par': case 'grp': return ev(n.a, env);
+    case 'sqrt': {
+      const v = ev(n.a, env);
+      if (v < -1e-9) return NaN;            // in ℝ nicht definiert
+      return Math.sqrt(Math.max(0, v));
+    }
+    case 'abs': return Math.abs(ev(n.a, env));
+    case 'pow': return Math.pow(ev(n.a, env), ev(n.b, env));
+  }
+  return NaN;
+}
+
+/* ---------- Darstellung als HTML ---------- */
+const RAD_SVG = '<svg class="msq-h" viewBox="0 0 10 24" preserveAspectRatio="none" aria-hidden="true"><path d="M0.4 13.6 L2.6 12.2 L5.4 23 L9.4 0.9 L10 0.9"/></svg>';
+const RAD = inner => `<span class="msq">${RAD_SVG}<span class="msq-b">${inner}</span></span>`;
+
+function rd(n) {
+  switch (n.t) {
+    case 'num': return `<span class="mn">${n.v}</span>`;
+    case 'var': return `<i class="mv">${n.v}</i>`;
+    case 'add': return rd(n.a) + '<span class="mo">+</span>' + rd(n.b);
+    case 'sub': return rd(n.a) + '<span class="mo">−</span>' + rd(n.b);
+    case 'mul': return rd(n.a) + '<span class="mo">·</span>' + rd(n.b);
+    case 'imul': return rd(n.a) + rd(n.b);
+    case 'div': return rd(n.a) + '<span class="mo">:</span>' + rd(n.b);
+    case 'neg': return '<span class="mneg">−</span>' + rd(n.a);
+    case 'par': return '<span class="mp">(</span>' + rd(n.a) + '<span class="mp">)</span>';
+    case 'grp': return rd(n.a);
+    case 'sqrt': return RAD(rd(n.a));
+    case 'abs': return `<span class="mabs">${rd(n.a)}</span>`;
+    case 'frac': return `<span class="mfrac"><span class="mnum">${rd(n.a)}</span><span class="mden">${rd(n.b)}</span></span>`;
+    case 'pow': return rd(n.a) + `<sup class="msup">${rd(n.b)}</sup>`;
+  }
+  return '';
+}
+
+/* Gleichungsketten: "a = b = c" → jedes Glied bricht nicht intern um */
+function M(s) {
+  return '<span class="math">' + s.split('=').map(part => `<span class="mpart">${rd(parse(part))}</span>`)
+    .join(' <span class="mo meq">=</span> ') + '</span>';
+}
+
+/* ---------- Definitionsbereiche & Testwerte ---------- */
+const D = {
+  none:  { vars: [],         pos: true,  cond: '' },
+  xge:   { vars: ['x'],      pos: true,  cond: '<i>x</i> ≥ 0' },
+  xgt:   { vars: ['x'],      pos: true,  cond: '<i>x</i> &gt; 0' },
+  xR:    { vars: ['x'],      pos: false, cond: '<i>x</i> ∈ ℝ' },
+  abge:  { vars: ['a', 'b'], pos: true,  cond: '<i>a</i>, <i>b</i> ≥ 0' },
+  abgt:  { vars: ['a', 'b'], pos: true,  cond: '<i>a</i>, <i>b</i> &gt; 0' },
+  abR:   { vars: ['a', 'b'], pos: false, cond: '<i>a</i>, <i>b</i> ∈ ℝ' },
+  aGEb:  { vars: ['a', 'b'], pos: true,  cond: '<i>a</i> ≥ <i>b</i> ≥ 0' },
+};
+// Krumme Testwerte vermeiden zufällige Gleichheiten
+const SAMPLE_POS = { x: [0.37, 1.6, 2.9, 4.3, 7.1, 0.83], a: [1.3, 0.45, 3.7, 2.2, 5.9, 0.71], b: [2.6, 1.9, 0.58, 4.4, 1.15, 3.3], y: [1.1, 2.3, 0.4, 3.6, 0.9, 5.2] };
+const SAMPLE_ANY = { x: [-2.3, 1.6, -0.7, 3.1, -4.6, 0.9], a: [-1.4, 2.2, 0.6, -3.3, -0.8, 4.1], b: [1.7, -2.9, -0.55, 3.8, 2.4, -1.2], y: [-1.1, 2.3, -0.4, 3.6, -0.9, 5.2] };
+
+function envs(dom, posOnly) {
+  const out = [];
+  for (let i = 0; i < 6; i++) {
+    const e = {};
+    for (const v of dom.vars) {
+      let s = (dom.pos ? SAMPLE_POS : SAMPLE_ANY)[v][i];
+      if (posOnly) s = Math.abs(s);
+      e[v] = s;
+    }
+    out.push(e);
+  }
+  return out;
+}
+
+/* Gleichwertigkeit: beide Terme an mehreren Stellen auswerten.
+   So zählt jede gleichwertige Schreibweise als richtig. */
+function equiv(A, B, dom, posOnly) {
+  let ok = 0;
+  for (const env of envs(dom, posOnly)) {
+    const a = ev(A, env), b = ev(B, env);
+    const fa = isFinite(a), fb = isFinite(b);
+    if (!fa && !fb) continue;
+    if (fa !== fb) return false;
+    if (Math.abs(a - b) > 1e-7 * Math.max(1, Math.abs(b))) return false;
+    ok++;
+  }
+  return ok >= (dom.vars.length ? 3 : 1);
+}
+
+/* ---------- Ist die (richtige) Eingabe vollständig vereinfacht? ---------- */
+function hasSquareFactor(n) {
+  n = Math.abs(n);
+  for (let k = 2; k * k <= n; k++) if (n % (k * k) === 0) return true;
+  return false;
+}
+function walk(n, f) {
+  f(n);
+  if (n.a) walk(n.a, f);
+  if (n.b) walk(n.b, f);
+}
+function countSqrt(n) { let c = 0; walk(n, x => { if (x.t === 'sqrt') c++; }); return c; }
+function varsIn(n) { const s = new Set(); walk(n, x => { if (x.t === 'var') s.add(x.v); }); return [...s]; }
+
+/* Radikand als Monom c·x^e·… erkennen (numerisch). Lässt sich ein
+   Quadrat herausziehen? Bei Summen o. Ä. wird nicht geprüft. */
+function radicandReducible(rad) {
+  if (countSqrt(rad) > 0) return true;              // verschachtelte Wurzel
+  const vs = varsIn(rad);
+  const one = {}; vs.forEach(v => { one[v] = 1; });
+  const c = ev(rad, one);
+  if (!isFinite(c) || c <= 0) return false;
+  for (const v of vs) {
+    const e2 = { ...one, [v]: 2 }, e3 = { ...one, [v]: 3 };
+    const ex = Math.log2(ev(rad, e2) / c);
+    const r = Math.round(ex);
+    if (Math.abs(ex - r) > 1e-9) return false;     // kein Monom
+    if (Math.abs(ev(rad, e3) / c - Math.pow(3, r)) > 1e-6) return false;
+    if (r >= 2) return true;
+  }
+  for (let d = 1; d <= 400; d++) {                   // rationaler Koeffizient p/d
+    const p = c * d;
+    if (Math.abs(p - Math.round(p)) < 1e-9) {
+      return hasSquareFactor(Math.round(p)) || hasSquareFactor(d);
+    }
+  }
+  return false;
+}
+
+const UNSIMPL = {
+  roots: 'Richtig gerechnet, aber noch nicht fertig: Fasse die Wurzeln zusammen bzw. vereinfache weiter.',
+  square: 'Richtig gerechnet, aber unter einer Wurzel steckt noch ein Quadrat, das du herausziehen kannst.',
+  fraction: 'Richtig gerechnet, aber der Bruch lässt sich noch kürzen.',
+};
+function unsimplified(A, ref) {
+  let why = null;
+  walk(A, n => {
+    if (why) return;
+    if (n.t === 'sqrt' && radicandReducible(n.a)) why = UNSIMPL.square;
+    if ((n.t === 'frac' || n.t === 'div') && n.a.t === 'num' && n.b.t === 'num' && gcd(n.a.v, n.b.v) > 1) why = UNSIMPL.fraction;
+  });
+  if (why) return why;
+  if (countSqrt(A) > countSqrt(ref)) return UNSIMPL.roots;
+  return null;
+}
+
+const BETRAG_HINT = () => 'Achtung: Die Variable darf auch negativ sein. Denk an ' + M('r{x²} = A{x}') + '.';
+
+/* Rückmeldung zu einer Antwort */
+function diagnose(A, task, checkSimpl) {
+  if (equiv(A, task.ansA, task.dom)) {
+    if (checkSimpl) {
+      const why = unsimplified(A, task.ansA);
+      if (why) return { ok: false, unsimpl: true, hint: why };
+    }
+    return { ok: true };
+  }
+  if (task.dom.vars.length && !task.dom.pos && equiv(A, task.ansA, task.dom, true)) {
+    return { ok: false, betrag: true, hint: BETRAG_HINT() };
+  }
+  return { ok: false, hint: task.hint };
+}
+
+/* ---------- Bausteine für Terme ---------- */
+// n = m²·k mit k quadratfrei
+function sqf(n) {
+  let m = 1;
+  for (let k = 2; k * k <= n; k++) while (n % (k * k) === 0) { n /= k * k; m *= k; }
+  return [m, n];
+}
+function pw(base, e) {
+  if (e === 0) return '';
+  if (e === 1) return base;
+  if (e === 2) return base + '²';
+  if (e === 3) return base + '³';
+  return base + '^{' + e + '}';
+}
+// Koeffizient · Variablenteil · √(Radikand), z. B. 3x√2
+function mono(coef, vars, rootIn) {
+  const r = rootIn && String(rootIn) !== '1' ? String(rootIn) : '';
+  let s = '';
+  if (coef !== 1 || (!vars && !r)) s += String(coef);
+  if (vars) s += vars;
+  if (r) s += 'r{' + r + '}';
+  return s;
+}
+const kk = k => (k > 1 ? k : '');
+const KS = [2, 3, 5, 6, 7, 10, 11];
+
+/* =====================================================================
+   AUFGABENGENERATOREN
+   Rückgabe: lhs (Aufgabe), ans (vereinfachte Lösung), steps (Lösungsweg),
+   dis (typische Fehler als Distraktoren), hint (Tipp nach 1. Fehlversuch)
+   ===================================================================== */
+
+/* ---- Stufe 1: nur Zahlen, glatte Ergebnisse ---- */
+function g_prod1() {
+  const k = pick([2, 3, 5, 6, 7]);
+  let m = rnd(1, 4), p = rnd(1, 4);
+  if (m === 1 && p === 1) p = rnd(2, 4);
+  const a = k * m * m, b = k * p * p, N = a * b, R = k * m * p;
+  return {
+    dom: D.none, lhs: `r{${a}}·r{${b}}`, ans: `${R}`,
+    steps: [`r{${a}·${b}}`, `r{${N}}`, `${R}`],
+    dis: [`${N}`, `r{${a + b}}`, `${R + k}`, `${R - 1}`, `${2 * R}`],
+    hint: 'Fasse zu einer Wurzel zusammen: ' + M('r{a}·r{b} = r{a·b}') + '.',
+  };
+}
+function g_quot1() {
+  const b = pick([2, 3, 5, 6, 7]), r = rnd(2, 9), a = b * r * r;
+  const asFrac = coin();
+  return {
+    dom: D.none, lhs: asFrac ? `F{r{${a}}}{r{${b}}}` : `r{${a}}:r{${b}}`, ans: `${r}`,
+    steps: [asFrac ? `r{F{${a}}{${b}}}` : `r{${a}:${b}}`, `r{${r * r}}`, `${r}`],
+    dis: [`${r * r}`, `r{${a - b}}`, `${r + 1}`, `${r - 1}`],
+    hint: 'Fasse zu einer Wurzel zusammen: ' + M('r{a}:r{b} = r{a:b}') + '.',
+  };
+}
+function g_abs1() {
+  const n = rnd(2, 13);
+  return {
+    dom: D.none, lhs: `r{(-${n})²}`, ans: `${n}`,
+    steps: [`r{${n * n}}`, `${n}`],
+    dis: [`-${n}`, `${n * n}`, `-${n * n}`, `r{${n}}`],
+    hint: 'Rechne zuerst ' + M(`(-${n})²`) + ' aus. Das Ergebnis einer Wurzel ist nie negativ.',
+  };
+}
+
+/* ---- Stufe 2: teilweises Radizieren, Brüche ---- */
+function g_part() {
+  const k = pick(KS), m = rnd(2, 9), n = m * m * k;
+  const ans = mono(m, '', k);
+  return {
+    dom: D.none, lhs: `r{${n}}`, ans,
+    steps: [`r{${m * m}·${k}}`, `r{${m * m}}·r{${k}}`, ans],
+    dis: [mono(k, '', m), mono(m * m, '', k), mono(m + 1, '', k), mono(m - 1 || 3, '', k)],
+    hint: `Suche die größte Quadratzahl, die als Faktor in ${n} steckt.`,
+  };
+}
+function g_prod2() {
+  const pool = [2, 3, 5, 6, 7, 8, 10, 12, 14, 15, 18, 20, 21, 24, 27, 28];
+  let a, b, N, m, k;
+  do {
+    a = pick(pool); b = pick(pool); N = a * b; [m, k] = sqf(N);
+  } while (a === b || m < 2 || k < 2 || N > 600);
+  const ans = mono(m, '', k);
+  return {
+    dom: D.none, lhs: `r{${a}}·r{${b}}`, ans,
+    steps: [`r{${a}·${b}}`, `r{${N}}`, `r{${m * m}·${k}}`, ans],
+    dis: [mono(m * m, '', k), mono(k, '', m), `r{${a + b}}`, mono(m + 1, '', k)],
+    hint: 'Fasse zu einer Wurzel zusammen und suche dann die größte Quadratzahl als Faktor.',
+  };
+}
+function g_quot2() {
+  const b = pick([2, 3, 5, 6, 7]), k = pick(KS), m = rnd(2, 5), q = m * m * k, a = b * q;
+  const asFrac = coin(), ans = mono(m, '', k);
+  return {
+    dom: D.none, lhs: asFrac ? `F{r{${a}}}{r{${b}}}` : `r{${a}}:r{${b}}`, ans,
+    steps: [asFrac ? `r{F{${a}}{${b}}}` : `r{${a}:${b}}`, `r{${q}}`, `r{${m * m}·${k}}`, ans],
+    dis: [mono(m * m, '', k), mono(k, '', m), `r{${a - b}}`, mono(m + 1, '', k)],
+    hint: 'Fasse zu einer Wurzel zusammen: ' + M('r{a}:r{b} = r{a:b}') + '. Vereinfache dann weiter.',
+  };
+}
+function g_frac2() {
+  let p, q;
+  do { p = rnd(1, 11); q = rnd(2, 12); } while (p === q || gcd(p, q) !== 1);
+  if (coin()) {
+    return {
+      dom: D.none, lhs: `r{F{${p * p}}{${q * q}}}`, ans: `F{${p}}{${q}}`,
+      steps: [`F{r{${p * p}}}{r{${q * q}}}`, `F{${p}}{${q}}`],
+      dis: [`F{${p * p}}{${q}}`, `F{${p}}{${q * q}}`, `F{${q}}{${p}}`, `F{${p + 1}}{${q}}`],
+      hint: 'Ziehe die Wurzel aus Zähler und Nenner getrennt: ' + M('r{F{a}{b}} = F{r{a}}{r{b}}') + '.',
+    };
+  }
+  const k = pick([2, 3, 5, 7]);
+  let m; do { m = rnd(2, 5); } while (gcd(m, q) !== 1);
+  const n = m * m * k, num = mono(m, '', k);
+  return {
+    dom: D.none, lhs: `r{F{${n}}{${q * q}}}`, ans: `F{${num}}{${q}}`,
+    steps: [`F{r{${n}}}{r{${q * q}}}`, `F{${num}}{${q}}`],
+    dis: [`F{${num}}{${q * q}}`, `F{${mono(m * m, '', k)}}{${q}}`, `F{${mono(k, '', m)}}{${q}}`, `F{${num}}{${q + 1}}`],
+    hint: 'Ziehe die Wurzel aus Zähler und Nenner getrennt. Im Zähler steckt eine Quadratzahl als Faktor.',
+  };
+}
+
+/* ---- Stufe 3: Variablen mit x ≥ 0 ---- */
+function g_prodx() {
+  const pool = [2, 3, 5, 6, 8, 10, 12, 15, 18, 20, 27];
+  let c1, c2, N, m, k;
+  do { c1 = pick(pool); c2 = pick(pool); N = c1 * c2; [m, k] = sqf(N); } while (N > 400 || (m === 1 && k === N && coin()));
+  const ans = mono(m, 'x', k);
+  const steps = [`r{${c1}x·${c2}x}`, `r{${N}x²}`];
+  if (k > 1) steps.push(`r{${m > 1 ? m * m : ''}x²}·r{${k}}`);
+  steps.push(ans);
+  return {
+    dom: D.xge, lhs: `r{${c1}x}·r{${c2}x}`, ans, steps,
+    dis: [mono(m, 'x²', k), mono(N, 'x', ''), mono(m, '', kk(k) + 'x'), mono(m + 1, 'x', k)],
+    hint: 'Fasse zu einer Wurzel zusammen. Für ' + M('x') + ' ≥ 0 gilt ' + M('r{x²} = x') + '.',
+  };
+}
+function g_powx() {
+  const n = pick([3, 5, 7]), e = (n - 1) / 2;
+  let m = 1, k = 1, c = 1;
+  if (coin()) { m = rnd(2, 5); k = pick([1, 2, 3, 5]); c = m * m * k; }
+  const rootIn = kk(k) + 'x';
+  const ans = mono(m, pw('x', e), rootIn);
+  return {
+    dom: D.xge, lhs: `r{${c > 1 ? c : ''}${pw('x', n)}}`, ans,
+    steps: [`r{${m > 1 ? m * m : ''}${pw('x', n - 1)}·${kk(k)}x}`, ans],
+    dis: [mono(m, pw('x', n - 1), rootIn), mono(m, pw('x', e), kk(k)), mono(m, pw('x', e + 1), rootIn), mono(c > 1 ? c : m + 1, pw('x', e), rootIn)],
+    hint: 'Zerlege ' + M(`${pw('x', n)} = ${pw('x', n - 1)}·x`) + '. Aus ' + M(pw('x', n - 1)) + ' kannst du die Wurzel ziehen.',
+  };
+}
+function g_quotx() {
+  const c2 = pick([2, 3, 5, 6]), r = rnd(2, 6), c1 = c2 * r * r, p = pick([3, 5]);
+  const asFrac = coin();
+  const ans = mono(r, pw('x', (p - 1) / 2), '');
+  return {
+    dom: D.xgt,
+    lhs: asFrac ? `F{r{${c1}${pw('x', p)}}}{r{${c2}x}}` : `r{${c1}${pw('x', p)}}:r{${c2}x}`, ans,
+    steps: [`r{F{${c1}${pw('x', p)}}{${c2}x}}`, `r{${r * r}${pw('x', p - 1)}}`, ans],
+    dis: [mono(r * r, pw('x', p - 1), ''), mono(r, pw('x', p - 1), ''), mono(r, pw('x', (p - 1) / 2), 'x'), mono(r + 1, pw('x', (p - 1) / 2), '')],
+    hint: 'Fasse zu einer Wurzel zusammen und kürze den Bruch unter der Wurzel.',
+  };
+}
+function g_ab3() {
+  const m = rnd(2, 6), k = pick([1, 2, 3, 5]), c = m * m * k;
+  const ans = mono(m, 'a', kk(k) + 'b');
+  return {
+    dom: D.abge, lhs: `r{${c}a²b}`, ans,
+    steps: [`r{${m * m}a²}·r{${kk(k)}b}`, ans],
+    dis: [mono(m, 'ab', k), mono(m * m, 'a', kk(k) + 'b'), mono(m, 'a²', kk(k) + 'b'), mono(m, '', kk(k) + 'ab')],
+    hint: 'Ziehe aus jedem Quadrat einzeln die Wurzel. Was bleibt unter der Wurzel übrig?',
+  };
+}
+
+/* ---- Stufe 4: Betrag, Variable ∈ ℝ ---- */
+function g_absx() {
+  const m = rnd(2, 9), k = pick([1, 1, 2, 3, 5, 6, 7]), c = m * m * k;
+  const ans = mono(m, 'A{x}', k);
+  const tail = k > 1 ? `·r{${k}}` : '';
+  return {
+    dom: D.xR, lhs: `r{${c}x²}`, ans,
+    steps: [`r{${m * m}}·r{x²}${tail}`, `${m}·A{x}${tail}`, ans],
+    dis: [mono(m, 'x', k), mono(m * m, 'A{x}', k), mono(m, 'x²', k), mono(m + 1, 'A{x}', k)],
+    hint: 'Achtung: ' + M('x') + ' kann negativ sein. Was gilt für ' + M('r{x²}') + '?',
+  };
+}
+function g_pow4() {
+  const n = pick([2, 3, 4, 5]);
+  const ans = n % 2 === 0 ? pw('x', n) : pw('A{x}', n);
+  return {
+    dom: D.xR, lhs: `r{${pw('x', 2 * n)}}`, ans,
+    steps: [`r{(${pw('x', n)})²}`, `A{${pw('x', n)}}`, ans],
+    dis: [pw('x', n), pw('A{x}', n), `-${pw('x', n)}`, pw('x', 2 * n), pw('x', n + 1), pw('x', n - 1)],
+    hint: 'Es gilt ' + M(`r{${pw('x', 2 * n)}} = A{${pw('x', n)}}`) + '. Kann ' + M(pw('x', n)) + ' negativ werden?',
+  };
+}
+function g_binom4() {
+  const d = rnd(1, 9), s = coin() ? '+' : '-', o = s === '+' ? '-' : '+';
+  return {
+    dom: D.xR, lhs: `r{(x${s}${d})²}`, ans: `A{x${s}${d}}`,
+    steps: [`A{x${s}${d}}`],
+    dis: [`x${s}${d}`, `A{x${o}${d}}`, `A{x}${s}${d}`, `x${o}${d}`],
+    hint: 'Die Wurzel aus einem Quadrat ist der Betrag der Basis. Das gilt auch, wenn die Basis eine Summe ist.',
+  };
+}
+function g_ab4() {
+  const m = rnd(2, 6), k = pick([1, 2, 3]), c = m * m * k;
+  const ans = mono(m, 'A{a}b²', k);
+  const tail = k > 1 ? `·r{${k}}` : '';
+  return {
+    dom: D.abR, lhs: `r{${c}a²b^{4}}`, ans,
+    steps: [`r{${m * m}}·r{a²}·r{b^{4}}${tail}`, `${m}·A{a}·b²${tail}`, ans],
+    dis: [mono(m, 'ab²', k), mono(m, 'A{a}A{b}', k), mono(m, 'A{ab}', k), mono(m * m, 'A{a}b²', k), mono(m, 'A{a}b^{4}', k)],
+    hint: 'Behandle jeden Faktor einzeln. Bei welchem Faktor brauchst du einen Betrag, bei welchem nicht?',
+  };
+}
+
+/* ---- Stufe 5: Kombinationen ---- */
+function g_prod5() {
+  const pool = [2, 3, 6, 8, 12, 18, 27];
+  let c1, c2, N, m, k;
+  do { c1 = pick(pool); c2 = pick(pool); N = c1 * c2; [m, k] = sqf(N); } while (N > 500);
+  const ans = mono(m, 'a²b²', k);
+  const steps = [`r{${c1}a³b·${c2}ab³}`, `r{${N}a^{4}b^{4}}`];
+  if (k > 1) steps.push(`r{${m > 1 ? m * m : ''}a^{4}b^{4}}·r{${k}}`);
+  steps.push(ans);
+  return {
+    dom: D.abge, lhs: `r{${c1}a³b}·r{${c2}ab³}`, ans, steps,
+    dis: [mono(m, 'ab', k), mono(N, 'a²b²', ''), mono(m, 'a^{4}b^{4}', k), mono(m + 1, 'a²b²', k)],
+    hint: 'Fasse zu einer Wurzel zusammen und fasse die Potenzen mit gleicher Basis zusammen.',
+  };
+}
+function g_quot5() {
+  const pa = pick([3, 5]), pb = pick([3, 5, 7]), c2 = pick([2, 3, 5]), r = rnd(2, 5), k = pick([1, 2, 3]);
+  const c1 = c2 * r * r * k;
+  const vAns = pw('a', (pa - 1) / 2) + pw('b', (pb - 1) / 2);
+  const ans = mono(r, vAns, k);
+  const top = `${c1}${pw('a', pa)}${pw('b', pb)}`;
+  return {
+    dom: D.abgt, lhs: coin() ? `F{r{${top}}}{r{${c2}ab}}` : `r{${top}}:r{${c2}ab}`, ans,
+    steps: [`r{F{${top}}{${c2}ab}}`, `r{${r * r * k}${pw('a', pa - 1)}${pw('b', pb - 1)}}`, ans],
+    dis: [mono(r, pw('a', pa - 1) + pw('b', pb - 1), k), mono(r * r, vAns, k), mono(r, pw('a', (pa + 1) / 2) + pw('b', (pb - 1) / 2), k), mono(r, vAns, kk(k) + 'ab')],
+    hint: 'Fasse zu einer Wurzel zusammen, kürze, und ziehe dann aus jedem Quadrat die Wurzel.',
+  };
+}
+function g_mix5() {
+  const n = pick([1, 3]);
+  let c1, c2, N, m, k;
+  do { c1 = pick([2, 3, 5, 6]); c2 = pick([2, 3, 6, 8, 10, 12, 15, 18, 24, 27, 50]); N = c1 * c2; [m, k] = sqf(N); } while (m < 2);
+  const vp = n === 1 ? 'A{x}' : 'A{x}³';
+  const ans = mono(m, vp, k);
+  const steps = [`r{${c1}·${c2}${pw('x', 2 * n)}}`, `r{${N}${pw('x', 2 * n)}}`];
+  if (k > 1) steps.push(`r{${m * m}${pw('x', 2 * n)}}·r{${k}}`);
+  steps.push(ans);
+  return {
+    dom: D.xR, lhs: `r{${c1}}·r{${c2}${pw('x', 2 * n)}}`, ans, steps,
+    dis: [mono(m, pw('x', n), k), mono(m * m, vp, k), mono(m, pw('x', 2 * n), k), mono(m + 1, vp, k)],
+    hint: 'Fasse zu einer Wurzel zusammen. ' + M('x') + ' kann negativ sein: Brauchst du einen Betrag?',
+  };
+}
+function g_binom5() {
+  const q = pick([1, 1, 2, 3]), s = coin() ? '+' : '-', o = s === '+' ? '-' : '+';
+  let d; do { d = rnd(1, 7); } while (gcd(q, d) !== 1);
+  const qs = q > 1 ? String(q) : '';
+  return {
+    dom: D.xR, lhs: `r{${q > 1 ? q * q : ''}x²${s}${2 * q * d}x+${d * d}}`, ans: `A{${qs}x${s}${d}}`,
+    steps: [`r{(${qs}x${s}${d})²}`, `A{${qs}x${s}${d}}`],
+    dis: [`${qs}x${s}${d}`, `A{${qs}x${o}${d}}`, `${qs}A{x}${s}${d}`, `A{${q > 1 ? q * q : ''}x${s}${d * d}}`],
+    hint: 'Erkennst du unter der Wurzel eine binomische Formel?',
+  };
+}
+function g_frac5() {
+  const m = rnd(2, 6), k = pick([1, 2, 3]), c = m * m * k;
+  let q; do { q = rnd(2, 9); } while (gcd(m, q) !== 1);
+  const num = mono(m, 'A{x}', k);
+  return {
+    dom: D.xR, lhs: `r{F{${c}x²}{${q * q}}}`, ans: `F{${num}}{${q}}`,
+    steps: [`F{r{${c}x²}}{r{${q * q}}}`, `F{${num}}{${q}}`],
+    dis: [`F{${mono(m, 'x', k)}}{${q}}`, `F{${num}}{${q * q}}`, `F{${mono(m * m, 'A{x}', k)}}{${q}}`, `F{${num}}{${q + 1}}`],
+    hint: 'Ziehe die Wurzel aus Zähler und Nenner getrennt. Achte im Zähler auf den Betrag.',
+  };
+}
+
+const GENS = {
+  1: [g_prod1, g_quot1, g_abs1],
+  2: [g_part, g_prod2, g_quot2, g_frac2],
+  3: [g_prodx, g_powx, g_quotx, g_ab3],
+  4: [g_absx, g_pow4, g_binom4, g_ab4],
+  5: [g_prod5, g_quot5, g_mix5, g_binom5, g_frac5],
+};
+
+/* ---------- Richtig/Falsch: typische Fehlvorstellungen ---------- */
+const BANK = [
+  { lv: [3, 4, 5], lhs: 'r{a²+b²}', rhs: 'a+b', dom: D.abge, truth: false,
+    why: () => 'Für Summen gibt es kein Wurzelgesetz. Gegenbeispiel: ' + M('r{3²+4²} = r{25} = 5') + ', aber ' + M('3+4 = 7') + '.' },
+  { lv: [3, 4, 5], lhs: 'r{16+9}', rhs: 'r{16}+r{9}', dom: D.none, truth: false,
+    why: () => M('r{16+9} = r{25} = 5') + ', aber ' + M('r{16}+r{9} = 4+3 = 7') + '. Für Summen gibt es kein Wurzelgesetz.' },
+  { lv: [3], lhs: 'r{a}·r{b}', rhs: 'r{a·b}', dom: D.abge, truth: true,
+    why: () => 'Das ist die Produktregel. Sie gilt, weil beide Radikanden nicht negativ sind.' },
+  { lv: [3, 4], lhs: 'F{r{a}}{r{b}}', rhs: 'r{F{a}{b}}', dom: { ...D.abgt, cond: '<i>a</i> ≥ 0, <i>b</i> &gt; 0' }, truth: true,
+    why: () => 'Das ist die Divisionsregel. Sie gilt für ' + M('a') + ' ≥ 0 und ' + M('b') + ' > 0.' },
+  { lv: [3, 4, 5], lhs: 'r{a-b}', rhs: 'r{a}-r{b}', dom: D.aGEb, truth: false,
+    why: () => 'Gegenbeispiel: ' + M('r{25-16} = r{9} = 3') + ', aber ' + M('r{25}-r{16} = 1') + '.' },
+  { lv: [3, 4], lhs: 'r{9x²}', rhs: '3x', dom: D.xge, truth: true,
+    why: () => 'Für ' + M('x') + ' ≥ 0 ist ' + M('r{9x²} = 3A{x} = 3x') + '.' },
+  { lv: [4, 5], lhs: 'r{9x²}', rhs: '3x', dom: D.xR, truth: false,
+    why: () => 'Für ' + M('x') + ' ∈ ℝ gilt ' + M('r{9x²} = 3A{x}') + '. Für ' + M('x = -1') + ' wäre ' + M('3x = -3') + ', die Wurzel aber 3.' },
+  { lv: [4, 5], lhs: 'r{x²}', rhs: 'x', dom: D.xR, truth: false,
+    why: () => 'Für negative Zahlen stimmt das nicht: ' + M('r{(-3)²} = r{9} = 3') + '. Richtig ist ' + M('r{x²} = A{x}') + '.' },
+  { lv: [4, 5], lhs: 'r{x²}', rhs: 'A{x}', dom: D.xR, truth: true,
+    why: () => 'Eine Wurzel ist nie negativ. Deshalb braucht man den Betrag.' },
+  { lv: [4, 5], lhs: 'r{x^{4}}', rhs: 'x²', dom: D.xR, truth: true,
+    why: () => M('x²') + ' ist nie negativ, also ist hier kein Betrag nötig.' },
+  { lv: [4, 5], lhs: 'r{x^{6}}', rhs: 'x³', dom: D.xR, truth: false,
+    why: () => 'Für ' + M('x = -1') + ' ist ' + M('r{(-1)^{6}} = 1') + ', aber ' + M('(-1)³ = -1') + '. Richtig ist ' + M('r{x^{6}} = A{x}³') + '.' },
+  { lv: [4, 5], lhs: 'r{(x-5)²}', rhs: 'x-5', dom: D.xR, truth: false,
+    why: () => 'Richtig ist ' + M('r{(x-5)²} = A{x-5}') + '. Für ' + M('x = 0') + ' steht links 5, rechts −5.' },
+  { lv: [5], lhs: 'r{(-2)·(-8)}', rhs: 'r{-2}·r{-8}', dom: D.none, truth: false,
+    why: () => M('r{-2}') + ' ist in ℝ nicht definiert. Die Produktregel gilt nur für nicht negative Radikanden. Links steht ' + M('r{16} = 4') + '.' },
+  { lv: [5], lhs: 'r{4a²b²}', rhs: '2A{ab}', dom: D.abR, truth: true,
+    why: () => M('r{4a²b²} = r{(2ab)²} = 2A{ab}') + '.' },
+  { lv: [5], lhs: 'r{x^{8}}', rhs: 'x^{4}', dom: D.xR, truth: true,
+    why: () => M('x^{4}') + ' ist nie negativ, daher ' + M('r{x^{8}} = A{x^{4}} = x^{4}') + '.' },
+];
+
+/* Generische Ersatz-Distraktoren: Zahl am Anfang verändern */
+function fallbackDis(ans) {
+  const m = ans.match(/^(\d+)/);
+  if (m) {
+    const n = +m[1];
+    return [ans.replace(/^\d+/, n + 1), ans.replace(/^\d+/, n + 2), n > 1 ? ans.replace(/^\d+/, n - 1) : '5' + ans];
+  }
+  return ['2' + ans, '3' + ans, '4' + ans];
+}
+
+/* ---------- Aufgabe zusammenbauen ---------- */
+function buildFromGen(g, level, type) {
+  const raw = g();
+  const t = { ...raw, level, type, gen: g };
+  t.lhsA = parse(raw.lhs);
+  t.ansA = parse(raw.ans);
+  // Distraktoren: eindeutig und garantiert NICHT gleichwertig zur Lösung
+  const ds = [];
+  for (const s of raw.dis.concat(fallbackDis(raw.ans))) {
+    let A;
+    try { A = parse(s); } catch (e) { continue; }
+    if (equiv(A, t.ansA, raw.dom)) continue;
+    if (ds.some(d => d.s === s || equiv(d.A, A, raw.dom))) continue;
+    ds.push({ s, A });
+  }
+  t.dis = ds;
+  t.chain = [raw.lhs].concat(raw.steps).join(' = ');
+  if (type === 'mc') {
+    const wrong = shuffle(ds.slice(0, 4)).slice(0, 3);
+    t.options = shuffle([{ s: raw.ans, A: t.ansA, ok: true }].concat(wrong.map(d => ({ ...d, ok: false }))));
+  }
+  if (type === 'tf') {
+    t.truth = coin();
+    t.rhs = t.truth ? raw.ans : pick(ds.slice(0, 3)).s;
+  }
+  return t;
+}
+
+function makeTask(level, type, lastGen) {
+  if (type === 'tf' && level >= 3 && Math.random() < (level >= 4 ? 0.5 : 0.35)) {
+    const items = BANK.filter(b => b.lv.includes(level));
+    const b = pick(items);
+    return { level, type, bank: true, gen: b, lhs: b.lhs, rhs: b.rhs, dom: b.dom, truth: b.truth, why: b.why() };
+  }
+  const list = GENS[level];
+  let g;
+  do { g = pick(list); } while (g === lastGen && list.length > 1);
+  return buildFromGen(g, level, type);
+}
+
+/* =====================================================================
+   OBERFLÄCHE: Eingabe-Editor, Spielablauf, adaptive Stufen, Zeitmodus
+   ===================================================================== */
+'use strict';
+
+const UP_PRACTICE = 3;   // richtige Antworten in Folge (1. Versuch) → Stufe hoch
+const UP_TIME = 2;       // im Zeitmodus schneller, damit 2 Minuten reichen
+const DOWN = 2;          // falsche Antworten in Folge → Stufe runter
+const ROUND_MS = 120000;
+const HS_KEY = 'wurzelgesetze-trainer.highscore';
+
+const $ = id => document.getElementById(id);
+const S = { startLevel: 1 };
+
+function loadHS() { try { return +localStorage.getItem(HS_KEY) || 0; } catch (e) { return 0; } }
+function saveHS(v) { try { localStorage.setItem(HS_KEY, String(v)); } catch (e) { /* privat/blockiert */ } }
+
+/* ---------------------------------------------------------------------
+   STRUKTUR-EDITOR
+   Zeile = {items:[], parent}, Element = Zeichen ('c') oder Kasten
+   (sqrt, abs, pow mit einer Zeile; frac mit Zähler- und Nennerzeile).
+   --------------------------------------------------------------------- */
+let E = null;
+const newRow = parent => ({ items: [], parent });
+
+function edReset() { const root = newRow(null); E = { root, cur: { row: root, i: 0 }, locked: false }; }
+
+function edInsertChar(v) {
+  const { row, i } = E.cur;
+  row.items.splice(i, 0, { t: 'c', v, row });
+  E.cur.i++;
+}
+function edInsertBox(type) {
+  const it = { t: type, row: E.cur.row };
+  it.rows = type === 'frac' ? [newRow(it), newRow(it)] : [newRow(it)];
+  E.cur.row.items.splice(E.cur.i, 0, it);
+  E.cur = { row: it.rows[0], i: 0 };
+}
+function edRight() {
+  const { row, i } = E.cur;
+  if (i < row.items.length) {
+    const it = row.items[i];
+    if (it.t === 'c') E.cur.i++; else E.cur = { row: it.rows[0], i: 0 };
+    return;
+  }
+  const it = row.parent;
+  if (!it) return;
+  const k = it.rows.indexOf(row);
+  if (k < it.rows.length - 1) { E.cur = { row: it.rows[k + 1], i: 0 }; return; }
+  E.cur = { row: it.row, i: it.row.items.indexOf(it) + 1 };
+}
+function edLeft() {
+  const { row, i } = E.cur;
+  if (i > 0) {
+    const it = row.items[i - 1];
+    if (it.t === 'c') E.cur.i--;
+    else { const r = it.rows[it.rows.length - 1]; E.cur = { row: r, i: r.items.length }; }
+    return;
+  }
+  const it = row.parent;
+  if (!it) return;
+  const k = it.rows.indexOf(row);
+  if (k > 0) { const r = it.rows[k - 1]; E.cur = { row: r, i: r.items.length }; return; }
+  E.cur = { row: it.row, i: it.row.items.indexOf(it) };
+}
+const isEmptyBox = it => it.rows.every(r => r.items.length === 0);
+function edBack() {
+  const { row, i } = E.cur;
+  if (i > 0) {
+    const it = row.items[i - 1];
+    if (it.t === 'c' || isEmptyBox(it)) { row.items.splice(i - 1, 1); E.cur.i--; }
+    else { const r = it.rows[it.rows.length - 1]; E.cur = { row: r, i: r.items.length }; }
+    return;
+  }
+  const it = row.parent;
+  if (!it) return;
+  const pr = it.row, idx = pr.items.indexOf(it);
+  if (isEmptyBox(it)) { pr.items.splice(idx, 1); E.cur = { row: pr, i: idx }; return; }
+  if (it.t === 'frac') { edLeft(); return; }
+  // Am Anfang einer gefüllten Wurzel/eines Betrags: Kasten auflösen, Inhalt bleibt
+  const kids = it.rows[0].items;
+  kids.forEach(k => { k.row = pr; });
+  pr.items.splice(idx, 1, ...kids);
+  E.cur = { row: pr, i: idx };
+}
+
+function serRow(row) {
+  return row.items.map(it => {
+    if (it.t === 'c') return it.v === '−' ? '-' : it.v;
+    const b = it.rows.map(serRow);
+    if (it.t === 'sqrt') return 'r{' + b[0] + '}';
+    if (it.t === 'abs') return 'A{' + b[0] + '}';
+    if (it.t === 'pow') return '^{' + b[0] + '}';
+    return 'F{' + b[0] + '}{' + b[1] + '}';
+  }).join('');
+}
+
+/* Darstellung mit Cursor; jedes Zeichen/Kästchen bekommt eine Tipp-Adresse */
+let tapMap = [];
+const CARET = '<span class="caret" aria-hidden="true"></span>';
+function rRow(row) {
+  const active = !E.locked && E.cur.row === row;
+  const rid = tapMap.push({ row, i: row.items.length }) - 1;
+  if (!row.items.length) return `<span class="slot${active ? ' on' : ''}" data-rid="${rid}">${active ? CARET : ''}</span>`;
+  let h = '';
+  row.items.forEach((it, i) => {
+    if (active && E.cur.i === i) h += CARET;
+    h += rItem(it, i);
+  });
+  if (active && E.cur.i === row.items.length) h += CARET;
+  return `<span class="erow" data-rid="${rid}">${h}</span>`;
+}
+function rItem(it, i) {
+  if (it.t === 'c') {
+    const cid = tapMap.push({ row: it.row, i: i + 1 }) - 1;
+    const v = it.v;
+    let cls = 'ec', g = v;
+    if (/[xab]/.test(v)) cls += ' var';
+    else if ('+−·:'.includes(v)) cls += ' op';
+    else if (v === '²' || v === '³') { cls += ' sq'; g = v === '²' ? '2' : '3'; }
+    return `<span class="${cls}" data-cid="${cid}">${g}</span>`;
+  }
+  if (it.t === 'sqrt') return RAD(rRow(it.rows[0]));
+  if (it.t === 'abs') return `<span class="mabs">${rRow(it.rows[0])}</span>`;
+  if (it.t === 'pow') return `<sup class="msup">${rRow(it.rows[0])}</sup>`;
+  return `<span class="mfrac"><span class="mnum">${rRow(it.rows[0])}</span><span class="mden">${rRow(it.rows[1])}</span></span>`;
+}
+function edRender() {
+  const el = $('editor');
+  if (!el) return;
+  tapMap = [];
+  let h = rRow(E.root);
+  if (!E.root.items.length && !E.locked) h += '<span class="placeholder">Deine Lösung</span>';
+  el.innerHTML = h;
+}
+function edTap(e) {
+  if (E.locked) return;
+  const c = e.target.closest('[data-cid]');
+  const r = c ? null : e.target.closest('[data-rid]');
+  const ref = c ? tapMap[+c.dataset.cid] : r ? tapMap[+r.dataset.rid] : { row: E.root, i: E.root.items.length };
+  if (!ref) return;
+  E.cur = { row: ref.row, i: ref.i };
+  edRender();
+}
+
+/* ---------------------------------------------------------------------
+   TASTATUR
+   --------------------------------------------------------------------- */
+const SLOT = '<span class="slot-s"></span>';
+const KEYS = [
+  { k: 'sqrt', h: RAD(SLOT), c: 'op', a: 'Wurzel' },
+  { k: 'abs', h: `<span class="mabs">${SLOT}</span>`, c: 'op', a: 'Betrag' },
+  { k: 'frac', h: `<span class="mfrac"><span class="mnum">${SLOT}</span><span class="mden">${SLOT}</span></span>`, c: 'op', a: 'Bruch' },
+  { k: '²', h: `${SLOT}<sup class="msup">2</sup>`, c: 'op', a: 'hoch 2' },
+  { k: '³', h: `${SLOT}<sup class="msup">3</sup>`, c: 'op', a: 'hoch 3' },
+  { k: 'pow', h: `${SLOT}<sup class="msup">${SLOT}</sup>`, c: 'op', a: 'hoch n' },
+  { k: '7' }, { k: '8' }, { k: '9' }, { k: '·', c: 'op', a: 'mal' }, { k: ':', c: 'op', a: 'geteilt' },
+  { k: 'back', h: '⌫', c: 'ui', a: 'Löschen' },
+  { k: '4' }, { k: '5' }, { k: '6' }, { k: '+', c: 'op', a: 'plus' }, { k: '−', c: 'op', a: 'minus' }, { k: '(', c: 'op', a: 'Klammer auf' },
+  { k: '1' }, { k: '2' }, { k: '3' }, { k: 'x', c: 'var' }, { k: 'a', c: 'var' }, { k: ')', c: 'op', a: 'Klammer zu' },
+  { k: '0' }, { k: 'b', c: 'var' }, { k: 'left', h: '←', c: 'ui', a: 'Cursor nach links' }, { k: 'right', h: '→', c: 'ui', a: 'Cursor nach rechts / aus dem Kästchen' },
+  { k: 'check', h: 'Prüfen', c: 'go' },
+];
+function buildPad() {
+  $('pad').innerHTML = KEYS.map(k =>
+    `<button type="button" class="key ${k.c || ''}" data-k="${k.k}"${k.a ? ` aria-label="${k.a}"` : ''}>${k.h || k.k}</button>`).join('');
+}
+function press(k) {
+  if (!S.task || S.task.type !== 'input' || S.done || E.locked) return;
+  if (k === 'check') { submitInput(); return; }
+  if (k === 'back') edBack();
+  else if (k === 'left') edLeft();
+  else if (k === 'right') edRight();
+  else if (k === 'sqrt' || k === 'abs' || k === 'frac' || k === 'pow') edInsertBox(k);
+  else edInsertChar(k);
+  clearSoftMsg();
+  edRender();
+}
+function onKey(e) {
+  if ($('scr-game').hidden) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (S.done && k === 'Enter' && S.mode === 'practice') { e.preventDefault(); nextTask(); return; }
+  if (!S.task || S.task.type !== 'input' || S.done) return;
+  const map = { '*': '·', '-': '−', '|': 'abs', '/': 'frac', '^': 'pow', 'w': 'sqrt', 'r': 'sqrt', 'Backspace': 'back', 'ArrowLeft': 'left', 'ArrowRight': 'right', 'Enter': 'check' };
+  let key = map[k] || k;
+  if (!/^[0-9xab+−·:()²³]$/.test(key) && !['abs', 'frac', 'pow', 'sqrt', 'back', 'left', 'right', 'check'].includes(key)) return;
+  e.preventDefault();
+  press(key);
+}
+
+/* ---------------------------------------------------------------------
+   SPIELABLAUF
+   --------------------------------------------------------------------- */
+function show(id) {
+  ['scr-start', 'scr-game', 'scr-end'].forEach(s => { $(s).hidden = s !== id; });
+  window.scrollTo(0, 0);
+}
+
+function startGame(mode) {
+  clearTimers();
+  Object.assign(S, {
+    mode, level: mode === 'practice' ? S.startLevel : 1, up: 0, down: 0,
+    n: 0, solved: 0, firstTry: 0, points: 0, lastGen: null, lastTypes: [],
+    task: null, done: false, tries: 0, finished: false,
+  });
+  S.maxLevel = S.level;
+  $('hud-mode').textContent = mode === 'practice' ? 'Üben' : 'Zeitchallenge';
+  $('hud-points').hidden = mode !== 'time';
+  $('hud-clock').hidden = mode !== 'time';
+  show('scr-game');
+  if (mode === 'time') {
+    S.endAt = Date.now() + ROUND_MS;
+    S.tick = setInterval(tick, 200);
+    tick();
+  }
+  updateHud();
+  nextTask();
+}
+
+function clearTimers() {
+  clearInterval(S.tick); clearTimeout(S.nextTO); clearTimeout(S.toastTO);
+  S.tick = S.nextTO = null;
+}
+
+function tick() {
+  const left = Math.max(0, S.endAt - Date.now());
+  const sec = Math.ceil(left / 1000);
+  const c = $('hud-clock');
+  c.textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  c.classList.toggle('low', sec <= 10);
+  if (left <= 0) endGame(true);
+}
+
+function pickType() {
+  // Mischung: 50 % Eingabe, 25 % Auswahl, 25 % Richtig/Falsch; nie 3× derselbe Typ
+  let t;
+  do {
+    const r = Math.random();
+    t = r < 0.5 ? 'input' : r < 0.75 ? 'mc' : 'tf';
+  } while (S.lastTypes.length >= 2 && S.lastTypes.every(x => x === t));
+  S.lastTypes = S.lastTypes.concat(t).slice(-2);
+  return t;
+}
+
+function nextTask() {
+  if (S.finished) return;
+  clearTimeout(S.nextTO);
+  const type = pickType();
+  S.task = makeTask(S.level, type, S.lastGen);
+  S.lastGen = S.task.gen;
+  S.tries = 0;
+  S.done = false;
+  renderTask();
+}
+
+const KIND = { input: 'Vereinfache so weit wie möglich.', mc: 'Welcher Term ist gleich?', tf: 'Stimmt diese Gleichung?' };
+
+function renderTask() {
+  const t = S.task;
+  $('task-kind').textContent = KIND[t.type];
+  $('task-lvl').textContent = 'Stufe ' + t.level;
+  $('task-term').innerHTML = t.type === 'tf' ? M(t.lhs + ' = ' + t.rhs) : M(t.lhs);
+  $('task-cond').innerHTML = t.dom.cond ? 'für ' + t.dom.cond : '';
+  $('fb').className = 'fb';
+  $('fb').innerHTML = '';
+  const ans = $('answer');
+  const usePad = t.type === 'input';
+  $('pad').hidden = !usePad;
+  $('play').classList.toggle('with-pad', usePad);
+  setPadEnabled(true);
+
+  if (t.type === 'input') {
+    edReset();
+    ans.innerHTML = '<div class="editor" id="editor" role="textbox" aria-label="Deine Lösung" tabindex="0"></div>' +
+      '<p class="editor-tip">Tippe auf ein Kästchen, um es auszufüllen. Mit → verlässt du ein Kästchen.</p>';
+    $('editor').addEventListener('click', edTap);
+    edRender();
+  } else if (t.type === 'mc') {
+    ans.innerHTML = '<div class="opts mc">' + t.options.map((o, i) =>
+      `<button type="button" class="opt" data-i="${i}">${M(o.s)}</button>`).join('') + '</div>';
+  } else {
+    ans.innerHTML = '<div class="opts">' +
+      '<button type="button" class="opt tf" data-v="1">Richtig</button>' +
+      '<button type="button" class="opt tf" data-v="0">Falsch</button></div>';
+  }
+}
+
+function setPadEnabled(on) { $('pad').querySelectorAll('.key').forEach(b => { b.disabled = !on; }); }
+
+/* ----- Antworten auswerten ----- */
+function submitInput() {
+  const s = serRow(E.root);
+  if (!s) { softMsg('Gib zuerst deine Lösung ein.'); return; }
+  let A;
+  try { A = parse(s); } catch (e) {
+    softMsg('Die Eingabe ist noch unvollständig. Sind alle Kästchen gefüllt und alle Klammern geschlossen?');
+    return;
+  }
+  handle(diagnose(A, S.task, true));
+}
+
+function onAnswerClick(e) {
+  const b = e.target.closest('.opt');
+  if (!b || b.disabled || S.done) return;
+  const t = S.task;
+  if (t.type === 'mc') {
+    const o = t.options[+b.dataset.i];
+    S.chosen = b;
+    handle(o.ok ? { ok: true } : diagnose(o.A, t, false));
+  } else {
+    const v = b.dataset.v === '1';
+    S.chosen = b;
+    handle({ ok: v === t.truth });
+  }
+}
+
+function handle(d) {
+  const t = S.task;
+  S.tries++;
+  if (d.ok) return finish(true);
+  // Gestuftes Feedback nur im Übungsmodus und nicht bei Richtig/Falsch
+  if (S.mode === 'practice' && S.tries === 1 && t.type !== 'tf') {
+    showHint(d);
+    return;
+  }
+  finish(false, d);
+}
+
+function showHint(d) {
+  const t = S.task;
+  if (t.type === 'mc' && S.chosen) { S.chosen.classList.add('is-bad'); S.chosen.disabled = true; }
+  if (t.type === 'input') $('editor').classList.add('is-bad');
+  fb('hint', d.unsimpl ? 'Fast!' : 'Noch nicht.', `<p>${d.hint}</p><p>Versuch es noch einmal.</p>`);
+}
+
+function finish(ok, d) {
+  const t = S.task;
+  S.done = true;
+  S.n++;
+  const lvlBefore = t.level;
+  if (ok) {
+    S.solved++;
+    S.down = 0;
+    if (S.tries === 1) { S.up++; S.firstTry++; }
+    if (S.mode === 'time') S.points += 10 * lvlBefore;
+  } else {
+    S.down++;
+    S.up = 0;
+  }
+  // Adaptive Stufe
+  const UP = S.mode === 'time' ? UP_TIME : UP_PRACTICE;
+  let msg = '';
+  if (S.up >= UP) {
+    S.up = 0;
+    if (S.level < 5) { S.level++; msg = `Stufe ${S.level} erreicht!`; }
+  }
+  if (S.down >= DOWN) {
+    S.down = 0;
+    if (S.level > 1) { S.level--; msg = `Zurück auf Stufe ${S.level}. Weiter so!`; }
+  }
+  S.maxLevel = Math.max(S.maxLevel, S.level);
+  if (msg) toast(msg);
+  updateHud();
+  lockAnswer(ok);
+
+  // Rückmeldung
+  const solution = t.type === 'tf'
+    ? `<p>${t.bank ? t.why : (t.truth ? 'Die Gleichung stimmt:' : 'Richtig wäre:')}</p>${t.bank ? '' : `<div class="chain">${M(t.chain)}</div>`}`
+    : `<div class="label">Lösungsweg</div><div class="chain">${M(t.chain)}</div>`;
+
+  if (S.mode === 'time') {
+    if (ok) fb('ok', `Richtig! +${10 * lvlBefore}`, '');
+    else {
+      const short = t.type === 'tf'
+        ? `<p>Die Gleichung ist ${t.truth ? 'richtig' : 'falsch'}.</p>`
+        : `<p>Lösung: ${M(t.ans)}</p>`;
+      fb('bad', 'Leider falsch.', short);
+    }
+    S.nextTO = setTimeout(nextTask, ok ? 900 : 2000);
+    return;
+  }
+
+  const btn = '<button type="button" class="btn btn-main" id="btn-next">Weiter</button>';
+  if (ok) {
+    const title = S.tries === 1 ? 'Richtig!' : 'Richtig, im zweiten Versuch!';
+    fb('ok', title, solution + btn);
+  } else {
+    const pre = d && d.unsimpl ? '<p>Richtig gerechnet, aber nicht vollständig vereinfacht.</p>'
+      : d && d.betrag ? '<p>Der Betrag fehlt.</p>' : '';
+    fb('bad', t.type === 'tf' ? 'Leider falsch.' : 'Leider nicht.', pre + solution + btn);
+  }
+  $('btn-next').addEventListener('click', nextTask);
+  $('btn-next').focus({ preventScroll: true });
+}
+
+function lockAnswer(ok) {
+  const t = S.task;
+  if (t.type === 'input') {
+    E.locked = true;
+    edRender();
+    $('editor').classList.remove('is-bad');
+    $('editor').classList.add('locked', ok ? 'is-ok' : 'is-bad');
+    setPadEnabled(false);
+  } else {
+    document.querySelectorAll('#answer .opt').forEach(b => {
+      b.disabled = true;
+      const right = t.type === 'mc' ? t.options[+b.dataset.i].ok : (b.dataset.v === '1') === t.truth;
+      if (right) b.classList.add('is-ok');
+      else if (b === S.chosen) b.classList.add('is-bad');
+    });
+  }
+}
+
+/* ----- Anzeigen ----- */
+function fb(kind, title, body) {
+  const el = $('fb');
+  el.className = 'fb ' + kind;
+  el.innerHTML = `<h3>${title}</h3>${body}`;
+}
+function softMsg(text) { const el = $('fb'); el.className = 'fb info'; el.innerHTML = `<p>${text}</p>`; }
+function clearSoftMsg() {
+  const el = $('fb');
+  if (el.classList.contains('info')) { el.className = 'fb'; el.innerHTML = ''; }
+  const ed = $('editor'); if (ed) ed.classList.remove('is-bad');
+}
+function toast(text) {
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(S.toastTO);
+  S.toastTO = setTimeout(() => el.classList.remove('show'), 2200);
+}
+function updateHud() {
+  $('hud-level').textContent = S.level;
+  $('hud-bars').querySelectorAll('span').forEach((b, i) => b.classList.toggle('on', i < S.level));
+  const UP = S.mode === 'time' ? UP_TIME : UP_PRACTICE;
+  $('hud-streak').innerHTML = S.level < 5
+    ? Array.from({ length: UP }, (_, i) => `<i class="${i < S.up ? 'on' : ''}"></i>`).join('')
+    : '';
+  $('hud-streak').setAttribute('aria-label', S.level < 5 ? `${S.up} von ${UP} richtig bis zur nächsten Stufe` : 'Höchste Stufe');
+  $('hud-points').innerHTML = `${S.points}<small>Pkt.</small>`;
+}
+
+/* ----- Ende ----- */
+function endGame(timeUp) {
+  if (S.finished) return;
+  S.finished = true;
+  clearTimers();
+  const quote = S.n ? Math.round(100 * S.solved / S.n) : 0;
+  let h;
+  if (S.mode === 'time') {
+    const old = loadHS();
+    const rec = timeUp && S.points > old;
+    if (rec) saveHS(S.points);
+    h = `<h2>${timeUp ? 'Zeit abgelaufen!' : 'Challenge abgebrochen'}</h2>
+      <div class="big">${S.points}<small>Punkte</small></div>
+      ${rec ? '<span class="newrec">Neuer Rekord!</span>' : `<p>Dein Rekord: <b>${Math.max(old, 0)}</b> Punkte${timeUp ? '' : ' (abgebrochene Runden zählen nicht)'}</p>`}
+      <dl class="stats">
+        <div><dt>Aufgaben</dt><dd>${S.n}</dd></div>
+        <div><dt>Richtig</dt><dd>${S.solved}</dd></div>
+        <div><dt>Trefferquote</dt><dd>${quote} %</dd></div>
+        <div><dt>Höchste Stufe</dt><dd>${S.maxLevel}</dd></div>
+      </dl>`;
+  } else {
+    h = `<h2>Übung beendet</h2>
+      <dl class="stats">
+        <div><dt>Aufgaben</dt><dd>${S.n}</dd></div>
+        <div><dt>Gelöst</dt><dd>${S.solved}</dd></div>
+        <div><dt>Im 1. Versuch</dt><dd>${S.firstTry}</dd></div>
+        <div><dt>Höchste Stufe</dt><dd>${S.maxLevel}</dd></div>
+      </dl>
+      <p>${S.n ? `Trefferquote: <b>${quote} %</b>` : 'Du hast noch keine Aufgabe bearbeitet.'}</p>`;
+  }
+  h += `<div class="end-actions">
+      <button type="button" class="btn btn-main" id="btn-again">Nochmal</button>
+      <button type="button" class="btn btn-ghost" id="btn-home">Zum Start</button></div>`;
+  $('end').innerHTML = h;
+  $('btn-again').addEventListener('click', () => startGame(S.mode));
+  $('btn-home').addEventListener('click', goHome);
+  show('scr-end');
+}
+
+function goHome() {
+  clearTimers();
+  const hs = loadHS();
+  $('record-start').innerHTML = hs ? `Dein Rekord: <b>${hs}</b> Punkte` : 'Noch kein Rekord. Leg los!';
+  show('scr-start');
+}
+
+/* ---------------------------------------------------------------------
+   START
+   --------------------------------------------------------------------- */
+function init() {
+  $('brand').innerHTML = RAD('Wurzelgesetze') + '-Trainer';
+  $('rules-list').innerHTML = [
+    ['Produktregel', 'r{a}·r{b} = r{a·b}', '<i>a</i>, <i>b</i> ≥ 0'],
+    ['Divisionsregel', 'r{a}:r{b} = r{a:b}', '<i>a</i> ≥ 0, <i>b</i> &gt; 0'],
+    ['Betrag', 'r{a²} = A{a}', '<i>a</i> ∈ ℝ'],
+  ].map(([n, f, c]) => `<dt>${n}</dt><dd>${M(f)}<span class="c">für ${c}</span></dd>`).join('');
+  buildPad();
+  $('pad').addEventListener('click', e => { const b = e.target.closest('.key'); if (b && !b.disabled) press(b.dataset.k); });
+  $('answer').addEventListener('click', onAnswerClick);
+  $('lvl-pick').addEventListener('click', e => {
+    const b = e.target.closest('button[data-l]');
+    if (!b) return;
+    S.startLevel = +b.dataset.l;
+    $('lvl-pick').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  });
+  $('go-practice').addEventListener('click', () => startGame('practice'));
+  $('go-time').addEventListener('click', () => startGame('time'));
+  $('btn-end').addEventListener('click', () => endGame(false));
+  document.addEventListener('keydown', onKey);
+  goHome();
+}
+init();
+</script>
