@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parabel-Quiz</title>
+<style>
+  :root {
+    --ink: #203149;
+    --muted: #63758a;
+    --blue: #6551c8;
+    --line: #e0e5ef;
+    --green: #18794e;
+    --red: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 22px 14px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, #f0edff, #f8fbff 55%, #e5f7f2);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .game {
+    width: min(100%, 640px);
+    padding: clamp(22px, 5vw, 38px);
+    background: white;
+    border: 1px solid #e7edf5;
+    border-radius: 24px;
+    box-shadow: 0 18px 50px #193c6418;
+  }
+  .top, .bottom, .progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    padding: 7px 12px;
+    border-radius: 99px;
+    background: #f0edff;
+    color: var(--blue);
+    font-size: .85rem;
+    font-weight: 750;
+  }
+  .score, .streak, .progress-label {
+    color: var(--muted);
+    font-size: .9rem;
+    font-weight: 650;
+  }
+  h1 { margin: 18px 0 4px; font-size: clamp(1.9rem, 7vw, 2.7rem); letter-spacing: -1.3px; }
+  .intro { margin: 0; color: var(--muted); }
+  .progress { margin: 24px 0; }
+  .progress-label { margin-bottom: 8px; }
+  .track { height: 9px; overflow: hidden; border-radius: 99px; background: #edf1f6; }
+  .bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6551c8, #35b892); transition: width .25s; }
+  .prompt { margin: 20px 0 9px; color: var(--muted); font-weight: 650; }
+  .task {
+    min-height: 100px;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #fbfdff;
+    text-align: center;
+    white-space: pre-line;
+    font-size: clamp(1.25rem, 5vw, 1.8rem);
+    font-weight: 750;
+    line-height: 1.5;
+  }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 17px; }
+  button { font: inherit; }
+  .choice {
+    min-height: 56px;
+    padding: 11px 8px;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 1.03rem;
+    font-weight: 700;
+  }
+  .choice:hover:not(:disabled) { border-color: #a99bea; background: #faf9ff; }
+  .choice:focus-visible, .primary:focus-visible { outline: 3px solid #a99bea; outline-offset: 3px; }
+  .choice:disabled { cursor: default; }
+  .choice.correct { border-color: #53b487; background: #eaf8f0; color: var(--green); }
+  .choice.wrong { border-color: #e39a94; background: #fff0ee; color: var(--red); }
+  .feedback { min-height: 48px; margin: 14px 2px 0; color: var(--muted); line-height: 1.45; }
+  .feedback.good { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+  .primary {
+    padding: 11px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--blue);
+    color: white;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .primary:hover { background: #5140ad; }
+  .finished { padding: 20px 4px 6px; text-align: center; }
+  .finished .emoji { font-size: 3rem; }
+  .finished h2 { margin: 8px 0; font-size: 1.8rem; }
+  .finished p { color: var(--muted); line-height: 1.5; }
+  @media (max-width: 420px) {
+    .choices { grid-template-columns: 1fr; gap: 8px; }
+    .choice { min-height: 49px; }
+  }
+</style>
+</head>
+<body>
+<main class="game">
+  <div class="top">
+    <span class="badge">📐 Mathe-Mini-Spiel</span>
+    <span class="score" id="score">Punkte: 0</span>
+  </div>
+  <h1>Parabel-Quiz</h1>
+  <p class="intro">Knacke die Aufgaben rund um quadratische Funktionen!</p>
+
+  <section id="play">
+    <div class="progress">
+      <div class="progress-label">
+        <span id="round">Aufgabe 1 von 10</span>
+        <span id="category">Scheitelpunkt</span>
+      </div>
+      <div class="track"><div class="bar" id="bar"></div></div>
+    </div>
+
+    <p class="prompt" id="prompt"></p>
+    <div class="task" id="task"></div>
+    <div class="choices" id="choices"></div>
+    <p class="feedback" id="feedback" aria-live="polite">Wähle die richtige Antwort aus.</p>
+    <div class="bottom">
+      <span class="streak" id="streak">🔥 Serie: 0</span>
+      <button class="primary" id="next" hidden>Nächste Aufgabe →</button>
+    </div>
+  </section>
+
+  <section class="finished" id="finished" hidden></section>
+</main>
+
+<script>
+(() => {
+  const total = 10;
+  let questionNo = 0;
+  let score = 0;
+  let streak = 0;
+  let correctAnswer = "";
+
+  const $ = id => document.getElementById(id);
+  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = items => items[Math.floor(Math.random() * items.length)];
+  const shuffle = items => items.sort(() => Math.random() - 0.5);
+  const fmt = n => n < 0 ? `−${Math.abs(n)}` : String(n);
+
+  function optionsFor(answer, candidates) {
+    const options = [...new Set([String(answer), ...candidates.map(String)])];
+
+    while (options.length < 4) {
+      let extra;
+
+      if (answer.startsWith("(") && answer.includes("|")) {
+        // Weitere Scheitelpunkt-Koordinaten
+        extra = `(${fmt(rand(-6, 6))} | ${fmt(rand(-6, 6))})`;
+      } else if (answer.startsWith("x = ") && answer.includes(" und ")) {
+        // Weitere Paare von Nullstellen
+        let a = rand(-6, 6);
+        let b = rand(-6, 6);
+        while (a === b) b = rand(-6, 6);
+        extra = `x = ${fmt(a)} und x = ${fmt(b)}`;
+      } else if (answer.startsWith("x = ")) {
+        // Weitere mögliche Symmetrieachsen
+        extra = `x = ${fmt(rand(-8, 8))}`;
+      } else if (/^-?\d+$/.test(answer)) {
+        // Weitere Zahlenwerte
+        extra = String(rand(-50, 50));
+      } else {
+        // Alternative Öffnungsrichtungen
+        extra = pick(["Nach oben", "Nach unten", "Nach links", "Nach rechts"]);
+      }
+
+      if (!options.includes(extra)) options.push(extra);
+    }
+
+    return shuffle(options);
+  }
+
+
+  function polynomial(a, b, c) {
+    let text = a === 1 ? "x²" : a === -1 ? "−x²" : `${a}x²`;
+    if (b !== 0) {
+      text += b > 0 ? ` + ${b === 1 ? "" : b}x` : ` − ${Math.abs(b) === 1 ? "" : Math.abs(b)}x`;
+    }
+    if (c !== 0) text += c > 0 ? ` + ${c}` : ` − ${Math.abs(c)}`;
+    return text;
+  }
+
+  function vertexForm(a, h, k) {
+    const bracket = h > 0 ? `(x − ${h})` : h < 0 ? `(x + ${Math.abs(h)})` : "x";
+    const coefficient = a === 1 ? "" : a === -1 ? "−" : String(a);
+    const constant = k > 0 ? ` + ${k}` : k < 0 ? ` − ${Math.abs(k)}` : "";
+    return `f(x) = ${coefficient}${bracket}²${constant}`;
+  }
+
+  function makeQuestion() {
+    const kind = rand(0, 4);
+
+    if (kind === 0) {
+      const a = pick([-3, -2, -1, 1, 2, 3]);
+      const h = rand(-5, 5);
+      const k = rand(-6, 6);
+      const answer = `(${fmt(h)} | ${fmt(k)})`;
+      return {
+        category: "Scheitelpunkt",
+        prompt: "Bestimme den Scheitelpunkt der Parabel:",
+        task: vertexForm(a, h, k),
+        answer,
+        options: optionsFor(answer, [
+          `(${fmt(-h)} | ${fmt(k)})`,
+          `(${fmt(h)} | ${fmt(-k)})`,
+          `(${fmt(k)} | ${fmt(h)})`
+        ])
+      };
+    }
+
+    if (kind === 1) {
+      const a = pick([-3, -2, -1, 1, 2, 3]);
+      const h = rand(-5, 5);
+      const k = rand(-6, 6);
+      const answer = `x = ${fmt(h)}`;
+      return {
+        category: "Symmetrieachse",
+        prompt: "Welche Gleichung hat die Symmetrieachse?",
+        task: vertexForm(a, h, k),
+        answer,
+        options: optionsFor(answer, [
+          `x = ${fmt(-h)}`,
+          `y = ${fmt(k)}`,
+          `x = ${fmt(k)}`
+        ])
+      };
+    }
+
+    if (kind === 2) {
+      const a = pick([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]);
+      const answer = a > 0 ? "Nach oben" : "Nach unten";
+      return {
+        category: "Öffnungsrichtung",
+        prompt: "In welche Richtung ist die Parabel geöffnet?",
+        task: `f(x) = ${polynomial(a, rand(-5, 5), rand(-6, 6))}`,
+        answer,
+        options: optionsFor(answer, [
+          a > 0 ? "Nach unten" : "Nach oben",
+          "Nach links",
+          "Nach rechts"
+        ])
+      };
+    }
+
+    if (kind === 3) {
+      let r1 = rand(-5, 5);
+      let r2 = rand(-5, 5);
+      while (r2 === r1) r2 = rand(-5, 5);
+      const a = pick([-3, -2, -1, 1, 2, 3]);
+      const factor = r => r >= 0 ? `(x − ${r})` : `(x + ${Math.abs(r)})`;
+      const roots = [r1, r2].sort((x, y) => x - y);
+      const answer = `x = ${fmt(roots[0])} und x = ${fmt(roots[1])}`;
+      const distractors = [
+        `x = ${fmt(roots[0] + 1)} und x = ${fmt(roots[1])}`,
+        `x = ${fmt(roots[0])} und x = ${fmt(roots[1] + 1)}`,
+        `x = ${fmt(-roots[0])} und x = ${fmt(-roots[1])}`
+      ];
+      return {
+        category: "Nullstellen",
+        prompt: "Bestimme die Nullstellen der Funktion:",
+        task: `f(x) = ${a}${factor(r1)}${factor(r2)}`,
+        answer,
+        options: optionsFor(answer, distractors)
+      };
+    }
+
+    const a = pick([-3, -2, -1, 1, 2, 3]);
+    const b = rand(-5, 5);
+    const c = rand(-6, 6);
+    const x = rand(-4, 4);
+    const answer = a * x * x + b * x + c;
+    return {
+      category: "Funktionswert",
+      prompt: `Berechne den Funktionswert für x = ${x}:`,
+      task: `f(x) = ${polynomial(a, b, c)}\nf(${x}) = ?`,
+      answer,
+      options: optionsFor(answer, [
+        a * x + b * x + c,
+        a * x * x - b * x + c,
+        a * x * x + b + c
+      ])
+    };
+  }
+
+  function showQuestion() {
+    if (questionNo >= total) return finish();
+
+    const q = makeQuestion();
+    correctAnswer = String(q.answer);
+    $("round").textContent = `Aufgabe ${questionNo + 1} von ${total}`;
+    $("category").textContent = q.category;
+    $("bar").style.width = `${questionNo / total * 100}%`;
+    $("prompt").textContent = q.prompt;
+    $("task").textContent = q.task;
+    $("feedback").textContent = "Wähle die richtige Antwort aus.";
+    $("feedback").className = "feedback";
+    $("next").hidden = true;
+    $("choices").replaceChildren();
+
+    q.options.forEach(option => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "choice";
+      button.textContent = option;
+      button.addEventListener("click", () => checkAnswer(button, option));
+      $("choices").appendChild(button);
+    });
+  }
+
+  function checkAnswer(button, choice) {
+    const buttons = [...$("choices").children];
+    buttons.forEach(item => item.disabled = true);
+
+    if (String(choice) === correctAnswer) {
+      button.classList.add("correct");
+      score++;
+      streak++;
+      $("feedback").textContent = pick([
+        "Richtig! Du hast die Parabel geknackt. ✨",
+        "Genau – stark gerechnet! 🎯",
+        "Stimmt! Weiter so. 🚀"
+      ]);
+      $("feedback").className = "feedback good";
+    } else {
+      button.classList.add("wrong");
+      streak = 0;
+      const right = buttons.find(item => item.textContent === correctAnswer);
+      if (right) right.classList.add("correct");
+      $("feedback").textContent = `Knapp daneben. Richtig ist: ${correctAnswer}.`;
+      $("feedback").className = "feedback bad";
+    }
+
+    $("score").textContent = `Punkte: ${score}`;
+    $("streak").textContent = `🔥 Serie: ${streak}`;
+    questionNo++;
+    $("bar").style.width = `${questionNo / total * 100}%`;
+    $("next").hidden = false;
+    $("next").textContent = questionNo === total ? "Ergebnis ansehen" : "Nächste Aufgabe →";
+  }
+
+  function finish() {
+    $("play").hidden = true;
+    $("finished").hidden = false;
+
+    const message = score === total
+      ? "Perfekt – du bist ein Parabel-Profi!"
+      : score >= 7
+        ? "Richtig stark! Die Grundlagen sitzen."
+        : score >= 4
+          ? "Guter Anfang – mit etwas Übung wirst du noch sicherer."
+          : "Weiterüben lohnt sich – du schaffst das!";
+
+    $("finished").innerHTML = `
+      <div class="emoji">${score === total ? "🏆" : score >= 7 ? "🌟" : "💪"}</div>
+      <h2>Runde geschafft!</h2>
+      <p><strong>${score} von ${total} Punkten</strong><br>${message}</p>
+      <button class="primary" id="again">Nochmal spielen</button>`;
+    $("again").addEventListener("click", restart);
+  }
+
+  function restart() {
+    questionNo = 0;
+    score = 0;
+    streak = 0;
+    $("score").textContent = "Punkte: 0";
+    $("streak").textContent = "🔥 Serie: 0";
+    $("play").hidden = false;
+    $("finished").hidden = true;
+    showQuestion();
+  }
+
+  $("next").addEventListener("click", showQuestion);
+  showQuestion();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lineare-Funktionen-Challenge</title>
+<style>
+  :root {
+    --ink: #18324b; --muted: #62768a; --blue: #315fce;
+    --line: #dce5ef; --green: #18794e; --red: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 22px 14px;
+    display: grid; place-items: center;
+    background: linear-gradient(145deg, #eaf1ff, #f5fbff 55%, #e8f7f1);
+    color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .game {
+    width: min(100%, 620px); padding: clamp(22px, 5vw, 38px);
+    background: white; border: 1px solid #e7edf5; border-radius: 24px;
+    box-shadow: 0 18px 50px #193c6418;
+  }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .badge { padding: 7px 12px; border-radius: 99px; background: #eef3ff; color: var(--blue); font-size: .85rem; font-weight: 750; }
+  .score, .streak { color: var(--muted); font-size: .92rem; font-weight: 650; }
+  h1 { margin: 18px 0 4px; font-size: clamp(1.9rem, 7vw, 2.7rem); letter-spacing: -1.3px; }
+  .intro { margin: 0; color: var(--muted); }
+  .progress { margin: 24px 0; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: .88rem; }
+  .track { height: 9px; overflow: hidden; border-radius: 99px; background: #edf1f6; }
+  .bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #315fce, #35b892); transition: width .25s; }
+  .prompt { margin: 20px 0 9px; color: var(--muted); font-weight: 650; }
+  .task {
+    min-height: 94px; display: grid; place-items: center; padding: 16px;
+    border: 1px solid var(--line); border-radius: 18px; background: #fbfdff;
+    text-align: center; font-size: clamp(1.35rem, 5.5vw, 1.9rem); font-weight: 750;
+  }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 17px; }
+  button { font: inherit; }
+  .choice {
+    min-height: 56px; padding: 11px 8px; border: 2px solid var(--line);
+    border-radius: 14px; background: white; color: var(--ink);
+    cursor: pointer; font-size: 1.03rem; font-weight: 700;
+  }
+  .choice:hover:not(:disabled) { border-color: #91b1ef; background: #f7faff; }
+  .choice:focus-visible, .primary:focus-visible { outline: 3px solid #88adff; outline-offset: 3px; }
+  .choice:disabled { cursor: default; }
+  .choice.correct { border-color: #53b487; background: #eaf8f0; color: var(--green); }
+  .choice.wrong { border-color: #e39a94; background: #fff0ee; color: var(--red); }
+  .feedback { min-height: 48px; margin: 14px 2px 0; color: var(--muted); line-height: 1.45; }
+  .feedback.good { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+  .bottom { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 7px; }
+  .primary {
+    padding: 11px 16px; border: 0; border-radius: 12px;
+    background: var(--blue); color: white; font-weight: 750; cursor: pointer;
+  }
+  .primary:hover { background: #234bab; }
+  .finished { padding: 20px 4px 6px; text-align: center; }
+  .finished .emoji { font-size: 3rem; }
+  .finished h2 { margin: 8px 0; font-size: 1.8rem; }
+  .finished p { color: var(--muted); line-height: 1.5; }
+  @media (max-width: 420px) {
+    .choices { grid-template-columns: 1fr; gap: 8px; }
+    .choice { min-height: 49px; }
+  }
+</style>
+</head>
+<body>
+<main class="game">
+  <div class="top">
+    <span class="badge">📈 Mathe-Mini-Spiel</span>
+    <span class="score" id="score">Punkte: 0</span>
+  </div>
+  <h1>Lineare-Funktionen-Challenge</h1>
+  <p class="intro">Knacke die Aufgaben – eine nach der anderen!</p>
+
+  <section id="play">
+    <div class="progress">
+      <div class="progress-label">
+        <span id="round">Aufgabe 1 von 10</span>
+        <span id="category">Funktionswert</span>
+      </div>
+      <div class="track"><div class="bar" id="bar"></div></div>
+    </div>
+    <p class="prompt" id="prompt">Berechne den Funktionswert:</p>
+    <div class="task" id="task"></div>
+    <div class="choices" id="choices"></div>
+    <p class="feedback" id="feedback" aria-live="polite">Wähle die richtige Antwort aus.</p>
+    <div class="bottom">
+      <span class="streak" id="streak">🔥 Serie: 0</span>
+      <button class="primary" id="next" hidden>Nächste Aufgabe →</button>
+    </div>
+  </section>
+  <section class="finished" id="finished" hidden></section>
+</main>
+
+<script>
+(() => {
+  const total = 10;
+  let questionNo = 0, score = 0, streak = 0, correctAnswer = "";
+  const $ = id => document.getElementById(id);
+  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const signed = n => n < 0 ? `− ${Math.abs(n)}` : `+ ${n}`;
+
+  function functionText(m, b) {
+    const xPart = m === 1 ? "x" : m === -1 ? "−x" : `${m}x`;
+    return `f(x) = ${xPart} ${signed(b)}`;
+  }
+
+  function optionsFor(answer, candidates) {
+    const options = [...new Set([String(answer), ...candidates.map(String)])];
+    while (options.length < 4) {
+      const candidate = String(rand(-15, 15));
+      if (!options.includes(candidate)) options.push(candidate);
+    }
+    return options.slice(0, 4).sort(() => Math.random() - 0.5);
+  }
+
+  function makeQuestion() {
+    const kind = rand(0, 2);
+    const m = pick([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]);
+    const b = rand(-8, 8);
+
+    if (kind === 0) {
+      const x = rand(-5, 5);
+      const answer = m * x + b;
+      return {
+        category: "Funktionswert",
+        prompt: `Berechne den Funktionswert für x = ${x}:`,
+        task: `${functionText(m, b)}<br>f(${x}) = ?`,
+        answer,
+        options: optionsFor(answer, [m * x - b, m + x + b, m * (x + b)])
+      };
+    }
+
+    if (kind === 1) {
+      const askSlope = Math.random() < 0.5;
+      const answer = askSlope ? m : b;
+      return {
+        category: askSlope ? "Steigung" : "y-Achsenabschnitt",
+        prompt: askSlope ? "Wie groß ist die Steigung m?" : "Wie groß ist der y-Achsenabschnitt b?",
+        task: functionText(m, b),
+        answer,
+        options: optionsFor(answer, [askSlope ? b : m, -answer, answer + 2])
+      };
+    }
+
+    const zero = rand(-5, 5);
+    const root = zero === 0 ? 3 : zero;
+    const intercept = -m * root;
+    return {
+      category: "Nullstelle",
+      prompt: "Für welchen x-Wert ist f(x) = 0?",
+      task: `${functionText(m, intercept)}<br>Gesucht: die Nullstelle`,
+      answer: root,
+      options: optionsFor(root, [root + 1, root - 1, -root])
+    };
+  }
+
+  function showQuestion() {
+    if (questionNo >= total) return finish();
+    const q = makeQuestion();
+    correctAnswer = String(q.answer);
+    $("round").textContent = `Aufgabe ${questionNo + 1} von ${total}`;
+    $("category").textContent = q.category;
+    $("bar").style.width = `${questionNo / total * 100}%`;
+    $("prompt").textContent = q.prompt;
+    $("task").innerHTML = q.task;
+    $("feedback").textContent = "Wähle die richtige Antwort aus.";
+    $("feedback").className = "feedback";
+    $("next").hidden = true;
+    $("choices").replaceChildren();
+
+    q.options.forEach(option => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "choice";
+      button.textContent = option;
+      button.addEventListener("click", () => checkAnswer(button, option));
+      $("choices").appendChild(button);
+    });
+  }
+
+  function checkAnswer(button, choice) {
+    const buttons = [...$("choices").children];
+    buttons.forEach(item => item.disabled = true);
+
+    if (String(choice) === correctAnswer) {
+      button.classList.add("correct");
+      score++;
+      streak++;
+      $("feedback").textContent = pick([
+        "Richtig! Du hast den Zusammenhang geknackt. ✨",
+        "Genau – stark gerechnet! 🎯",
+        "Stimmt! Weiter so. 🚀"
+      ]);
+      $("feedback").className = "feedback good";
+    } else {
+      button.classList.add("wrong");
+      streak = 0;
+      const correctButton = buttons.find(item => item.textContent === correctAnswer);
+      if (correctButton) correctButton.classList.add("correct");
+      $("feedback").textContent = `Knapp daneben. Die richtige Antwort ist ${correctAnswer}.`;
+      $("feedback").className = "feedback bad";
+    }
+
+    $("score").textContent = `Punkte: ${score}`;
+    $("streak").textContent = `🔥 Serie: ${streak}`;
+    questionNo++;
+    $("bar").style.width = `${questionNo / total * 100}%`;
+    $("next").hidden = false;
+    $("next").textContent = questionNo === total ? "Ergebnis ansehen" : "Nächste Aufgabe →";
+  }
+
+  function finish() {
+    $("play").hidden = true;
+    $("finished").hidden = false;
+    const message = score === total ? "Perfekt – du bist ein Profi für lineare Funktionen!" :
+      score >= 7 ? "Richtig stark! Die Grundlagen sitzen schon gut." :
+      score >= 4 ? "Guter Anfang – ein bisschen Übung bringt dich weiter." :
+      "Weiterüben lohnt sich – du schaffst das!";
+    $("finished").innerHTML = `
+      <div class="emoji">${score === total ? "🏆" : score >= 7 ? "🌟" : "💪"}</div>
+      <h2>Runde geschafft!</h2>
+      <p><strong>${score} von ${total} Punkten</strong><br>${message}</p>
+      <button class="primary" id="again">Nochmal spielen</button>`;
+    $("again").addEventListener("click", restart);
+  }
+
+  function restart() {
+    questionNo = 0;
+    score = 0;
+    streak = 0;
+    $("score").textContent = "Punkte: 0";
+    $("streak").textContent = "🔥 Serie: 0";
+    $("play").hidden = false;
+    $("finished").hidden = true;
+    showQuestion();
+  }
+
+  $("next").addEventListener("click", showQuestion);
+  showQuestion();
+})();
+</script>
+</body>
+</html>

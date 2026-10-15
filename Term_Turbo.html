@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Term-Turbo</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #17324d;
+    --muted: #60758b;
+    --blue: #2764dc;
+    --pale: #eef4ff;
+    --line: #dce6f2;
+    --green: #18794e;
+    --red: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 24px 16px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, #e9f2ff, #f8fbff 55%, #e6f7f2);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .game {
+    width: min(100%, 620px);
+    padding: clamp(22px, 5vw, 38px);
+    background: white;
+    border: 1px solid #e7edf5;
+    border-radius: 24px;
+    box-shadow: 0 18px 50px #193c6418;
+  }
+  .topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .badge { padding: 7px 12px; border-radius: 999px; background: var(--pale); color: var(--blue); font-size: .85rem; font-weight: 700; }
+  .score { color: var(--muted); font-size: .93rem; font-weight: 650; }
+  h1 { margin: 18px 0 4px; font-size: clamp(2rem, 7vw, 2.8rem); letter-spacing: -1.5px; }
+  .sub { margin: 0; color: var(--muted); }
+  .progress-wrap { margin: 24px 0; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: .88rem; }
+  .track { height: 9px; overflow: hidden; border-radius: 99px; background: #edf1f6; }
+  .bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2764dc, #35b892); transition: width .3s ease; }
+  .prompt { margin: 25px 0 8px; color: var(--muted); font-weight: 650; }
+  .task {
+    min-height: 86px;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #fbfdff;
+    font-size: clamp(1.55rem, 6vw, 2.15rem);
+    font-weight: 750;
+    letter-spacing: .3px;
+    text-align: center;
+  }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  button { font: inherit; }
+  .choice {
+    min-height: 58px;
+    padding: 12px 10px;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 1.08rem;
+    font-weight: 700;
+    transition: transform .12s, border-color .12s, background .12s;
+  }
+  .choice:hover:not(:disabled) { transform: translateY(-2px); border-color: #91b1ef; background: #f7faff; }
+  .choice:focus-visible, .restart:focus-visible { outline: 3px solid #88adff; outline-offset: 3px; }
+  .choice:disabled { cursor: default; }
+  .choice.correct { border-color: #53b487; background: #eaf8f0; color: var(--green); }
+  .choice.wrong { border-color: #e39a94; background: #fff0ee; color: var(--red); }
+  .feedback { min-height: 52px; margin: 15px 2px 0; color: var(--muted); line-height: 1.45; }
+  .feedback.good { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+  .bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .streak { color: var(--muted); font-size: .92rem; }
+  .restart {
+    padding: 11px 17px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--blue);
+    color: white;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .restart:hover { background: #174fb8; }
+  .finished { padding: 20px 4px 6px; text-align: center; }
+  .finished .emoji { font-size: 3rem; }
+  .finished h2 { margin: 8px 0; font-size: 1.8rem; }
+  .finished p { color: var(--muted); line-height: 1.5; }
+  @media (max-width: 420px) {
+    .choices { grid-template-columns: 1fr; gap: 9px; }
+    .choice { min-height: 50px; }
+  }
+</style>
+</head>
+<body>
+<main class="game" aria-live="polite">
+  <div class="topline">
+    <span class="badge">✦ Mathe-Mini-Spiel</span>
+    <span class="score" id="score">Punkte: 0</span>
+  </div>
+  <h1>Term-Turbo</h1>
+  <p class="sub">Bring Terme in Form – eine Aufgabe nach der anderen.</p>
+  <section id="play">
+    <div class="progress-wrap">
+      <div class="progress-label"><span id="round">Aufgabe 1 von 10</span><span id="type">Zusammenfassen</span></div>
+      <div class="track"><div class="bar" id="bar"></div></div>
+    </div>
+    <p class="prompt" id="prompt">Vereinfache den Term:</p>
+    <div class="task" id="task"></div>
+    <div class="choices" id="choices"></div>
+    <p class="feedback" id="feedback" aria-live="polite">Wähle die richtige Antwort aus.</p>
+    <div class="bottom">
+      <span class="streak" id="streak">🔥 Serie: 0</span>
+      <button class="restart" id="next" hidden>Nächste Aufgabe →</button>
+    </div>
+  </section>
+  <section class="finished" id="finished" hidden></section>
+</main>
+
+<script>
+(() => {
+  const total = 10;
+  let questionNo = 0, score = 0, streak = 0, currentAnswer = "";
+  const $ = id => document.getElementById(id);
+  const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function term(a, b) {
+    let first = a === 0 ? "" : (a === 1 ? "x" : a === -1 ? "−x" : `${a}x`);
+    if (b === 0) return first || "0";
+    const constant = Math.abs(b);
+    if (!first) return b < 0 ? `−${constant}` : `${constant}`;
+    return `${first} ${b < 0 ? "−" : "+"} ${constant}`;
+  }
+  function uniqueOptions(answer, candidates) {
+    const options = [...new Set([answer, ...candidates].filter(x => x !== undefined && x !== ""))];
+    while (options.length < 4) options.push(`${rand(2, 9)}x + ${rand(1, 9)}`);
+    return options.slice(0, 4).sort(() => Math.random() - 0.5);
+  }
+  function makeQuestion() {
+    const kind = rand(0, 2);
+    if (kind === 0) {
+      const a = rand(2, 7), c = rand(1, 6), b = rand(-8, 8), d = rand(-8, 8);
+      const answer = term(a + c, b + d);
+      return {
+        type: "Zusammenfassen", prompt: "Fasse gleichartige Terme zusammen:",
+        task: `${term(a, b)} + ${term(c, d)}`,
+        answer,
+        options: uniqueOptions(answer, [term(a - c, b + d), term(a + c, b - d), term(a, b + c + d)])
+      };
+    }
+    if (kind === 1) {
+      const a = rand(2, 5), b = rand(1, 6), c = rand(-6, 6);
+      const answer = term(a * b, a * c);
+      return {
+        type: "Ausmultiplizieren", prompt: "Multipliziere die Klammer aus:",
+        task: `${a}(${term(b, c)})`, answer,
+        options: uniqueOptions(answer, [term(a + b, a * c), term(a * b, c), term(a * b, a + c)])
+      };
+    }
+    const g = rand(2, 5), m = rand(1, 5), n = rand(1, 6);
+    const answer = `${g}(${term(m, n)})`;
+    const expanded = term(g * m, g * n);
+    return {
+      type: "Ausklammern", prompt: "Klammere den größten gemeinsamen Faktor aus:",
+      task: expanded, answer,
+      options: uniqueOptions(answer, [
+        `${m}(${term(g, n)})`,
+        `${g}(${term(m, -n)})`,
+        `${g * m}(x + ${n})`
+      ])
+    };
+  }
+  function showQuestion() {
+    if (questionNo >= total) return finish();
+    const q = makeQuestion();
+    currentAnswer = q.answer;
+    $("round").textContent = `Aufgabe ${questionNo + 1} von ${total}`;
+    $("type").textContent = q.type;
+    $("bar").style.width = `${(questionNo / total) * 100}%`;
+    $("prompt").textContent = q.prompt;
+    $("task").textContent = q.task;
+    $("feedback").textContent = "Wähle die richtige Antwort aus.";
+    $("feedback").className = "feedback";
+    $("next").hidden = true;
+    $("choices").replaceChildren();
+    q.options.forEach(option => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "choice";
+      button.textContent = option;
+      button.addEventListener("click", () => answer(button, option));
+      $("choices").appendChild(button);
+    });
+  }
+  function answer(button, choice) {
+    const buttons = [...$("choices").children];
+    buttons.forEach(b => b.disabled = true);
+    if (choice === currentAnswer) {
+      button.classList.add("correct");
+      score++;
+      streak++;
+      $("feedback").textContent = pick(["Richtig! Stark gerechnet. ✨", "Genau! Weiter so. 🎯", "Yes – das stimmt! 🚀"]);
+      $("feedback").className = "feedback good";
+    } else {
+      button.classList.add("wrong");
+      streak = 0;
+      const correctButton = buttons.find(b => b.textContent === currentAnswer);
+      if (correctButton) correctButton.classList.add("correct");
+      $("feedback").textContent = `Knapp daneben. Richtig wäre: ${currentAnswer}`;
+      $("feedback").className = "feedback bad";
+    }
+    $("score").textContent = `Punkte: ${score}`;
+    $("streak").textContent = `🔥 Serie: ${streak}`;
+    questionNo++;
+    $("bar").style.width = `${(questionNo / total) * 100}%`;
+    $("next").hidden = false;
+    $("next").textContent = questionNo === total ? "Ergebnis ansehen" : "Nächste Aufgabe →";
+  }
+  function finish() {
+    $("play").hidden = true;
+    $("finished").hidden = false;
+    const message = score === total ? "Term-Meister:in! Alles richtig!" :
+      score >= 7 ? "Richtig stark – du bist auf Kurs!" :
+      score >= 4 ? "Guter Anfang – mit etwas Übung wirst du noch sicherer." :
+      "Übung macht den Unterschied – versuch es gleich noch einmal!";
+    $("finished").innerHTML = `<div class="emoji">${score === total ? "🏆" : score >= 7 ? "🌟" : "💪"}</div>
+      <h2>Runde geschafft!</h2>
+      <p><strong>${score} von ${total} Punkten</strong><br>${message}</p>
+      <button class="restart" id="again">Nochmal spielen</button>`;
+    $("again").addEventListener("click", restart);
+  }
+  function restart() {
+    questionNo = 0; score = 0; streak = 0;
+    $("score").textContent = "Punkte: 0";
+    $("streak").textContent = "🔥 Serie: 0";
+    $("play").hidden = false;
+    $("finished").hidden = true;
+    showQuestion();
+  }
+  $("next").addEventListener("click", showQuestion);
+  showQuestion();
+})();
+</script>
+</body>
+</html>
