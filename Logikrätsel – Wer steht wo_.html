@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logikrätsel – Wer steht wo?</title>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --text: #f6f2e8;
+    --soft: #c9cde8;
+    --panel: rgba(255,255,255,.08);
+    --accent: #ffc857;
+    --ok: #8be3c6;
+    --warn: #ffb36b;
+    --sky-top: #0c0f26;
+    --sky-bottom: #1d2250;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body[data-theme="tiere"]    { --sky-top:#12281c; --sky-bottom:#2b5a3d; --accent:#f4d35e; }
+  body[data-theme="eis"]      { --sky-top:#3a1d4a; --sky-bottom:#7a3f7d; --accent:#ffd1e3; }
+  body[data-theme="laternen"] { --sky-top:#0c0f26; --sky-bottom:#1d2250; --accent:#ffc857; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom)) fixed;
+    color: var(--text);
+    font-family: "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+  }
+  main { max-width: 1280px; width: 100%; margin: 0 auto; padding: 10px 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  h1 { margin: 0; font-size: clamp(1.5rem, 4vh, 2.3rem); }
+  h2 { margin: 0; font-size: clamp(1.3rem, 3.4vh, 2rem); text-align: center; }
+  .rule { margin: 0; color: var(--soft); font-size: clamp(1rem, 2.2vh, 1.3rem); line-height: 1.4; text-align: center; }
+
+  /* Bedienknöpfe */
+  .btn {
+    font: inherit; color: var(--text); cursor: pointer;
+    background: var(--panel); border: 2px solid rgba(255,255,255,.2);
+    border-radius: 999px; padding: 10px 22px; min-height: 56px;
+    font-size: clamp(1rem, 2.4vh, 1.35rem); touch-action: manipulation;
+    transition: background .15s, transform .1s;
+  }
+  .btn:hover { background: rgba(255,255,255,.16); }
+  .btn:active { transform: scale(.97); }
+  .btn[aria-pressed="true"] { background: var(--accent); color: #231b05; border-color: var(--accent); font-weight: 700; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, .slot:focus-visible { outline: 4px solid var(--ok); outline-offset: 3px; }
+  .levels, .bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+
+  /* Aufteilung: Hinweise links, Spielfläche rechts */
+  .layout { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 880px) {
+    .layout { grid-template-columns: minmax(300px, 36%) 1fr; align-items: start; }
+  }
+  .scene { order: -1; }
+  @media (min-width: 880px) { .scene { order: 0; } }
+  .panel { background: rgba(0,0,0,.2); border-radius: 22px; padding: 14px; }
+
+  /* Hinweiskarten */
+  .clues h2 { margin-bottom: 10px; }
+  #clueList { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .clue {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    padding: 12px 14px; min-height: 60px; border-radius: 16px;
+    background: var(--panel); border: 3px solid rgba(255,255,255,.14);
+    color: var(--text); font: inherit; font-size: clamp(1.05rem, 2.4vh, 1.45rem); line-height: 1.3;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .clue .box { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--soft); display: grid; place-items: center; font-weight: 700; color: transparent; }
+  .clue[aria-pressed="true"] { opacity: .62; }
+  .clue[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); color: #231b05; }
+  .clue .badge { margin-left: auto; flex: none; font-size: .8em; padding-left: 6px; }
+  .clue.ok  { border-color: var(--ok); }
+  .clue.bad { border-color: var(--warn); background: rgba(255,179,107,.16); }
+  .clue.hint { outline: 4px solid var(--ok); outline-offset: 3px; animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { outline-color: var(--ok); } 50% { outline-color: transparent; } }
+
+  /* Spielfläche */
+  .scene { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .row {
+    --n: 3;
+    display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 10px; align-items: start;
+    width: 100%; max-width: calc(var(--n) * 200px + (var(--n) - 1) * 10px); margin-inline: auto;
+  }
+  #slots { padding-top: 26px; }
+
+  .cell { container-type: inline-size; aspect-ratio: 4 / 5; position: relative; border-radius: 18px; }
+  .slot { background: rgba(255,255,255,.07); border: 3px dashed rgba(255,255,255,.3); }
+  .slot.has { border-style: solid; background: rgba(255,255,255,.14); }
+  .home { border: 2px dashed rgba(255,255,255,.14); }
+
+  /* Haus (Tiere) */
+  body[data-theme="tiere"] .slot { border-radius: 8px 8px 18px 18px; }
+  body[data-theme="tiere"] .slot::before {
+    content: ""; position: absolute; left: -7%; top: -20%; width: 114%; height: 26%;
+    background: var(--roof, #b5523b); clip-path: polygon(50% 0, 100% 100%, 0 100%); pointer-events: none;
+  }
+  body[data-theme="tiere"] .slot:nth-child(5n+1) { --roof: #b5523b; }
+  body[data-theme="tiere"] .slot:nth-child(5n+2) { --roof: #d08b3c; }
+  body[data-theme="tiere"] .slot:nth-child(5n+3) { --roof: #8a5fb0; }
+  body[data-theme="tiere"] .slot:nth-child(5n+4) { --roof: #3f8f7a; }
+  body[data-theme="tiere"] .slot:nth-child(5n+5) { --roof: #c2566f; }
+  /* Eisfach */
+  body[data-theme="eis"] .slot { border-radius: 22px; background: linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.06)); }
+  /* Haken (Laternen) */
+  body[data-theme="laternen"] .slot::before {
+    content: ""; position: absolute; left: calc(50% - 1.5px); top: -16%; width: 3px; height: 16%; background: #d8cfa8; pointer-events: none;
+  }
+
+  /* Figuren */
+  .piece {
+    width: 100%; height: 100%; padding: 0; margin: 0; border: 0; border-radius: 16px;
+    background: transparent; color: var(--text); font: inherit; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3cqw;
+    touch-action: manipulation; min-height: 0;
+  }
+  .piece.sel { outline: 4px solid var(--accent); outline-offset: -4px; background: rgba(255,255,255,.16); box-shadow: 0 0 24px rgba(255,255,255,.25); }
+  .piece .label { font-size: clamp(12px, 13cqw, 24px); font-weight: 700; text-align: center; overflow-wrap: anywhere; line-height: 1.1; }
+  .art { width: 64cqw; height: 64cqw; position: relative; display: block; }
+  .art.emoji { display: grid; place-items: center; font-size: 8vmin; font-size: 50cqw; line-height: 1; }
+  .scoop::before {
+    content: ""; position: absolute; z-index: 2; left: 6%; top: 0; width: 88%; height: 66%;
+    border-radius: 50% 50% 46% 46%;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.6), var(--c) 55%);
+  }
+  .scoop::after {
+    content: ""; position: absolute; z-index: 1; left: 22%; bottom: 0; width: 56%; height: 46%;
+    clip-path: polygon(0 0, 100% 0, 50% 100%); background: linear-gradient(#ebb96a, #c98a3c);
+  }
+  .lantern::before {
+    content: ""; position: absolute; left: 18%; right: 18%; top: 16%; bottom: 6%;
+    border-radius: 30%; background: radial-gradient(circle at 50% 40%, #fff6cf 0, var(--c) 65%);
+    box-shadow: 0 0 20px 2px var(--c);
+  }
+  .lantern::after { content: ""; position: absolute; left: 32%; right: 32%; top: 4%; height: 14%; background: #2c2f55; border-radius: 6px; }
+
+  .tray .cap { margin: 0 0 8px; text-align: center; color: var(--soft); font-size: clamp(1rem, 2.2vh, 1.3rem); }
+  .tray .row { max-width: calc(var(--n) * 200px + (var(--n) - 1) * 10px); }
+  .msg { margin: 0; min-height: 1.6em; text-align: center; font-size: clamp(1.05rem, 2.5vh, 1.5rem); }
+
+  /* Gewinn-Anzeige */
+  #win { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(8,10,30,.72); }
+  #win.show { display: flex; }
+  .win-card {
+    background: linear-gradient(180deg, #2b3270, #1a1f4a); border: 3px solid var(--accent); border-radius: 28px;
+    padding: 28px 32px; text-align: center; max-width: 560px; box-shadow: 0 0 60px rgba(255,200,87,.35); animation: pop .4s ease-out;
+  }
+  .win-card h2 { margin: 0 0 8px; font-size: clamp(1.6rem, 5vh, 2.6rem); }
+  .win-card p { margin: 0 0 20px; color: var(--soft); font-size: clamp(1.1rem, 2.8vh, 1.5rem); }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .shoot { position: fixed; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); z-index: 11; pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .clue.hint, .win-card { animation: none; }
+    .btn { transition: none; }
+  }
+</style>
+</head>
+<body data-theme="tiere">
+<main>
+  <header>
+    <h1>Logikrätsel</h1>
+    <div class="levels" role="group" aria-label="Schwierigkeit">
+      <button type="button" class="btn" data-level="leicht" aria-pressed="true">Leicht: Tierhäuser</button>
+      <button type="button" class="btn" data-level="mittel" aria-pressed="false">Mittel: Eisdiele</button>
+      <button type="button" class="btn" data-level="schwer" aria-pressed="false">Schwer: Laternen</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="clues panel" aria-labelledby="clue-title">
+      <h2 id="clue-title">Hinweise</h2>
+      <ul id="clueList"></ul>
+    </section>
+
+    <section class="scene">
+      <h2 id="heading"></h2>
+      <p class="rule" id="rule"></p>
+      <div id="slots" class="row" aria-label="Plätze"></div>
+      <div id="tray" class="tray panel">
+        <p class="cap" id="trayCap"></p>
+        <div id="trayRow" class="row"></div>
+      </div>
+      <p class="msg" id="msg" aria-live="polite"></p>
+      <div class="bar">
+        <button type="button" class="btn" id="btn-hint">Tipp</button>
+        <button type="button" class="btn" id="btn-check">Prüfen</button>
+        <button type="button" class="btn" id="btn-reset">Von vorn</button>
+        <button type="button" class="btn" id="btn-new">Neues Rätsel</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div id="win" role="dialog" aria-modal="true" aria-labelledby="win-title">
+  <div class="win-card">
+    <h2 id="win-title"></h2>
+    <p>Geschafft! Jeder Hinweis passt.</p>
+    <div class="bar">
+      <button type="button" class="btn" id="btn-win-new">Neues Rätsel</button>
+      <button type="button" class="btn" id="btn-win-next">Nächste Stufe</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Themen und Stufen ---------- */
+  // nom = Nominativ (mit Artikel), dat = Dativ (mit Artikel) für die Hinweissätze
+  const THEMES = {
+    tiere: {
+      verb: "wohnt", heading: "Wer wohnt wo?", slotName: "Haus", trayCap: "Diese Tiere suchen ein Haus",
+      rule: "Jedes Tier gehört in ein Haus. Tippt erst ein Tier an, dann ein Haus. Links und rechts ist so, wie ihr es auf dem Bildschirm seht.",
+      win: "Alle Tiere sind zu Hause!",
+      pool: [
+        { label: "Fuchs", nom: "der Fuchs", dat: "dem Fuchs", emoji: "🦊" },
+        { label: "Igel", nom: "der Igel", dat: "dem Igel", emoji: "🦔" },
+        { label: "Eule", nom: "die Eule", dat: "der Eule", emoji: "🦉" },
+        { label: "Hase", nom: "der Hase", dat: "dem Hasen", emoji: "🐇" },
+        { label: "Eichhörnchen", nom: "das Eichhörnchen", dat: "dem Eichhörnchen", emoji: "🐿️" },
+        { label: "Bär", nom: "der Bär", dat: "dem Bären", emoji: "🐻" }
+      ]
+    },
+    eis: {
+      verb: "liegt", heading: "Welche Sorte liegt wo?", slotName: "Fach", trayCap: "Diese Sorten suchen ein Fach",
+      rule: "Jede Eissorte gehört in ein Fach der Eistheke. Tippt erst eine Sorte an, dann ein Fach. Links und rechts ist so, wie ihr es auf dem Bildschirm seht.",
+      win: "Die Eistheke ist perfekt sortiert!",
+      pool: [
+        { label: "Schokolade", nom: "die Schokolade", dat: "der Schokolade", color: "#6b3f2a" },
+        { label: "Erdbeere", nom: "die Erdbeere", dat: "der Erdbeere", color: "#ff7a9c" },
+        { label: "Zitrone", nom: "die Zitrone", dat: "der Zitrone", color: "#ffe14d" },
+        { label: "Pistazie", nom: "die Pistazie", dat: "der Pistazie", color: "#9ad36a" },
+        { label: "Blaubeere", nom: "die Blaubeere", dat: "der Blaubeere", color: "#6f7be8" },
+        { label: "Vanille", nom: "die Vanille", dat: "der Vanille", color: "#fff0c9" }
+      ]
+    },
+    laternen: {
+      verb: "hängt", heading: "Welche Laterne hängt wo?", slotName: "Haken", trayCap: "Diese Laternen suchen einen Haken",
+      rule: "Jede Laterne gehört an einen Haken. Tippt erst eine Laterne an, dann einen Haken. Links und rechts ist so, wie ihr es auf dem Bildschirm seht.",
+      win: "Alle Laternen hängen richtig!",
+      pool: [
+        { label: "Rot", nom: "die rote Laterne", dat: "der roten Laterne", color: "#ff5a5f" },
+        { label: "Gelb", nom: "die gelbe Laterne", dat: "der gelben Laterne", color: "#ffd84a" },
+        { label: "Grün", nom: "die grüne Laterne", dat: "der grünen Laterne", color: "#4fcf7c" },
+        { label: "Blau", nom: "die blaue Laterne", dat: "der blauen Laterne", color: "#4aa3ff" },
+        { label: "Lila", nom: "die lila Laterne", dat: "der lila Laterne", color: "#b080ff" }
+      ]
+    }
+  };
+
+  // Hinweisarten pro Stufe. "dirleft" ist immer erlaubt: Eine Kette aus
+  // "direkt links neben" legt jede Reihenfolge eindeutig fest, deshalb
+  // findet der Generator immer eine eindeutige Lösung.
+  const LEVELS = {
+    leicht: { n: 3, theme: "tiere",    types: ["end", "mid", "next", "dirleft", "left"], minClues: 3 },
+    mittel: { n: 4, theme: "eis",      types: ["end", "next", "dirleft", "left", "notnext", "notend"], minClues: 4 },
+    schwer: { n: 5, theme: "laternen", types: ["end", "mid", "next", "dirleft", "left", "notnext", "notend", "between"], minClues: 5 }
+  };
+  const ORDER = ["leicht", "mittel", "schwer"];
+
+  /* ---------- Zustand ---------- */
+  let levelKey = "leicht", theme, n, items, clues, solution;
+  let slots, selected, checked, status, hintIdx, won, msg;
+
+  /* ---------- Hilfsfunktionen ---------- */
+  const $ = id => document.getElementById(id);
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Alle Anordnungen von n Figuren auf n Plätzen. perm[figur] = platz.
+  const permCache = {};
+  function getPerms(k) {
+    if (permCache[k]) return permCache[k];
+    const res = [], arr = [], used = Array(k).fill(false);
+    (function rec() {
+      if (arr.length === k) { res.push(arr.slice()); return; }
+      for (let s = 0; s < k; s++) {
+        if (!used[s]) { used[s] = true; arr.push(s); rec(); arr.pop(); used[s] = false; }
+      }
+    })();
+    return (permCache[k] = res);
+  }
+
+  // Prüft einen Hinweis für eine (auch unvollständige) Anordnung.
+  // pos[figur] = Platz oder -1 (noch nicht gesetzt).
+  // Ergebnis: true, false oder null (noch nicht entscheidbar).
+  function ev(c, pos, k) {
+    const pa = pos[c.a];
+    if (pa < 0) return null;
+    switch (c.type) {
+      case "end":    return c.side === "L" ? pa === 0 : pa === k - 1;
+      case "notend": return c.side === "L" ? pa !== 0 : pa !== k - 1;
+      case "mid":    return pa === (k - 1) / 2;
+    }
+    const pb = pos[c.b];
+    if (pb < 0) return null;
+    switch (c.type) {
+      case "next":    return Math.abs(pa - pb) === 1;
+      case "notnext": return Math.abs(pa - pb) !== 1;
+      case "dirleft": return pa + 1 === pb;
+      case "left":    return pa < pb;
+    }
+    const pc = pos[c.c];
+    if (pc < 0) return null;
+    return (pb < pa && pa < pc) || (pc < pa && pa < pb); // "between"
+  }
+
+  function allClues(k, types) {
+    const out = [], has = t => types.includes(t);
+    for (let a = 0; a < k; a++) {
+      if (has("end"))    out.push({ type: "end", a, side: "L" }, { type: "end", a, side: "R" });
+      if (has("notend")) out.push({ type: "notend", a, side: "L" }, { type: "notend", a, side: "R" });
+      if (has("mid") && k % 2 === 1) out.push({ type: "mid", a });
+      for (let b = 0; b < k; b++) {
+        if (b === a) continue;
+        if (has("dirleft")) out.push({ type: "dirleft", a, b });
+        if (has("left"))    out.push({ type: "left", a, b });
+        if (a < b && has("next"))    out.push({ type: "next", a, b });
+        if (a < b && has("notnext")) out.push({ type: "notnext", a, b });
+      }
+      if (has("between")) {
+        for (let b = 0; b < k; b++) for (let c = b + 1; c < k; c++) {
+          if (b !== a && c !== a) out.push({ type: "between", a, b, c });
+        }
+      }
+    }
+    return out;
+  }
+
+  function clueText(c) {
+    const A = items[c.a], B = items[c.b], C = items[c.c], v = theme.verb, s = cap(A.nom);
+    const side = c.side === "L" ? "links" : "rechts";
+    switch (c.type) {
+      case "end":     return `${s} ${v} ganz ${side}.`;
+      case "notend":  return `${s} ${v} nicht ganz ${side}.`;
+      case "mid":     return `${s} ${v} in der Mitte.`;
+      case "next":    return `${s} ${v} direkt neben ${B.dat}.`;
+      case "notnext": return `${s} ${v} nicht neben ${B.dat}.`;
+      case "dirleft": return `${s} ${v} direkt links neben ${B.dat}.`;
+      case "left":    return `${s} ${v} weiter links als ${B.nom}.`;
+      case "between": return `${s} ${v} zwischen ${B.dat} und ${C.dat}.`;
+    }
+  }
+
+  function posFromSlots() {
+    const pos = Array(n).fill(-1);
+    slots.forEach((id, i) => { if (id !== null) pos[id] = i; });
+    return pos;
+  }
+
+  /* ---------- Rätsel erzeugen (immer genau eine Lösung) ---------- */
+  function newPuzzle() {
+    const L = LEVELS[levelKey];
+    theme = THEMES[L.theme];
+    n = L.n;
+    document.body.dataset.theme = L.theme;
+    const perms = getPerms(n);
+
+    for (let tries = 0; tries < 30; tries++) {
+      items = shuffle(theme.pool.slice()).slice(0, n);
+      const sol = shuffle([...Array(n).keys()]);
+      // Nur Hinweise, die für die gewählte Lösung wahr sind
+      const pool = shuffle(allClues(n, L.types).filter(c => ev(c, sol, n) === true));
+
+      // 1) Hinweise hinzufügen, bis nur noch eine Anordnung übrig ist
+      let cand = perms, chosen = [];
+      for (const c of pool) {
+        if (cand.length === 1) break;
+        const nx = cand.filter(p => ev(c, p, n) === true);
+        if (nx.length < cand.length) { chosen.push(c); cand = nx; }
+      }
+      if (cand.length !== 1) continue;
+
+      // 2) Überflüssige Hinweise wieder entfernen (Eindeutigkeit bleibt erhalten)
+      const count = set => perms.filter(p => set.every(c => ev(c, p, n) === true)).length;
+      for (const c of shuffle(chosen.slice())) {
+        const rest = chosen.filter(x => x !== c);
+        if (count(rest) === 1) chosen = rest;
+      }
+
+      // 3) Mindestanzahl an Hinweisen (zusätzliche wahre Hinweise schaden nicht)
+      const extra = shuffle(pool.filter(c => !chosen.includes(c)));
+      while (chosen.length < L.minClues && extra.length) chosen.push(extra.pop());
+
+      clues = shuffle(chosen);
+      solution = cand[0];
+      break;
+    }
+    resetState();
+  }
+
+  function resetState() {
+    slots = Array(n).fill(null);
+    selected = null;
+    checked = Array(clues.length).fill(false);
+    status = Array(clues.length).fill(null);
+    hintIdx = -1;
+    won = false;
+    msg = "";
+    closeWin();
+    render();
+  }
+
+  /* ---------- Darstellung ---------- */
+  function pieceEl(id) {
+    const it = items[id];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "piece" + (selected === id ? " sel" : "");
+    b.dataset.id = id;
+    b.dataset.key = "p" + id;
+    const art = document.createElement("span");
+    if (it.emoji) { art.className = "art emoji"; art.textContent = it.emoji; art.setAttribute("aria-hidden", "true"); }
+    else { art.className = "art " + (theme === THEMES.eis ? "scoop" : "lantern"); art.style.setProperty("--c", it.color); art.setAttribute("aria-hidden", "true"); }
+    const lab = document.createElement("span");
+    lab.className = "label";
+    lab.textContent = it.label;
+    b.append(art, lab);
+    b.setAttribute("aria-pressed", selected === id ? "true" : "false");
+    return b;
+  }
+
+  function render() {
+    const activeKey = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key : null;
+
+    $("heading").textContent = theme.heading;
+    $("rule").textContent = theme.rule;
+    document.querySelectorAll(".levels .btn").forEach(b =>
+      b.setAttribute("aria-pressed", b.dataset.level === levelKey ? "true" : "false"));
+
+    // Plätze
+    const slotsEl = $("slots");
+    slotsEl.style.setProperty("--n", n);
+    slotsEl.innerHTML = "";
+    slots.forEach((id, i) => {
+      const d = document.createElement("div");
+      d.className = "cell slot" + (id !== null ? " has" : "");
+      d.dataset.i = i;
+      if (id === null) {
+        d.tabIndex = 0;
+        d.setAttribute("role", "button");
+        d.dataset.key = "s" + i;
+        d.setAttribute("aria-label", `${theme.slotName} ${i + 1} von ${n}, leer`);
+      } else {
+        d.appendChild(pieceEl(id));
+      }
+      slotsEl.appendChild(d);
+    });
+
+    // Ablage: jede Figur hat ihren festen Heimatplatz
+    const trayRow = $("trayRow");
+    trayRow.style.setProperty("--n", n);
+    trayRow.innerHTML = "";
+    const inSlot = new Set(slots.filter(x => x !== null));
+    for (let id = 0; id < n; id++) {
+      const h = document.createElement("div");
+      h.className = "cell home";
+      if (!inSlot.has(id)) h.appendChild(pieceEl(id));
+      trayRow.appendChild(h);
+    }
+    const selInSlot = selected !== null && inSlot.has(selected);
+    $("trayCap").textContent = selInSlot ? "Tippt hier, um die Figur zurückzulegen."
+      : inSlot.size === n ? "Alle Figuren sind gesetzt." : theme.trayCap;
+
+    // Hinweise
+    const list = $("clueList");
+    list.innerHTML = "";
+    clues.forEach((c, i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "clue" + (status[i] === "ok" ? " ok" : "") + (status[i] === "bad" ? " bad" : "") + (hintIdx === i ? " hint" : "");
+      b.dataset.i = i;
+      b.dataset.key = "c" + i;
+      b.setAttribute("aria-pressed", checked[i] ? "true" : "false");
+      b.innerHTML = '<span class="box" aria-hidden="true">✓</span><span class="txt"></span><span class="badge"></span>';
+      b.querySelector(".txt").textContent = clueText(c);
+      b.querySelector(".badge").textContent = status[i] === "ok" ? "passt" : status[i] === "bad" ? "passt noch nicht" : "";
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+
+    $("msg").textContent = msg;
+    $("btn-hint").disabled = won;
+    $("btn-check").disabled = won;
+
+    if (activeKey) {
+      const again = document.querySelector(`[data-key="${activeKey}"]`);
+      if (again) again.focus({ preventScroll: true });
+    }
+    const h = list.querySelector(".hint");
+    if (h) h.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  /* ---------- Bedienung ---------- */
+  function afterChange() {
+    selected = null;
+    status = Array(clues.length).fill(null);
+    hintIdx = -1;
+    msg = "";
+    const placed = slots.filter(x => x !== null).length;
+    if (placed === n) {
+      const pos = posFromSlots();
+      if (clues.every(c => ev(c, pos, n) === true)) { won = true; render(); celebrate(); return; }
+      msg = "Alle Plätze sind besetzt, aber noch passt nicht jeder Hinweis. Tippt auf „Prüfen“.";
+    }
+    render();
+  }
+
+  function onTrayPiece(id) {
+    if (won) return;
+    selected = selected === id ? null : id;
+    render();
+  }
+
+  function onTrayBackground() {
+    if (won || selected === null) return;
+    const j = slots.indexOf(selected);
+    if (j >= 0) { slots[j] = null; afterChange(); }
+  }
+
+  function onSlot(i) {
+    if (won) return;
+    const occupant = slots[i];
+    if (selected === null) {
+      if (occupant !== null) { selected = occupant; render(); }
+      return;
+    }
+    if (selected === occupant) { selected = null; render(); return; }
+    const j = slots.indexOf(selected);       // war die Figur schon in einem Platz?
+    if (j >= 0) slots[j] = occupant;          // dann tauscht der bisherige Bewohner dorthin (oder null)
+    slots[i] = selected;                      // sonst geht er zurück in die Ablage
+    afterChange();
+  }
+
+  function toggleClue(i) {
+    if (won) return;
+    checked[i] = !checked[i];
+    hintIdx = -1;
+    render();
+  }
+
+  // Tipp: Welcher noch nicht abgehakte Hinweis schränkt die Möglichkeiten
+  // (unter den bereits abgehakten Hinweisen) am stärksten ein?
+  function hint() {
+    if (won) return;
+    hintIdx = -1;
+    const cand = getPerms(n).filter(p => clues.every((c, i) => !checked[i] || ev(c, p, n) === true));
+    if (cand.length <= 1) {
+      msg = "Mit den abgehakten Hinweisen steht die Lösung schon fest. Jetzt könnt ihr die Figuren setzen.";
+    } else {
+      let best = -1, bestCount = Infinity;
+      clues.forEach((c, i) => {
+        if (checked[i]) return;
+        const k = cand.filter(p => ev(c, p, n) === true).length;
+        if (k < bestCount) { bestCount = k; best = i; }
+      });
+      if (best < 0) msg = "Alle Hinweise sind abgehakt. Tippt auf „Prüfen“, um zu sehen, welche noch nicht passen.";
+      else { hintIdx = best; msg = "Tipp: Dieser Hinweis hilft als Nächstes."; }
+    }
+    render();
+  }
+
+  // Prüfen: zeigt neutral, welche Hinweise passen und welche noch nicht
+  function check() {
+    if (won) return;
+    hintIdx = -1;
+    const pos = posFromSlots();
+    status = clues.map(c => { const r = ev(c, pos, n); return r === null ? null : r ? "ok" : "bad"; });
+    const bad = status.filter(s => s === "bad").length;
+    const placed = slots.filter(x => x !== null).length;
+    if (bad > 0) msg = bad === 1 ? "Bei einem Hinweis passt die Anordnung noch nicht. Schaut ihn euch gemeinsam an."
+                                  : `Bei ${bad} Hinweisen passt die Anordnung noch nicht. Schaut sie euch gemeinsam an.`;
+    else if (placed === 0) msg = "Noch nichts gesetzt. Probiert einfach etwas aus!";
+    else msg = "Bis jetzt passt alles. Es fehlen noch Figuren.";
+    render();
+  }
+
+  /* ---------- Gewinn ---------- */
+  function celebrate() {
+    $("win-title").textContent = theme.win;
+    $("btn-win-next").style.display = levelKey === "schwer" ? "none" : "";
+    setTimeout(() => {
+      $("win").classList.add("show");
+      sparkle();
+      $("btn-win-new").focus();
+    }, 500);
+  }
+  function closeWin() { $("win").classList.remove("show"); }
+  function sparkle() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (let i = 0; i < 26; i++) {
+      const s = document.createElement("div");
+      s.className = "shoot";
+      s.style.left = (50 + (Math.random() - .5) * 20) + "vw";
+      s.style.top = "50vh";
+      document.body.appendChild(s);
+      const dx = (Math.random() - .5) * 90, dy = (Math.random() - .8) * 70;
+      s.animate(
+        [{ transform: "translate(0,0) scale(1)", opacity: 1 },
+         { transform: `translate(${dx}vw,${dy}vh) scale(.2)`, opacity: 0 }],
+        { duration: 1400 + Math.random() * 800, easing: "ease-out" }
+      ).onfinish = () => s.remove();
+    }
+  }
+
+  /* ---------- Ereignisse ---------- */
+  $("slots").addEventListener("click", e => {
+    const cell = e.target.closest(".slot");
+    if (cell) onSlot(+cell.dataset.i);
+  });
+  $("slots").addEventListener("keydown", e => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("slot")) {
+      e.preventDefault();
+      onSlot(+e.target.dataset.i);
+    }
+  });
+  $("tray").addEventListener("click", e => {
+    const p = e.target.closest(".piece");
+    if (p) onTrayPiece(+p.dataset.id); else onTrayBackground();
+  });
+  $("clueList").addEventListener("click", e => {
+    const b = e.target.closest(".clue");
+    if (b) toggleClue(+b.dataset.i);
+  });
+  document.querySelectorAll(".levels .btn").forEach(b =>
+    b.addEventListener("click", () => { levelKey = b.dataset.level; newPuzzle(); }));
+  $("btn-hint").addEventListener("click", hint);
+  $("btn-check").addEventListener("click", check);
+  $("btn-reset").addEventListener("click", resetState);
+  $("btn-new").addEventListener("click", newPuzzle);
+  $("btn-win-new").addEventListener("click", newPuzzle);
+  $("btn-win-next").addEventListener("click", () => {
+    levelKey = ORDER[Math.min(ORDER.indexOf(levelKey) + 1, ORDER.length - 1)];
+    newPuzzle();
+  });
+
+  newPuzzle();
+})();
+</script>
+</body>
+</html>
