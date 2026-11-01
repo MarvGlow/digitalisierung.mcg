@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grundrechte-Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: eine Spielspalte (max. 760px), schmale Kopfzeile mit Runde/Punkten; Artikel-Nummern wie Registerreiter im Grundgesetz */
+:root {
+  --paper: #EDF0F5;
+  --surface: #FFFFFF;
+  --ink: #151A24;
+  --muted: #566073;
+  --line: #CFD6E0;
+  --accent: #2443B5;
+  --accent-soft: #E3E8FA;
+  --on-accent: #FFFFFF;
+  --gold: #8A5E00;
+  --gold-soft: #FAEFD2;
+  --ok: #1B6E40;
+  --ok-soft: #DFF1E6;
+  --bad: #A92219;
+  --bad-soft: #FAE4E1;
+  --f-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0F131A; --surface: #18202B; --ink: #E7EBF2; --muted: #9AA5B7; --line: #2B3543;
+    --accent: #8EA6FF; --accent-soft: #1F2A4D; --on-accent: #0F131A;
+    --gold: #F0B93C; --gold-soft: #3A2C0B;
+    --ok: #63D394; --ok-soft: #10301F; --bad: #FF8076; --bad-soft: #3B1613;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0F131A; --surface: #18202B; --ink: #E7EBF2; --muted: #9AA5B7; --line: #2B3543;
+  --accent: #8EA6FF; --accent-soft: #1F2A4D; --on-accent: #0F131A;
+  --gold: #F0B93C; --gold-soft: #3A2C0B;
+  --ok: #63D394; --ok-soft: #10301F; --bad: #FF8076; --bad-soft: #3B1613;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-block: 16px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.1; }
+p { margin: 0; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Kopfzeile */
+.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--line);
+}
+.brand { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; letter-spacing: .01em; font-size: 1.05rem; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  font-size: .82rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.chip-score { color: var(--gold); background: var(--gold-soft); border-color: transparent; }
+.chip-streak { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.bump { animation: bump .35s ease; }
+@keyframes bump { 40% { transform: scale(1.18); } }
+
+/* Startseite */
+.eyebrow { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.intro { display: grid; gap: 22px; }
+.intro h1 { font-size: clamp(2.6rem, 9vw, 4.4rem); font-weight: 800; font-stretch: 72%; letter-spacing: -.01em; text-transform: uppercase; }
+.intro h1 .art-mark { color: var(--accent); }
+.lead { font-size: 1.15rem; max-width: 34em; }
+.plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.plan li {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px; align-items: baseline;
+  padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.plan .tag { font-family: var(--f-display); font-weight: 800; font-stretch: 80%; color: var(--accent); font-size: 1.05rem; min-width: 5.2em; }
+.plan b { display: block; }
+.plan .sub { color: var(--muted); font-size: .95rem; }
+.plan .time { color: var(--muted); font-size: .85rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.note { background: var(--accent-soft); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; }
+.note h2 { font-size: 1rem; font-stretch: 90%; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.primary {
+  background: var(--accent); color: var(--on-accent); border: 0; border-radius: 10px;
+  padding: 13px 22px; font-weight: 700; font-size: 1.05rem; cursor: pointer;
+}
+.primary:hover { filter: brightness(1.08); }
+.secondary {
+  background: transparent; color: var(--accent); border: 2px solid var(--accent); border-radius: 10px;
+  padding: 11px 20px; font-weight: 700; font-size: 1.05rem; cursor: pointer;
+}
+.secondary:hover { background: var(--accent-soft); }
+.section-title { font-size: 1.25rem; font-stretch: 85%; font-weight: 800; }
+.cheat { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 10px; }
+.cheat li { display: grid; grid-template-columns: 4.2em 1fr; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+.cheat .art, .right .art, .wobble .art {
+  font-family: var(--f-display); font-weight: 800; font-stretch: 75%;
+  background: var(--ink); color: var(--paper); border-radius: 6px; padding: 2px 7px;
+  font-size: .9rem; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.cheat b { display: block; }
+.cheat span.m { color: var(--muted); font-size: .92rem; }
+
+/* Frage-Ansicht */
+.qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.qhead .round { font-family: var(--f-display); font-weight: 800; font-stretch: 80%; font-size: 1.1rem; }
+.qhead .count { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+.progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 20px; }
+.progress span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
+.case {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 20px 22px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.case:focus { outline: none; }
+.case-label { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+.case-text { font-size: 1.22rem; line-height: 1.45; }
+.prompt { font-weight: 700; margin-bottom: 10px; font-size: 1.05rem; }
+.stepno {
+  display: inline-block; font-family: var(--f-display); font-stretch: 80%; font-size: .8rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-right: 6px;
+}
+.rights { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 640px) { .rights { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.right {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 10px;
+  padding: 10px 11px; cursor: pointer; min-height: 84px; transition: border-color .15s, background .15s, opacity .15s;
+}
+.right:hover:not(:disabled) { border-color: var(--accent); }
+.right .rname { font-size: .93rem; line-height: 1.25; font-weight: 700; hyphens: auto; overflow-wrap: anywhere; }
+.right:disabled { cursor: default; }
+.right.is-correct { border-color: var(--ok); background: var(--ok-soft); }
+.right.is-correct .art { background: var(--ok); color: var(--surface); }
+.right.is-wrong { border-color: var(--bad); background: var(--bad-soft); }
+.right.is-wrong .art { background: var(--bad); color: var(--surface); }
+.right.is-dim { opacity: .45; }
+.step + .step { margin-top: 22px; }
+.mini { margin-top: 10px; font-weight: 700; }
+.mini.ok { color: var(--ok); }
+.mini.bad { color: var(--bad); }
+.verdicts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.verdict-btn {
+  background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: 14px 12px;
+  font-weight: 700; font-size: 1.05rem; cursor: pointer;
+}
+.verdict-btn:hover:not(:disabled) { border-color: var(--accent); }
+.verdict-btn:disabled { cursor: default; }
+.verdict-btn.is-correct { border-color: var(--ok); background: var(--ok-soft); }
+.verdict-btn.is-wrong { border-color: var(--bad); background: var(--bad-soft); }
+.verdict-btn.is-dim { opacity: .45; }
+
+.feedback { margin-top: 20px; border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; }
+.feedback.ok { background: var(--ok-soft); }
+.feedback.bad { background: var(--bad-soft); }
+.feedback .verdict { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 1.3rem; }
+.feedback.ok .verdict { color: var(--ok); }
+.feedback.bad .verdict { color: var(--bad); }
+.feedback .pts { font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+.feedback .primary { justify-self: start; margin-top: 6px; }
+.pop { animation: pop .3s ease; }
+@keyframes pop { from { transform: translateY(6px); opacity: .3; } to { transform: none; opacity: 1; } }
+
+/* Zwischenstand & Auswertung */
+.panel { display: grid; gap: 18px; }
+.panel h1 { font-size: clamp(2rem, 7vw, 3rem); font-weight: 800; font-stretch: 75%; text-transform: uppercase; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.stat .v { font-family: var(--f-display); font-weight: 800; font-stretch: 80%; font-size: 1.9rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat .l { color: var(--muted); font-size: .85rem; }
+.stat.gold .v { color: var(--gold); }
+.title-badge {
+  display: inline-flex; align-items: center; gap: 10px; justify-self: start;
+  background: var(--gold-soft); color: var(--gold); border-radius: 999px; padding: 8px 18px;
+  font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 1.25rem;
+}
+.title-badge svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
+.wobble { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.wobble li { display: grid; grid-template-columns: 4.2em 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+.wobble .err { color: var(--bad); font-weight: 700; font-size: .85rem; white-space: nowrap; }
+.wobble span.m { color: var(--muted); font-size: .93rem; display: block; }
+.rules { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+@media (max-width: 480px) {
+  .case-text { font-size: 1.1rem; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .plan li { grid-template-columns: auto 1fr; }
+  .plan .time { grid-column: 2; }
+  .wobble li { grid-template-columns: 4.2em 1fr; }
+  .wobble .err { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <span class="brand">Grundrechte-Check</span>
+    <div class="chips" id="chips" hidden>
+      <span class="chip" id="chipRound"></span>
+      <span class="chip chip-streak" id="chipStreak" hidden></span>
+      <span class="chip chip-score" id="chipScore">0 Punkte</span>
+    </div>
+  </header>
+  <main id="app" aria-live="polite"></main>
+</div>
+
+<script>
+"use strict";
+document.documentElement.lang = "de"; // für korrekte Silbentrennung (hyphens: auto)
+
+/* ================= INHALTE =================
+   Die acht Grundrechte mit Merksatz (für Startseite und Auswertung). */
+const RIGHTS = [
+  { id: 1,  art: "Art. 1",  name: "Menschenwürde",
+    merk: "Die Würde des Menschen ist unantastbar. Der Staat darf niemanden foltern oder demütigen. Dieses Recht gilt ausnahmslos." },
+  { id: 2,  art: "Art. 2",  name: "Freie Entfaltung der Persönlichkeit",
+    merk: "Jede:r darf das eigene Leben frei gestalten, solange die Rechte anderer und die Gesetze beachtet werden." },
+  { id: 3,  art: "Art. 3",  name: "Gleichheit vor dem Gesetz",
+    merk: "Alle Menschen sind vor dem Gesetz gleich. Niemand darf z. B. wegen Geschlecht, Herkunft oder Glauben benachteiligt werden." },
+  { id: 4,  art: "Art. 4",  name: "Glaubens- und Gewissensfreiheit",
+    merk: "Jede:r darf frei glauben, den Glauben ausüben oder auch gar keiner Religion angehören." },
+  { id: 5,  art: "Art. 5",  name: "Meinungs- und Pressefreiheit",
+    merk: "Jede:r darf die eigene Meinung sagen und verbreiten, Zeitungen dürfen frei berichten. Grenze: z. B. Beleidigungen." },
+  { id: 8,  art: "Art. 8",  name: "Versammlungsfreiheit",
+    merk: "Alle Deutschen dürfen sich friedlich und ohne Waffen versammeln, zum Beispiel bei einer Demonstration." },
+  { id: 10, art: "Art. 10", name: "Brief- und Fernmeldegeheimnis",
+    merk: "Briefe, Telefonate und Nachrichten sind davor geschützt, dass der Staat mitliest oder mithört." },
+  { id: 13, art: "Art. 13", name: "Unverletzlichkeit der Wohnung",
+    merk: "Die Wohnung ist geschützt. Durchsuchen darf der Staat sie grundsätzlich nur mit Erlaubnis eines Gerichts." }
+];
+const R = Object.fromEntries(RIGHTS.map(r => [r.id, r]));
+
+/* Runde 1: Jede Situation hat genau EIN eindeutig passendes Grundrecht.
+   Pro Spiel wird für jedes Grundrecht mindestens eine Situation gezogen (+2 zufällige) = 10. */
+const ROUND1_POOL = [
+  { right: 1, text: "Die Polizei droht einem Verdächtigen mit Schmerzen, damit er eine Tat gesteht.",
+    why: "Folter und schon die Drohung damit verletzen die Menschenwürde. Sie gilt für alle Menschen, auch für Verdächtige." },
+  { right: 2, text: "Tim färbt sich die Haare grün und verbringt seine Freizeit am liebsten im Skatepark.",
+    why: "Art. 2 schützt die freie Entfaltung der Persönlichkeit: Jede:r darf grundsätzlich selbst entscheiden, wie er oder sie lebt." },
+  { right: 3, text: "Ein Lehrer an einer staatlichen Schule gibt Kerem schlechtere Noten, weil seine Eltern aus der Türkei kommen.",
+    why: "Niemand darf wegen seiner Herkunft benachteiligt werden. Das steht in Art. 3." },
+  { right: 3, text: "Die Stadtverwaltung sucht eine neue Gärtnerin oder einen neuen Gärtner. In der Anzeige steht: Nur Männer dürfen sich bewerben.",
+    why: "Männer und Frauen sind gleichberechtigt (Art. 3). Eine Stelle nur wegen des Geschlechts zu verweigern, ist verboten." },
+  { right: 4, text: "Emre geht freitags mit seinem Vater zum Gebet in die Moschee.",
+    why: "Art. 4 schützt das Recht, einen Glauben zu haben und ihn auszuüben, zum Beispiel durch Gebete." },
+  { right: 4, text: "Lara glaubt an keinen Gott und möchte keiner Religion angehören.",
+    why: "Art. 4 schützt auch das Recht, keinen Glauben zu haben. Das nennt man negative Glaubensfreiheit." },
+  { right: 5, text: "Lukas schreibt einen Leserbrief an die Lokalzeitung: Das neue Busticket für Schüler:innen sei viel zu teuer.",
+    why: "Die eigene Meinung zu sagen oder zu schreiben, auch als Kritik, schützt die Meinungsfreiheit (Art. 5)." },
+  { right: 5, text: "Eine Zeitung berichtet kritisch über den Bürgermeister. Er möchte, dass die Zeitung den Bericht nicht drucken darf.",
+    why: "Die Pressefreiheit (Art. 5) schützt Zeitungen, Radio und Online-Medien. Eine Zensur findet nicht statt." },
+  { right: 8, text: "Schüler:innen treffen sich friedlich vor dem Rathaus, um für einen sicheren Radweg zur Schule zu demonstrieren.",
+    why: "Art. 8 schützt das Recht, sich friedlich und ohne Waffen zu versammeln, zum Beispiel bei einer Demonstration." },
+  { right: 8, text: "Viele Menschen versammeln sich vor dem Landtag in Düsseldorf, um gemeinsam gegen ein geplantes Gesetz zu protestieren.",
+    why: "Eine friedliche Demonstration ist eine Versammlung. Sie ist durch Art. 8 geschützt." },
+  { right: 10, text: "Eine Behörde liest heimlich die Nachrichten mit, die Mia gerade per Messenger an ihre Freundin schickt.",
+    why: "Das Fernmeldegeheimnis (Art. 10) schützt Nachrichten und Telefonate, während sie übertragen werden, auch Messenger-Nachrichten." },
+  { right: 10, text: "Ein Beamter öffnet einen Brief, der an Herrn Schulz adressiert ist, und liest ihn heimlich.",
+    why: "Das Briefgeheimnis (Art. 10) schützt Briefe davor, dass der Staat sie öffnet und liest." },
+  { right: 13, text: "Ein Polizist möchte ohne Grund und ohne Erlaubnis in die Wohnung von Familie Ahmadi, um sich dort umzusehen.",
+    why: "Die Wohnung ist ein geschützter Rückzugsort (Art. 13). Der Staat darf nur unter strengen Bedingungen hinein." }
+];
+
+/* Runde 2: Grundrechte haben Grenzen. Nur staatliche Akteure (Polizei, Stadt, Gericht, staatliche Schule),
+   denn Grundrechte binden den Staat (Art. 1 Abs. 3 GG). violated = true heißt: Das Grundrecht wird verletzt. */
+const ROUND2_POOL = [
+  { right: 8, violated: false,
+    text: "Bei einer Demonstration werfen viele Teilnehmende Steine auf Polizist:innen. Die Polizei löst die Demonstration auf.",
+    why: "Art. 8 schützt nur Versammlungen, die friedlich und ohne Waffen sind. Wer Steine wirft, ist nicht mehr geschützt. Die Auflösung ist erlaubt." },
+  { right: 8, violated: true,
+    text: "Die Stadt verbietet eine friedliche Demonstration gegen den Bürgermeister, nur weil ihm das Thema nicht gefällt.",
+    why: "Eine friedliche Versammlung darf nicht verboten werden, nur weil jemandem das Thema nicht passt. Dafür braucht es einen gewichtigen Grund, zum Beispiel eine Gefahr für andere." },
+  { right: 5, violated: false,
+    text: "Ein Mann beschimpft eine Politikerin im Internet mit üblen Beleidigungen. Ein Gericht verurteilt ihn deshalb zu einer Geldstrafe.",
+    why: "Die Meinungsfreiheit hat Grenzen. Sie endet dort, wo die Ehre anderer verletzt wird. Beleidigungen sind strafbar." },
+  { right: 5, violated: true,
+    text: "Die Schulleitung einer staatlichen Schule verbietet einen Artikel in der Schülerzeitung, nur weil er die neue Handyregel sachlich kritisiert.",
+    why: "Sachliche Kritik ist durch die Meinungs- und Pressefreiheit geschützt, auch in der Schülerzeitung. Die Schule darf sie nicht verbieten, nur weil ihr die Meinung nicht gefällt." },
+  { right: 13, violated: true,
+    text: "Ein Nachbar vermutet gestohlene Fahrräder bei Familie Weber. Die Polizei durchsucht sofort die Wohnung, ohne Erlaubnis eines Gerichts, obwohl es nicht eilt.",
+    why: "Eine Durchsuchung muss grundsätzlich ein Gericht erlauben. Nur wenn es wirklich eilt, darf die Polizei ausnahmsweise ohne Erlaubnis handeln. Hier eilt es nicht." },
+  { right: 10, violated: false,
+    text: "Die Polizei hört die Telefonate eines Mannes ab, der verdächtigt wird, an einem schweren Verbrechen beteiligt zu sein. Ein Gericht hat das vorher erlaubt.",
+    why: "Das Fernmeldegeheimnis darf durch ein Gesetz eingeschränkt werden. Bei schweren Straftaten ist das Abhören erlaubt, wenn ein Gericht zustimmt." },
+  { right: 4, violated: true,
+    text: "Ein Lehrer an einer staatlichen Schule verlangt, dass alle Schüler:innen vor dem Unterricht gemeinsam beten müssen.",
+    why: "Niemand darf gezwungen werden, an einer religiösen Handlung teilzunehmen. Ein freiwilliges Schulgebet wäre erlaubt, ein Zwang nicht." },
+  { right: 3, violated: false,
+    text: "Den Autoführerschein bekommt man frühestens mit 17 Jahren. Die 14-jährige Pia findet, dass Jugendliche dadurch ungerecht behandelt werden.",
+    why: "Art. 3 verbietet nur Ungleichbehandlungen ohne guten Grund. Hier gibt es einen sachlichen Grund: die Sicherheit im Straßenverkehr." },
+  { right: 2, violated: false,
+    text: "Wer Motorrad fährt, muss einen Helm tragen. Tom findet, dass die Helmpflicht seine Freiheit einschränkt.",
+    why: "Art. 2 schützt die freie Entfaltung, aber im Rahmen der Gesetze. Die Helmpflicht schützt Leben und Gesundheit. Das Bundesverfassungsgericht hat sie für erlaubt erklärt." }
+];
+
+/* ================= HILFSFUNKTIONEN ================= */
+const $ = sel => document.querySelector(sel);
+const app = $("#app");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function shuffle(arr) {               // Fisher-Yates, gibt neue Liste zurück
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Runde 1: je Grundrecht eine Situation + 2 zufällige weitere = 10 Fragen */
+function pickRound1() {
+  const chosen = [];
+  RIGHTS.forEach(r => {
+    const opts = ROUND1_POOL.filter(q => q.right === r.id);
+    chosen.push(opts[Math.floor(Math.random() * opts.length)]);
+  });
+  const rest = shuffle(ROUND1_POOL.filter(q => !chosen.includes(q))).slice(0, 2);
+  return shuffle(chosen.concat(rest));
+}
+
+/* Runde 2: 5 Fälle, mindestens 2 "verletzt" und 2 "nicht verletzt" */
+function pickRound2() {
+  const yes = shuffle(ROUND2_POOL.filter(c => c.violated));
+  const no = shuffle(ROUND2_POOL.filter(c => !c.violated));
+  const picked = yes.slice(0, 2).concat(no.slice(0, 2));
+  const extra = shuffle(yes.slice(2).concat(no.slice(2)))[0];
+  return shuffle(picked.concat(extra));
+}
+
+/* ================= SPIELZUSTAND ================= */
+const S = {};
+function newGame() {
+  Object.assign(S, {
+    score: 0, streak: 0, bestStreak: 0,
+    answers: 0, correct: 0,           // zählt alle Teilantworten (R2 = 2 pro Fall)
+    r1Correct: 0, r2Correct: 0,
+    errors: {},                       // Grundrecht-ID -> Anzahl Fehler
+    missed: [],                       // falsch beantwortete Situationen/Fälle
+    practice: false
+  });
+}
+
+function addError(item) {
+  S.errors[item.right] = (S.errors[item.right] || 0) + 1;
+  if (!S.missed.includes(item)) S.missed.push(item);
+}
+
+/* ================= KOPFZEILE ================= */
+function setBar(label) {
+  const chips = $("#chips");
+  if (!label) { chips.hidden = true; return; }
+  chips.hidden = false;
+  $("#chipRound").textContent = label;
+  $("#chipScore").hidden = S.practice;
+  $("#chipScore").textContent = S.score + " Punkte";
+  const st = $("#chipStreak");
+  st.hidden = S.practice || S.streak < 2;
+  st.textContent = "Serie ×" + S.streak;
+}
+function bump(el) { if (reduceMotion) return; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+
+function render(html) {
+  app.innerHTML = html;
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function showFeedback(container, ok, title, body, pts, nextLabel, onNext) {
+  const fb = document.createElement("div");
+  fb.className = "feedback pop " + (ok ? "ok" : "bad");
+  fb.setAttribute("role", "status");
+  fb.innerHTML = `<p class="verdict">${title}</p><p>${body}</p>` +
+    (pts ? `<p class="pts">${pts}</p>` : "") +
+    `<button type="button" class="primary next">${nextLabel}</button>`;
+  container.appendChild(fb);
+  const btn = fb.querySelector(".next");
+  btn.addEventListener("click", onNext);
+  btn.focus({ preventScroll: true });
+  fb.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
+}
+
+function rightButtons() {
+  return `<div class="rights" role="group" aria-label="Grundrechte">` +
+    RIGHTS.map(r => `<button type="button" class="right" data-id="${r.id}"><span class="art">${r.art}</span><span class="rname">${r.name}</span></button>`).join("") +
+    `</div>`;
+}
+function lockButtons(nodes, chosen, correct, key) {
+  nodes.forEach(b => {
+    const v = b.dataset[key];
+    b.disabled = true;
+    if (v === String(correct)) b.classList.add("is-correct");
+    else if (v === String(chosen)) b.classList.add("is-wrong");
+    else b.classList.add("is-dim");
+  });
+}
+
+function qHead(label, pos, total) {
+  const pct = Math.round((pos / total) * 100);
+  return `<div class="qhead"><span class="round">${label}</span><span class="count">${pos + 1} von ${total}</span></div>
+    <div class="progress" aria-hidden="true"><span style="width:${pct}%"></span></div>`;
+}
+
+/* Ablauf einer Liste von Fragen; erkennt am Feld "violated", ob es ein Fall aus Runde 2 ist */
+function runSequence(items, label, lastLabel, done) {
+  let i = 0;
+  const step = () => {
+    if (i >= items.length) return done();
+    const item = items[i], pos = i++;
+    const nextLabel = i >= items.length ? lastLabel : "Weiter";
+    ("violated" in item ? renderCase : renderSituation)(item, pos, items.length, label, nextLabel, step);
+  };
+  step();
+}
+
+/* ================= RUNDE 1: Blitz-Zuordnung ================= */
+function renderSituation(item, pos, total, label, nextLabel, next) {
+  setBar(label);
+  render(`${qHead(label, pos, total)}
+    <article class="case"><p class="case-label">Situation</p><p class="case-text">${item.text}</p></article>
+    <p class="prompt">Welches Grundrecht ist hier betroffen?</p>
+    ${rightButtons()}
+    <div id="fbSlot"></div>`);
+
+  const btns = app.querySelectorAll(".right");
+  btns.forEach(b => b.addEventListener("click", () => {
+    const chosen = Number(b.dataset.id);
+    const ok = chosen === item.right;
+    lockButtons(btns, chosen, item.right, "id");
+    let pts = "";
+    if (!S.practice) {
+      S.answers++;
+      if (ok) {
+        S.correct++; S.r1Correct++; S.streak++;
+        S.bestStreak = Math.max(S.bestStreak, S.streak);
+        const bonus = S.streak >= 3 ? 5 : 0;   // Serienbonus ab der 3. richtigen Antwort in Folge
+        S.score += 10 + bonus;
+        pts = bonus ? `+15 Punkte (10 + 5 Serienbonus)` : `+10 Punkte`;
+      } else {
+        S.streak = 0;
+        addError(item);
+      }
+      setBar(label);
+      if (ok) bump($("#chipScore"));
+    }
+    const r = R[item.right];
+    showFeedback($("#fbSlot"), ok,
+      ok ? "Richtig!" : "Leider falsch.",
+      (ok ? "" : `Richtig ist <b>${r.art} – ${r.name}</b>. `) + item.why,
+      pts, nextLabel, next);
+  }));
+}
+
+/* ================= RUNDE 2: Der Fall ================= */
+function renderCase(item, pos, total, label, nextLabel, next) {
+  setBar(label);
+  const r = R[item.right];
+  render(`${qHead(label, pos, total)}
+    <article class="case"><p class="case-label">Fall</p><p class="case-text">${item.text}</p></article>
+    <section class="step" id="step1">
+      <p class="prompt"><span class="stepno">Schritt 1</span>Welches Grundrecht ist betroffen?</p>
+      ${rightButtons()}
+      <p class="mini" id="mini1" hidden></p>
+    </section>
+    <section class="step" id="step2" hidden>
+      <p class="prompt"><span class="stepno">Schritt 2</span>Wird ${r.art} (${r.name}) hier verletzt?</p>
+      <div class="verdicts">
+        <button type="button" class="verdict-btn" data-v="true">Ja, verletzt</button>
+        <button type="button" class="verdict-btn" data-v="false">Nein, nicht verletzt</button>
+      </div>
+    </section>
+    <div id="fbSlot"></div>`);
+
+  let gained = 0, hadError = false;
+  const rbtns = app.querySelectorAll(".right");
+  rbtns.forEach(b => b.addEventListener("click", () => {
+    const chosen = Number(b.dataset.id);
+    const ok = chosen === item.right;
+    lockButtons(rbtns, chosen, item.right, "id");
+    if (!S.practice) {
+      S.answers++;
+      if (ok) { S.correct++; S.r2Correct++; S.score += 10; gained += 10; bump($("#chipScore")); }
+      else hadError = true;
+      setBar(label);
+    }
+    const mini = $("#mini1");
+    mini.hidden = false;
+    mini.className = "mini " + (ok ? "ok" : "bad");
+    mini.textContent = ok ? `Richtig: ${r.art} ist betroffen.` : `Nicht ganz: Betroffen ist ${r.art} – ${r.name}.`;
+    const s2 = $("#step2");
+    s2.hidden = false;
+    s2.querySelector(".verdict-btn").focus({ preventScroll: true });
+    s2.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
+  }));
+
+  const vbtns = app.querySelectorAll(".verdict-btn");
+  vbtns.forEach(b => b.addEventListener("click", () => {
+    const chosen = b.dataset.v === "true";
+    const ok = chosen === item.violated;
+    lockButtons(vbtns, String(chosen), String(item.violated), "v");
+    if (!S.practice) {
+      S.answers++;
+      if (ok) { S.correct++; S.r2Correct++; S.score += 15; gained += 15; bump($("#chipScore")); }
+      else hadError = true;
+      if (hadError) addError(item);
+      setBar(label);
+    }
+    const verdictText = `<b>${r.art} wird hier ${item.violated ? "verletzt" : "nicht verletzt"}.</b> `;
+    showFeedback($("#fbSlot"), ok,
+      ok ? "Richtig entschieden!" : "Leider falsch entschieden.",
+      verdictText + item.why,
+      S.practice ? "" : `Dieser Fall: +${gained} von 25 Punkten`,
+      nextLabel, next);
+  }));
+}
+
+/* ================= BILDSCHIRME ================= */
+function renderIntro() {
+  setBar(null);
+  render(`<section class="intro">
+    <div>
+      <p class="eyebrow">Wirtschaft-Politik · Klasse 7</p>
+      <h1>Grundrechte-<span class="art-mark">Check</span></h1>
+    </div>
+    <p class="lead">Erkennst du, welches Grundrecht im Spiel ist? Und weißt du, wann der Staat ein Grundrecht einschränken darf?</p>
+    <ol class="plan">
+      <li><span class="tag">Runde 1</span><span><b>Blitz-Zuordnung</b><span class="sub">10 Situationen: Welches Grundrecht ist betroffen? Drei richtige Antworten in Folge bringen Bonuspunkte.</span></span><span class="time">ca. 3 Min.</span></li>
+      <li><span class="tag">Runde 2</span><span><b>Der Fall</b><span class="sub">5 Fälle: Welches Grundrecht ist betroffen, und wird es verletzt?</span></span><span class="time">ca. 4 Min.</span></li>
+      <li><span class="tag">Ende</span><span><b>Auswertung</b><span class="sub">Punkte, Titel und die Grundrechte, die du noch üben solltest.</span></span><span class="time">ca. 1 Min.</span></li>
+    </ol>
+    <div class="note">
+      <h2>Gut zu wissen</h2>
+      <p>Grundrechte schützen dich vor allem gegenüber dem <b>Staat</b>, zum Beispiel gegenüber der Polizei, der Stadt oder einer staatlichen Schule (Art. 1 Abs. 3 GG).</p>
+    </div>
+    <div class="actions"><button type="button" class="primary" id="start">Spiel starten</button></div>
+    <h2 class="section-title">Diese 8 Grundrechte kommen vor</h2>
+    <ul class="cheat">${RIGHTS.map(r => `<li><span class="art">${r.art}</span><span><b>${r.name}</b><span class="m">${r.merk}</span></span></li>`).join("")}</ul>
+  </section>`);
+  $("#start").addEventListener("click", startGame);
+}
+
+function startGame() {
+  newGame();
+  runSequence(pickRound1(), "Runde 1 · Blitz-Zuordnung", "Zum Zwischenstand", renderBreak);
+}
+
+function renderBreak() {
+  S.streak = 0;
+  setBar("Zwischenstand");
+  render(`<section class="panel">
+    <p class="eyebrow">Runde 1 geschafft</p>
+    <h1>Zwischenstand</h1>
+    <div class="stats">
+      <div class="stat"><div class="v">${S.r1Correct}/10</div><div class="l">richtig zugeordnet</div></div>
+      <div class="stat gold"><div class="v">${S.score}</div><div class="l">Punkte</div></div>
+      <div class="stat"><div class="v">${S.bestStreak}</div><div class="l">beste Serie</div></div>
+    </div>
+    <div class="note">
+      <h2>Vor Runde 2: Grundrechte haben Grenzen</h2>
+      <p>Der Staat darf die meisten Grundrechte einschränken, wenn ein Gesetz das erlaubt und es einen guten Grund gibt, zum Beispiel um andere Menschen zu schützen. <b>Verletzt</b> ist ein Grundrecht erst, wenn der Staat es ohne ausreichenden Grund einschränkt. Nur die Menschenwürde darf nie eingeschränkt werden.</p>
+    </div>
+    <p>So gehst du bei jedem Fall vor: Erst bestimmst du das betroffene Grundrecht (10 Punkte). Dann entscheidest du, ob es verletzt wird (15 Punkte).</p>
+    <div class="actions"><button type="button" class="primary" id="go2">Runde 2 starten</button></div>
+  </section>`);
+  $("#go2").addEventListener("click", () =>
+    runSequence(pickRound2(), "Runde 2 · Der Fall", "Zur Auswertung", renderResult));
+  $("#go2").focus({ preventScroll: true });
+}
+
+const STAR = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 20.9l1.6-7L2 9.2l7.1-.6z"/></svg>`;
+
+function renderResult() {
+  S.practice = false;
+  const pct = S.answers ? S.correct / S.answers : 0;
+  const title = pct >= 0.85 ? "Grundrechte-Profi" : pct >= 0.6 ? "Grundrechte-Kenner:in" : "Grundrechte-Entdecker:in";
+  const praise = pct >= 0.85 ? "Stark! Du kennst die Grundrechte und ihre Grenzen sehr gut."
+    : pct >= 0.6 ? "Gut gemacht! Bei ein paar Grundrechten lohnt sich noch ein zweiter Blick."
+    : "Ein guter Anfang. Schau dir die Grundrechte unten noch einmal an und übe deine Fehler.";
+  const wob = Object.entries(S.errors).sort((a, b) => b[1] - a[1]);
+  setBar("Auswertung");
+  render(`<section class="panel">
+    <p class="eyebrow">Auswertung</p>
+    <h1>Geschafft!</h1>
+    <span class="title-badge">${STAR}${title}</span>
+    <p>${praise}</p>
+    <div class="stats">
+      <div class="stat gold"><div class="v">${S.score}</div><div class="l">Punkte</div></div>
+      <div class="stat"><div class="v">${S.correct}/${S.answers}</div><div class="l">Antworten richtig</div></div>
+      <div class="stat"><div class="v">${S.bestStreak}</div><div class="l">beste Serie</div></div>
+    </div>
+    <h2 class="section-title">${wob.length ? "Diese Grundrechte wackeln noch" : "Keine Wackelkandidaten"}</h2>
+    ${wob.length
+      ? `<ul class="wobble">${wob.map(([id, n]) => { const r = R[id]; return `<li><span class="art">${r.art}</span><span><b>${r.name}</b><span class="m">${r.merk}</span></span><span class="err">${n} Fehler</span></li>`; }).join("")}</ul>`
+      : `<p>Du hast alle Grundrechte richtig erkannt und eingeordnet.</p>`}
+    <div class="note">
+      <h2>Merke</h2>
+      <ul class="rules">
+        <li>Grundrechte schützen dich vor allem gegenüber dem Staat.</li>
+        <li>Die meisten Grundrechte haben Grenzen, zum Beispiel die Rechte anderer Menschen.</li>
+        <li>Die Menschenwürde gilt ausnahmslos.</li>
+      </ul>
+    </div>
+    <div class="actions">
+      ${S.missed.length ? `<button type="button" class="primary" id="practice">Fehler nochmal üben (${S.missed.length})</button>` : ""}
+      <button type="button" class="${S.missed.length ? "secondary" : "primary"}" id="again">Neues Spiel</button>
+    </div>
+  </section>`);
+  $("#again").addEventListener("click", startGame);
+  const pb = $("#practice");
+  if (pb) pb.addEventListener("click", startPractice);
+}
+
+/* Übungsmodus: falsch beantwortete Fragen ohne Punkte wiederholen, danach zurück zur Auswertung */
+function startPractice() {
+  const items = shuffle(S.missed);
+  S.practice = true;
+  runSequence(items, "Übung · Fehler wiederholen", "Zurück zur Auswertung", renderResult);
+}
+
+renderIntro();
+</script>
+</body>
+</html>
