@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Radikalische Substitution</title>
+<style>
+:root{--bg:#eef3f6;--c:#fff;--t:#16262e;--m:#51646e;--a:#1d4fd7;--ok:#1f7a3a;--no:#b3261e;--b:#c3d0d7;--br:#8a3a12;--cl:#2a7a3a;--rad:#c2185b;--grid:rgba(29,79,215,.08);--sel:rgba(29,79,215,.09)}
+@media(prefers-color-scheme:dark){:root{--bg:#0e151a;--c:#17212a;--t:#e5edf2;--m:#9fb0ba;--a:#8fb4ff;--ok:#7bd08f;--no:#ff9a91;--b:#33444f;--br:#f0a26b;--cl:#8fd19e;--rad:#ff8fbf;--grid:rgba(143,180,255,.09);--sel:rgba(143,180,255,.12)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:17px/1.55 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
+main{max-width:900px;margin:auto;padding:16px 14px 24px}
+h1{font-size:1.6rem;line-height:1.2;margin:.1em 0 .1em}
+.sub{margin:0 0 14px;color:var(--m)}
+button{font:inherit;color:inherit;background:var(--c);border:1.5px solid var(--b);border-radius:8px;padding:10px 14px;min-height:44px;cursor:pointer;text-align:left;touch-action:manipulation}
+button:hover:not(:disabled){border-color:var(--a)}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+button:disabled{cursor:default;opacity:.6}
+#nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:14px}
+.tab{display:flex;flex-direction:column;gap:2px;padding:10px 14px}
+.tab small{color:var(--m);font-size:.82rem;line-height:1.3}
+.tab.on,.opt.on,.opt.sel{border-color:var(--a);background:var(--sel);box-shadow:inset 0 -4px 0 var(--a)}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.opt.ok,.opt.ok:disabled{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--c));opacity:1}
+.opt.term{font-weight:bold}
+.eq{padding:10px 14px;margin:0 0 12px;background:var(--c);border-left:5px solid var(--a);border-radius:0 8px 8px 0;font-size:1.1rem}
+.lead{margin:6px 0 12px}
+.g{display:grid;grid-template-columns:1fr 1.7fr;gap:10px}
+.g>div,.pool,.col{display:flex;flex-direction:column;gap:8px}
+.pool{margin-bottom:12px}.pool.wrap{flex-direction:row;flex-wrap:wrap}
+.fig{background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/24px 24px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/24px 24px,var(--c);border:1.5px solid var(--b);border-radius:8px;padding:4px}
+.fig[hidden]{display:none}
+.fig svg{display:block;width:100%;height:auto;max-width:640px;margin:auto}
+.card{background:var(--c);border:1.5px solid var(--b);border-radius:10px;padding:14px}
+.card .fig{margin-bottom:12px}.card h2{margin:0 0 6px;font-size:1.2rem}
+.qt{font-size:1.12rem;font-weight:bold;margin:8px 0 12px}
+.dots{display:flex;gap:6px}.dots span{width:26px;height:6px;border-radius:3px;background:var(--b)}
+.dots .on{background:var(--ok)}.dots .cur{background:var(--a)}
+/* Phasen */
+.ph{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.colh{font-weight:bold;text-align:center;border-color:var(--a)}
+.sorted{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.sorted li{background:color-mix(in srgb,var(--ok) 12%,var(--c));border:1.5px solid var(--ok);border-radius:8px;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-size:.95rem}
+.sorted small{display:block;color:var(--m);font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:.85rem}
+.eqb{font-family:Arial,Helvetica,sans-serif;font-size:1rem}
+details.tip,details#why{background:var(--c);border:1.5px solid var(--b);border-radius:8px;padding:8px 14px;margin:0 0 12px}
+details#why{margin-top:16px}
+summary{cursor:pointer;font-weight:bold}
+details p{margin:8px 0}
+/* Simulation */
+.field{background:var(--c);border:1.5px solid var(--b);border-radius:10px;padding:10px 14px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px}
+.field .r{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center}
+.chip{display:inline-block;padding:2px 9px;margin:2px 4px 2px 0;border:1.5px solid var(--b);border-radius:14px;font:15px Arial,Helvetica,sans-serif;background:var(--bg)}
+.chip.cl{color:var(--cl);border-color:var(--cl)}.chip.br{color:var(--br);border-color:var(--br)}
+.chip.rr::after{content:'•';color:var(--rad);font-weight:bold;margin-left:3px}
+.chip.rl::before{content:'•';color:var(--rad);font-weight:bold;margin-right:3px}
+.none{color:var(--m)}
+.sim h3{font-size:1rem;margin:14px 0 6px}
+.bar2{display:flex;gap:8px;flex-wrap:wrap}
+.sim button{font-family:Arial,Helvetica,sans-serif;font-size:.95rem}
+#f{position:sticky;bottom:10px;margin:14px 0 0;padding:10px 14px;background:var(--c);border:1.5px solid var(--b);border-left-width:6px;border-radius:8px;font-weight:bold;max-height:40vh;overflow:auto}
+#f:empty{display:none}#f.bad{border-left-color:var(--no)}#f.good{border-left-color:var(--ok)}
+/* Zeichnung */
+svg text{font-family:Arial,Helvetica,sans-serif}
+.at{fill:var(--t)}.br{fill:var(--br);font-weight:bold}.cl{fill:var(--cl);font-weight:bold}
+.cap,.dl{fill:var(--m);font-style:italic}
+.bd{stroke:var(--t);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.rd{fill:var(--rad)}.rdt{color:var(--rad);fill:var(--rad);font-weight:bold}
+.ar{fill:none;stroke:var(--a);stroke-width:2.8;stroke-linecap:round}.arh{fill:var(--a)}.akh{fill:var(--t)}
+.cy{fill:none;stroke:var(--t);stroke-width:3;stroke-linecap:round}
+.nd{fill:var(--c);stroke:var(--a);stroke-width:2.2}
+.gl{stroke:var(--b);stroke-width:1}.tk{fill:var(--m);font-size:13px}
+.pl{fill:none;stroke:var(--rad);stroke-width:2.5;stroke-linejoin:round}
+.ps{fill:var(--a)}.pf{fill:var(--ok)}.pa{fill:var(--no)}.p0{fill:var(--m)}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.rv .arw{animation:fi .6s ease-out}
+@media(prefers-reduced-motion:reduce){.rv .arw{animation:none}}
+@media(max-width:700px){.g,.ph{grid-template-columns:1fr}.field .r{grid-template-columns:1fr;gap:2px}}
+</style></head><body><main>
+<h1>Radikalische Substitution</h1>
+<p class="sub">Alkane mit Halogenen unter Lichteinfluss, Chemie Grundkurs Q2. Wähle eine Übung.</p>
+<nav id="nav" aria-label="Übungen"></nav><div id="v"></div>
+<details id="why"><summary>Warum sind genau diese drei Begriffe sinnvoll für die Kettenreaktion?</summary>
+<p><b>Homolytische Spaltung (Kettenstart):</b> Aus einem Molekül entstehen die ersten Radikale. Dafür wird Energie gebraucht, hier Licht. Ohne Radikale gibt es keine Kette.</p>
+<p><b>Wasserstoffübertragung (Kettenfortpflanzung):</b> Ein Radikal entreißt einem Alkan-Molekül ein H-Atom und gibt dabei sein ungepaartes Elektron weiter: Es entsteht ein neues Radikal. Zusammen mit der Halogenübertragung ergibt das einen Kreislauf, in dem die Radikalzahl gleich bleibt und sehr viele Moleküle umgesetzt werden.</p>
+<p><b>Rekombination (Kettenabbruch):</b> Zwei Radikale bilden ein gemeinsames Elektronenpaar. Es bleibt kein Radikal übrig, die Kette endet.</p>
+<p>Die drei Begriffe beantworten also, was mit den Radikalen geschieht: Sie entstehen, werden weitergegeben und verschwinden wieder.</p></details>
+<p id="f" role="status" aria-live="polite"></p>
+<script>
+const $=s=>document.querySelector(s), sh=a=>[...a].sort(()=>Math.random()-.5);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const rdt=s=>s.replace(/•/g,'<span class="rdt">•</span>'); // Radikalpunkt farbig
+// ---------- Level 1: Begriffe ----------
+const T=[ // Begriff, Beschreibung, Hinweis bei Fehler
+['Radikal','Teilchen mit mindestens einem ungepaarten Elektron (Schreibweise mit Punkt, z. B. Cl•)','Es geht um die Elektronen: Ein Elektron hat keinen Partner.'],
+['homolytische Spaltung','Das Bindungselektronenpaar wird gleichmäßig aufgeteilt, jedes Atom behält ein Elektron; es entstehen Radikale','Bei der heterolytischen Spaltung bekommt ein Atom beide Elektronen, es entstehen Ionen. Hier ist die gleichmäßige Aufteilung gemeint.'],
+['Wasserstoffübertragung','Ein Radikal entreißt einem Molekül ein H-Atom; dabei entsteht ein neues Radikal','Es wird ein einzelnes Atom übertragen, keine Ionen. Das Radikal gibt dabei ein neues Radikal frei.'],
+['Rekombination','Zwei Radikale verbinden sich zu einem Molekül; es bleibt kein Radikal übrig','Das Wort bedeutet „wieder verbinden“. Die beiden ungepaarten Elektronen bilden ein gemeinsames Paar.'],
+['Kettenstart','Erste Radikale entstehen durch Energiezufuhr, z. B. durch Licht','Ohne Radikale gibt es noch keine Kette. Woher kommen die ersten?'],
+['Kettenfortpflanzung','Ein Radikal reagiert und dabei entsteht ein neues Radikal, die Kette läuft weiter','Die Zahl der Radikale bleibt gleich: eines geht, eines kommt.'],
+['Kettenabbruch','Radikale werden verbraucht, ohne dass neue entstehen','Danach kann nichts mehr weiterreagieren.'],
+['Substitution','Ein Atom (hier H) wird durch ein anderes Atom (hier ein Halogenatom) ersetzt','Im Produkt steht anstelle eines H-Atoms ein Halogenatom, das Kohlenstoffgerüst bleibt.']];
+const EQ={A:'CH₄ + Cl₂ → CH₃Cl + HCl (Licht)',B:'C₂H₆ + Br₂ → C₂H₅Br + HBr (Licht)'};
+// ---------- Level 2: Phasen ----------
+const PH=['Kettenstart','Kettenfortpflanzung','Kettenabbruch'];
+const EQN={ // Gleichung, Phase, Radikale links, Radikale rechts, Name
+A:[['Cl₂ → 2 Cl•  (Licht)',0,0,2,'homolytische Spaltung'],
+['Cl• + CH₄ → HCl + •CH₃',1,1,1,'Wasserstoffübertragung'],
+['•CH₃ + Cl₂ → CH₃Cl + Cl•',1,1,1,'Chlorübertragung'],
+['Cl• + Cl• → Cl₂',2,2,0,'Rekombination'],
+['•CH₃ + •CH₃ → C₂H₆',2,2,0,'Rekombination'],
+['•CH₃ + Cl• → CH₃Cl',2,2,0,'Rekombination']],
+B:[['Br₂ → 2 Br•  (Licht)',0,0,2,'homolytische Spaltung'],
+['Br• + C₂H₆ → HBr + •C₂H₅',1,1,1,'Wasserstoffübertragung'],
+['•C₂H₅ + Br₂ → C₂H₅Br + Br•',1,1,1,'Bromübertragung'],
+['Br• + C₂H₅Br → HBr + •C₂H₄Br',1,1,1,'Wasserstoffübertragung (Folgereaktion)'],
+['Br• + Br• → Br₂',2,2,0,'Rekombination'],
+['•C₂H₅ + •C₂H₅ → C₄H₁₀',2,2,0,'Rekombination'],
+['•C₂H₅ + Br• → C₂H₅Br',2,2,0,'Rekombination']]};
+// ---------- Level 3: Simulation ----------
+const SIMN={A:{X:'Cl',X2:'Cl₂',RH:'CH₄',R:'CH₃',HX:'HCl',RX:'CH₃Cl',RR:'C₂H₆',c:'cl',pre:'Chlor'},
+B:{X:'Br',X2:'Br₂',RH:'C₂H₆',R:'C₂H₅',HX:'HBr',RX:'C₂H₅Br',RR:'C₄H₁₀',c:'br',pre:'Brom'}};
+// ---------- Level 4: Fragen ----------
+const Q={ // Frage, Optionen (erste = richtig), Erklärung, Hinweis
+A:[['Cl₂ wird durch Licht gespalten. Warum entstehen dabei Radikale und keine Ionen?',['Beide Cl-Atome sind gleich elektronegativ, daher wird das Bindungselektronenpaar gleichmäßig aufgeteilt: Jedes Atom behält ein Elektron','Cl₂ ist polar, das Elektronenpaar geht zum elektronegativeren Cl-Atom','Das Licht entfernt von jedem Cl-Atom ein Proton'],'Die Bindung ist unpolar (zwei gleiche Atome). Bei der homolytischen Spaltung bleibt an jedem Atom ein Elektron: zwei Chlorradikale.','Vergleiche die Elektronegativität der beiden Atome in Cl₂. Wohin sollte das Elektronenpaar dann gehen?'],
+['Bei der Spaltung von Cl₂ werden Pfeile mit nur einer halben Pfeilspitze gezeichnet (Halbpfeile). Was zeigen sie im Unterschied zu den Vollpfeilen bei der elektrophilen Addition?',['Die Bewegung eines einzelnen Elektrons, nicht die eines Elektronenpaars','Die Bewegung eines Protons','Dass die Reaktion nur zur Hälfte abläuft'],'Ein Vollpfeil steht für ein Elektronenpaar, ein Halbpfeil für ein einzelnes Elektron. Bei der homolytischen Spaltung geht von der Bindung je ein Elektron zu jedem Atom.','Bei Radikalen geht es um ungepaarte Elektronen. Wie viele Elektronen werden jeweils verschoben?'],
+['Ein Cl•-Radikal trifft auf ein CH₄-Molekül. Welche Reaktion ist plausibel?',['Cl• entreißt dem CH₄ ein H-Atom: Es entstehen HCl und das Methylradikal •CH₃','Cl• gibt sein Elektron an CH₄ ab, es entstehen Ionen','Cl• lagert sich an das C-Atom an, es entsteht CH₄Cl•'],'Das Cl-Atom bildet mit dem H-Atom eine Bindung (HCl), das zweite Bindungselektron bleibt am Kohlenstoff: •CH₃. Man nennt das Wasserstoffübertragung.','Ein C-Atom kann nicht mehr als vier Bindungen haben. Was muss dann mit einem H-Atom geschehen?'],
+['Das •CH₃-Radikal trifft auf ein Cl₂-Molekül. Warum läuft die Kette danach weiter?',['Es entsteht neben CH₃Cl wieder ein Cl•-Radikal, das ein neues CH₄-Molekül angreifen kann','Das •CH₃-Radikal wird zu CH₃Cl, damit sind alle Radikale verbraucht','Das Cl₂-Molekül wird durch das Methylradikal in Ionen gespalten'],'Das Methylradikal nimmt ein Cl-Atom auf, das andere Cl-Atom bleibt als Radikal zurück. Die Radikalzahl bleibt gleich: 1 → 1.','Zähle die Radikale vor und nach dem Schritt. Was bleibt vom Cl₂-Molekül übrig, nachdem ein Cl-Atom gebunden wurde?'],
+['Ein einziger Lichtblitz startet die Reaktion, trotzdem werden sehr viele CH₄-Moleküle umgesetzt. Wie erklärt man das?',['Das Cl•-Radikal wird im zweiten Fortpflanzungsschritt zurückgebildet und kann immer wieder reagieren','Das Licht wirkt als Katalysator und wird nicht verbraucht','Jedes CH₄-Molekül nimmt selbst Licht auf'],'Die beiden Fortpflanzungsschritte bilden einen Kreislauf: Cl• → •CH₃ → Cl• … Erst wenn Radikale durch Abbruch verschwinden, hört die Kette auf.','Was entsteht am Ende des zweiten Schrittes, und womit beginnt der erste Schritt?'],
+['Der Kettenabbruch ist zu Beginn der Reaktion selten und wird gegen Ende häufiger. Warum?',['Anfangs gibt es viele CH₄- und Cl₂-Moleküle, ein Radikal trifft viel wahrscheinlicher auf ein Molekül als auf ein anderes Radikal; gegen Ende fehlen die Moleküle','Die Rekombination braucht Licht, das gegen Ende stärker wird','Radikale reagieren nur dann miteinander, wenn die Temperatur sinkt'],'Radikale sind sehr reaktiv, aber ihre Konzentration ist klein. Solange viele Moleküle da sind, setzen sie die Kette fort. Werden die Ausgangsstoffe knapp, treffen sich Radikale häufiger und rekombinieren.','Überlege, womit ein einzelnes Radikal am Anfang am wahrscheinlichsten zusammenstößt.'],
+['Ein Schüler schreibt: „Cl₂ → 2 Cl• ist ein Kettenabbruch, weil Cl₂ verbraucht wird.“ Wo liegt der Denkfehler?',['Entscheidend ist die Radikalbilanz: Hier entstehen aus 0 Radikalen zwei, das ist der Kettenstart','Cl₂ wird in diesem Schritt gar nicht verbraucht','Ein Abbruch liegt immer vor, wenn ein Molekül gespalten wird'],'Ob Start, Fortpflanzung oder Abbruch, erkennt man an der Zahl der Radikale: Start 0 → 2, Fortpflanzung 1 → 1, Abbruch 2 → 0.','Zähle die Radikale links und rechts vom Reaktionspfeil.'],
+['Warum sind homolytische Spaltung, Wasserstoffübertragung und Rekombination gute Begriffe, um die Kettenreaktion zu beschreiben?',['Sie beschreiben, was mit den Radikalen geschieht: Sie entstehen (Start), werden weitergegeben (Fortpflanzung) und verschwinden (Abbruch)','Sie bezeichnen die drei Produkte der Reaktion','Sie geben an, wie viel Licht in jeder Phase gebraucht wird'],'Homolytische Spaltung: Aus einem Molekül entstehen die ersten Radikale. Wasserstoffübertragung: Das ungepaarte Elektron wird auf das nächste Teilchen weitergegeben, die Radikalzahl bleibt gleich. Rekombination: Zwei Radikale bilden eine Bindung, es bleibt kein Radikal übrig. Zusammen beschreiben sie den ganzen Lebenslauf einer Radikalkette.','Jeder Begriff beantwortet eine Frage zu den Radikalen: entstehen, weitergeben oder verschwinden?']],
+B:[['Ein Gemisch aus Ethan und Brom bleibt im Dunkeln braun, bei Belichtung entfärbt es sich allmählich. Welche Rolle hat das Licht?',['Es liefert die Energie für die homolytische Spaltung von Br₂ in zwei Br•-Radikale (Kettenstart)','Es polarisiert Br₂ wie bei Ethen (induzierter Dipol), danach greift Br₂ als Elektrophil an','Es spaltet Ethan in Ionen'],'Alkane haben keine Doppelbindung, die Br₂ polarisieren könnte. Erst die Lichtenergie spaltet Br₂ homolytisch in Radikale.','Ethan besitzt keine C=C-Bindung. Wie kann Br₂ dann überhaupt reaktiv werden?'],
+['Ein Br•-Radikal trifft auf ein Ethan-Molekül. Welches Teilchen entsteht neben HBr, und warum setzt das die Kette fort?',['Ein Ethylradikal •C₂H₅; es hat wieder ein ungepaartes Elektron und kann weiterreagieren','Ein Ethyl-Kation C₂H₅⁺, das sich mit Br⁻ verbindet','Ein Ethylradikal; die Kette endet, weil Br• verbraucht ist'],'Br• nimmt ein H-Atom samt einem Bindungselektron mit. Das andere Elektron bleibt am C-Atom, es entsteht ein neues Radikal: Die Radikalzahl bleibt gleich.','Beim Abspalten eines H-Atoms nimmt es genau ein Elektron der C–H-Bindung mit. Was passiert mit dem zweiten?'],
+['Das Ethylradikal trifft auf ein Br₂-Molekül. Welche Produkte entstehen?',['Bromethan und ein neues Br•-Radikal','Bromethan und ein Bromid-Ion Br⁻','1,2-Dibromethan durch Addition'],'Das Radikal bindet ein Br-Atom, das andere bleibt als Radikal zurück und beginnt den Kreislauf von vorn.','Auch hier wird die Br–Br-Bindung homolytisch gespalten, nicht heterolytisch.'],
+['Ethen entfärbt Brom schon im Dunkeln, Ethan nicht. Wie erklärt man den Unterschied?',['Die elektronenreiche C=C-Bindung polarisiert Br₂ (elektrophile Addition über Ionen); Ethan hat keine solche Bindung, hier muss erst das Licht Radikale erzeugen','Ethan ist polarer als Ethen','Ethen enthält mehr Wasserstoffatome'],'Ethen reagiert ionisch über ein Carbokation. Ethan reagiert radikalisch, und dieser Mechanismus braucht Energie für den Start.','Denke an die elektrophile Addition: Welche Struktur im Ethen macht Br₂ reaktiv?'],
+['Im Produktgemisch findet man neben Bromethan Spuren von Butan (C₄H₁₀). Wie entsteht es?',['Zwei Ethylradikale verbinden sich: •C₂H₅ + •C₂H₅ → C₄H₁₀ (Rekombination, Kettenabbruch)','Br• spaltet Ethan in zwei CH₃-Gruppen, die sich zu Butan verbinden','Durch elektrophile Addition von Ethan an Ethan'],'Butan ist ein Hinweis auf Ethylradikale im Gemisch und damit auf den radikalischen Mechanismus.','Butan hat vier C-Atome. Welche reaktiven Teilchen mit zwei C-Atomen gibt es im Gemisch?'],
+['Bei Bromüberschuss entstehen auch Dibromethane (z. B. C₂H₄Br₂). Wie kommt es dazu?',['Br• entreißt auch dem Bromethan ein H-Atom, das entstehende Radikal reagiert mit Br₂ weiter (Mehrfachsubstitution)','Br₂ addiert sich an die C–C-Einfachbindung','Bromethan zerfällt in Ionen, die sich neu verbinden'],'Auch Bromethan besitzt H-Atome, die übertragen werden können. Die Substitution kann sich daher wiederholen.','Bromethan hat noch H-Atome. Was kann ein Br• damit tun?'],
+['Der Abbruch •C₂H₅ + •Br → C₂H₅Br wird mit Halbpfeilen gezeichnet. Wie sehen die Pfeile aus?',['Von jedem der beiden ungepaarten Elektronen zeigt ein Halbpfeil zur neuen Bindung zwischen C und Br','Ein Vollpfeil vom Br zum C-Atom','Zwei Halbpfeile, die von der neuen Bindung wegzeigen'],'Zwei einzelne Elektronen bilden ein gemeinsames Paar: Je ein Halbpfeil kommt von beiden Radikalen.','Zwei Radikale, zwei einzelne Elektronen: Wohin müssen beide wandern, damit eine Bindung entsteht?'],
+['Worin unterscheiden sich homolytische Spaltung, Wasserstoffübertragung und Rekombination in ihrer Wirkung auf die Zahl der Radikale?',['Spaltung: Die Zahl steigt (0 → 2). Wasserstoffübertragung: Sie bleibt gleich (1 → 1). Rekombination: Sie sinkt (2 → 0)','Alle drei erhöhen die Zahl der Radikale, nur unterschiedlich schnell','Spaltung und Rekombination erhöhen sie, die Wasserstoffübertragung senkt sie'],'Das macht sie zu passenden Begriffen: Sie stehen für Entstehen, Weitergeben und Verschwinden von Radikalen, also für die drei Phasen der Kette.','Zähle die Radikale vor und nach jeder Reaktion.']]};
+// ---------- Strukturformeln (SVG) ----------
+const WID={'+':20,H:22,'H₃C':52,'CH₂':56,'CH₃':56,Cl:27,Br:30};
+const X=(x,y,t,c='at',s=26)=>`<text x="${x}" y="${y}" class="${c}" font-size="${s}" text-anchor="middle" dominant-baseline="central">${t}</text>`;
+const L=(a,b,c,d,k='bd')=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" class="${k}"/>`;
+const D=(x,y)=>`<circle cx="${x}" cy="${y}" r="4.8" class="rd"/>`;
+// Zeile aus Bausteinen: t = Text, b = Bindung, d = Radikalpunkt, g = Lücke; liefert Positionen für die Pfeile
+function row(items,x0,y){let x=x0,s='',p={};
+ for(const it of items){const k=it[0];
+  if(k=='t'){const w=WID[it[1]];s+=X(x+w/2,y,it[1],it[2]||'at');p[it[3]||it[1]]=x+w/2;x+=w}
+  else if(k=='b'){s+=L(x+4,y,x+34,y);if(it[1])p[it[1]]=x+19;x+=38}
+  else if(k=='d'){s+=D(x+7,y);p[it[1]]=x+7;x+=14}
+  else x+=it[1]}
+ return {s,p,w:x-x0}}
+const PL=[['g',14],['t','+'],['g',14]];
+// Halbpfeil (ein Elektron): gebogener Pfeil von (x1,y1) nach (x2,y2)
+const AP=(x1,y1,x2,y2,lift=24)=>{const t=Math.min(y1,y2)-lift;return `<path d="M ${x1} ${y1} C ${x1+(x2-x1)*.2} ${t}, ${x1+(x2-x1)*.8} ${t}, ${x2} ${y2}" class="ar" marker-end="url(#hh)"/>`};
+const wrap=(W,s)=>{const k=Math.min(1,600/W);return `<g transform="translate(${(640-W*k)/2},${130*(1-k)}) scale(${k})">${s}</g>`};
+// Reaktionsschema: links Edukte, Pfeil, rechts Produkte (vor der Auflösung nur „?“)
+function rx(Li,Ri,r,arrows,cap,hv){
+ const y=130,GA=84,l=row(Li,0,y),wl=l.w,rr=row(Ri,wl+GA,y),W=wl+GA+rr.w;
+ let s=l.s+L(wl+16,y,wl+GA-16,y)+`<path d="M ${wl+GA-26} ${y-7} L ${wl+GA-16} ${y} L ${wl+GA-26} ${y+7}" class="bd" fill="none"/>`;
+ if(hv)s+=X(wl+GA/2,y-28,hv,'dl',22);
+ if(r)s+=`<g class="arw">${arrows(l.p,rr.p,y)}</g>`+rr.s+(cap?X(W/2,y+80,cap,'cap',22):'');
+ else s+=X(wl+GA+30,y,'?','at',34);
+ return wrap(W,s)}
+const SP=h=>{const c=h=='Cl'?'cl':'br',e=h=='Br';
+ return {h,c,e,
+ hal2:[['t',h,c,'a'],['b','hb'],['t',h,c,'b']],
+ hr:[['t',h,c,'a'],['d','d']],
+ rh:[['d','e'],['t',h,c,'b']],
+ RH:e?[['t','H','at','H'],['b','cb'],['t','CH₂','at','C'],['b'],['t','CH₃']]:[['t','H','at','H'],['b','cb'],['t','CH₃','at','C']],
+ Rl:e?[['d','d'],['t','CH₂','at','C'],['b'],['t','CH₃']]:[['d','d'],['t','CH₃','at','C']],
+ Rr:e?[['t','H₃C'],['b'],['t','CH₂','at','C'],['d','d']]:[['t','H₃C','at','C'],['d','d']],
+ RX:e?[['t','H₃C'],['b'],['t','CH₂','at','C'],['b'],['t',h,c,'x']]:[['t','H₃C','at','C'],['b'],['t',h,c,'x']],
+ HX:[['t','H'],['b'],['t',h,c]]}};
+const SPS={A:SP('Cl'),B:SP('Br')};
+const SC={
+ start:(sp,r)=>rx(sp.hal2,[...sp.hr,...PL,...sp.rh],r,(l,q,y)=>AP(l.hb-5,y-8,l.a,y-19)+AP(l.hb+5,y-8,l.b,y-19),'Kettenstart: homolytische Spaltung','hν'),
+ h1:(sp,r)=>rx([...sp.hr,...PL,...sp.RH],[...sp.HX,...PL,...sp.Rl],r,(l,q,y)=>AP(l.d+2,y-8,l.H-4,y-19,28)+AP(l.cb,y-8,l.C-16,y-19,28),'Kettenfortpflanzung: Wasserstoffübertragung'),
+ h2:(sp,r)=>rx([...sp.Rr,...PL,...sp.hal2],[...sp.RX,...PL,...sp.hr],r,(l,q,y)=>AP(l.d+2,y-8,l.a-6,y-19,28)+AP(l.hb,y-8,l.b,y-19,28),'Kettenfortpflanzung: '+(sp.h=='Cl'?'Chlor':'Brom')+'übertragung'),
+ end:(sp,r)=>rx([...sp.Rr,['g',64],...sp.rh],sp.RX,r,(l,q,y)=>{const m=(l.d+l.e)/2;return AP(l.d+3,y-9,m-5,y-20,26)+AP(l.e-3,y-9,m+5,y-20,26)},'Kettenabbruch: Rekombination'),
+ cyc:(sp,r)=>{const R=sp.e?'C₂H₅':'CH₃',N={cl:'Chlor',br:'Brom'}[sp.c],lx=140,rxx=500,lw=96,rw=sp.e?132:112,hx=sp.e?'HBr':'HCl',x2=sp.h+'₂',rh=sp.e?'C₂H₆':'CH₄',rxn=sp.e?'C₂H₅Br':'CH₃Cl';
+  const node=(cx,w,t)=>`<rect x="${cx-w/2}" y="108" width="${w}" height="44" rx="22" class="nd"/>`+t;
+  const nl=node(lx,lw,`<text x="${lx}" y="130" class="${sp.c}" font-size="26" text-anchor="middle" dominant-baseline="central">${sp.h}<tspan class="rdt">•</tspan></text>`);
+  const nr=node(rxx,rw,`<text x="${rxx}" y="130" class="at" font-size="26" text-anchor="middle" dominant-baseline="central"><tspan class="rdt">•</tspan>${R}</text>`);
+  let s=nl+nr+`<path d="M ${lx+22} 106 C ${lx+90} 18, ${rxx-90} 18, ${rxx-22} 106" class="cy" marker-end="url(#ak)"/><path d="M ${rxx-22} 154 C ${rxx-90} 242, ${lx+90} 242, ${lx+22} 154" class="cy" marker-end="url(#ak)"/>`
+   +X(320,16,hx,'at',22)+X(320,66,'+ '+rh,'at',22)+X(320,194,'+ '+x2,'at',22)+X(320,246,rxn,'at',22);
+  if(r)s+=X(320,92,'Wasserstoffübertragung','cap',20)+X(320,130,'Kettenfortpflanzung','cap',22)+X(320,168,N+'übertragung','cap',20);
+  return s}};
+const ALT={start:'Spaltung eines Halogenmoleküls unter Lichteinfluss in zwei Halogenradikale',h1:'Ein Halogenradikal entreißt einem Alkan-Molekül ein H-Atom, es entstehen Halogenwasserstoff und ein Alkylradikal',h2:'Ein Alkylradikal reagiert mit einem Halogenmolekül zum Halogenalkan und einem neuen Halogenradikal',end:'Zwei Radikale verbinden sich zu einem Molekül',cyc:'Kreislauf der beiden Fortpflanzungsschritte: Halogenradikal und Alkylradikal bilden sich abwechselnd neu'};
+let U=0;
+const svg=(sc,key,r)=>{const u=++U;
+ return `<svg viewBox="0 0 640 260" role="img" aria-label="${ALT[key]}"><defs><marker id="hh${u}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 5 Z" class="arh"/></marker><marker id="ak${u}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" class="akh"/></marker></defs>${SC[key](SPS[sc],r).replace(/#hh\)/g,'#hh'+u+')').replace(/#ak\)/g,'#ak'+u+')')}</svg>`};
+// Bild vor / nach der richtigen Antwort je Frage ("Name"+0/1 = ohne/mit Auflösung, 0 = kein Bild)
+const PIC={A:[['start0','start1'],[0,'start1'],['h10','h11'],['h20','h21'],[0,'cyc1'],[0,'end1'],[0,0],[0,0]],
+ B:[['start0','start1'],['h10','h11'],['h20','h21'],[0,0],[0,0],[0,0],['end0','end1'],[0,'cyc1']]};
+// ---------- Zustand ----------
+let st=1,sc='A',done=new Set(),err={1:new Set(),2:0,4:0};
+const f=(m,c)=>{$('#f').textContent=m;$('#f').className=c||''};
+const TABS=[['Begriffe zuordnen','Fachbegriffe und Beschreibungen'],['Phasen zuordnen','Start, Fortpflanzung oder Abbruch'],['Kette simulieren','Radikale zählen und beobachten'],['Mechanismus verstehen','Fragen mit Strukturformeln']];
+const fin=i=>i==0?done.has('1'):done.has((i+1)+'A')&&done.has((i+1)+'B');
+function nav(){const n=$('#nav');n.innerHTML='';
+ TABS.forEach(([a,b],i)=>{const x=el('button','tab'+(i+1==st?' on':''));x.setAttribute('aria-current',i+1==st);
+  x.append(el('b',null,(i+1)+'  '+a+(fin(i)?'  ✓':'')),el('small',null,b));x.onclick=()=>{st=i+1;show()};n.append(x)})}
+const lbl=k=>({A:'A: Methan + Cl₂',B:'B: Ethan + Br₂ (schwerer)'}[k])+(done.has(st+k)?'  ✓':'');
+const mark=()=>document.querySelectorAll('[data-k]').forEach(b=>b.textContent=lbl(b.dataset.k));
+function bar(){const d=el('div','seg');
+ ['A','B'].forEach(k=>{const b=el('button','opt'+(k==sc?' on':''),lbl(k));b.dataset.k=k;b.onclick=()=>{sc=k;show()};d.append(b)});
+ return [d,el('div','eq',EQ[sc])]}
+function show(){nav();f('');$('#v').innerHTML='';[s1,s2,s3,s4][st-1]()}
+// ---------- Level 1 ----------
+function s1(){
+ const v=$('#v');v.append(el('p','lead','Tippe zuerst einen Begriff an, dann die passende Beschreibung.'));
+ const g=el('div','g'),l=el('div'),r=el('div');g.append(l,r);v.append(g);
+ let sel=null,n=0;
+ const mk=(txt,i,k)=>{const b=el('button','opt'+(k=='t'?' term':''),txt);b.dataset.i=i;
+  b.onclick=()=>{ if(b.disabled)return;
+   if(k=='t'){l.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel=b;b.classList.add('sel');f('');return}
+   if(!sel){f('Wähle zuerst einen Begriff aus.','bad');return}
+   if(sel.dataset.i==b.dataset.i){sel.disabled=b.disabled=true;sel.classList.remove('sel');sel.classList.add('ok');b.classList.add('ok');sel=null;
+    if(++n==T.length){done.add('1');nav();const u=[...err[1]];
+     f(u.length?'Alle Begriffe zugeordnet. Noch unsicher: '+u.join(', ')+'.':'Alle Begriffe ohne Fehler zugeordnet.','good');
+     const rb=el('button','opt','Noch einmal');rb.style.marginTop='12px';rb.onclick=()=>{err[1]=new Set();show()};v.append(rb)}
+    else f('Richtig. '+n+' von '+T.length+' zugeordnet.','good')}
+   else{const i=+sel.dataset.i;err[1].add(T[i][0]);f('Nicht passend zu „'+T[i][0]+'“. Hinweis: '+T[i][2],'bad');sel.classList.remove('sel');sel=null}};return b};
+ T.forEach((t,i)=>l.append(mk(t[0],i,'t')));
+ sh(T.map((_,i)=>i)).forEach(i=>r.append(mk(T[i][1],i,'d')))}
+// ---------- Level 2 ----------
+function s2(){
+ const v=$('#v');v.append(...bar(),el('p','lead','Tippe eine Reaktionsgleichung an, dann die Phase, zu der sie gehört.'));
+ const tip=el('details','tip');tip.innerHTML='<summary>Tipp</summary><p>Zähle die Radikale links und rechts vom Reaktionspfeil. Entstehen neue, bleibt die Zahl gleich oder verschwinden Radikale?</p>';v.append(tip);
+ const pool=el('div','pool wrap'),g=el('div','ph');v.append(pool,g);
+ const E=EQN[sc];let sel=null,n=0;
+ PH.forEach((nm,k)=>{const col=el('div','col'),hb=el('button','opt colh',nm),ul=el('ul','sorted');
+  hb.onclick=()=>{ if(!sel){f('Wähle zuerst eine Reaktionsgleichung aus.','bad');return}
+   const e=E[sel.dataset.i];
+   if(e[1]==k){const li=el('li');li.innerHTML=rdt(e[0])+'<small>'+e[4]+', Radikale: '+e[2]+' → '+e[3]+'</small>';ul.append(li);sel.remove();sel=null;n++;
+    if(n==E.length){done.add('2'+sc);nav();mark();f('Alle Reaktionen sind richtig zugeordnet. Fehlversuche in dieser Sitzung: '+err[2]+'.','good');
+     const rb=el('button','opt','Neu mischen');rb.onclick=show;pool.append(rb)}
+    else f('Richtig.','good')}
+   else{err[2]++;f('Radikalbilanz dieser Gleichung: '+e[2]+' → '+e[3]+'. Das passt nicht zu „'+nm+'“.','bad');sel.classList.remove('sel');sel=null}};
+  col.append(hb,ul);g.append(col)});
+ sh(E.map((_,i)=>i)).forEach(i=>{const b=el('button','opt eqb');b.innerHTML=rdt(E[i][0]);b.dataset.i=i;
+  b.onclick=()=>{pool.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel=b;b.classList.add('sel');f('')};pool.append(b)})}
+// ---------- Level 3: Simulation ----------
+function chart(h){const W=640,H=170,pl=40,pr=16,pt=30,pb=28,mx=Math.max(4,...h.map(a=>a[0])),xm=Math.max(h.length-1,12);
+ const x=i=>pl+(W-pl-pr)*i/xm,y=v=>H-pb-(H-pb-pt)*v/mx;let g='';
+ for(let v=0;v<=mx;v+=2)g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" class="gl"/><text x="${pl-8}" y="${y(v)}" class="tk" text-anchor="end" dominant-baseline="central">${v}</text>`;
+ const pts=h.map((a,i)=>x(i)+','+y(a[0])).join(' '),dots=h.map((a,i)=>`<circle cx="${x(i)}" cy="${y(a[0])}" r="5" class="p${a[1]||'0'}"/>`).join('');
+ const lg=[['ps','Start',300],['pf','Fortpflanzung',372],['pa','Abbruch',500]].map(([c,t,px])=>`<circle cx="${px}" cy="14" r="5" class="${c}"/><text x="${px+10}" y="14" class="tk" dominant-baseline="central">${t}</text>`).join('');
+ return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Verlauf der Radikalzahl über die Reaktionsschritte">${g}<polyline points="${pts}" class="pl"/>${dots}<text x="${pl}" y="14" class="tk" dominant-baseline="central">Anzahl der Radikale</text>${lg}<text x="${W-pr}" y="${H-8}" class="tk" text-anchor="end">Reaktionsschritte</text></svg>`}
+function s3(){
+ const v=$('#v');v.append(...bar());const N=SIMN[sc];
+ let s={X2:6,RH:6,X:0,R:0,HX:0,RX:0,aX2:0,aRR:0,aRX:0,photons:0,h:[[0,'']]};
+ v.append(el('p','lead',`Aufgabe: Starte die Kette mit einem Lichtblitz, lass mindestens drei Moleküle ${N.RX} entstehen und beende die Kette dann durch Abbruch, bis kein Radikal mehr übrig ist. Beobachte dabei die Kurve der Radikalzahl.`));
+ const field=el('div','field'),cb=el('div','fig'),btns=el('div','sim');v.append(field,cb,btns);
+ const rad=()=>s.X+s.R;
+ const ch=(t,k,rc)=>`<span class="chip ${k||''} ${rc||''}">${t}</span>`;
+ const rows=l=>{const o=l.map(([n,t,k,rc])=>ch(t,k,rc).repeat(n)).join('');return o||'<span class="none">–</span>'};
+ const draw=()=>{field.innerHTML=
+  `<div class="r"><b>Vorrat</b><div>${rows([[s.RH,N.RH],[s.X2,N.X2,N.c]])}</div></div>`+
+  `<div class="r"><b>Radikale</b><div>${rows([[s.X,N.X,N.c,'rr'],[s.R,N.R,'','rl']])}</div></div>`+
+  `<div class="r"><b>Produkte</b><div>${rows([[s.HX,N.HX],[s.RX,N.RX]])}</div></div>`+
+  `<div class="r"><b>Aus Abbruch</b><div>${rows([[s.aX2,N.X2,N.c],[s.aRR,N.RR],[s.aRX,N.RX]])}</div></div>`;
+  cb.innerHTML=chart(s.h)};
+ const bad=m=>f(m,'bad');
+ const check=()=>{ if(rad()==0&&s.photons>0){const base=`Kette beendet: Es ist kein Radikal mehr übrig. Aus ${s.photons==1?'einem Lichtblitz':s.photons+' Lichtblitzen'} sind ${s.RX} ${N.RX} und ${s.HX} ${N.HX} entstanden.`;
+   if(s.RX>=3){done.add('3'+sc);nav();mark();f(base+' Mit nur wenigen Radikalen wurden viele Moleküle umgesetzt.','good')}
+   else f(base+' Lass die Kette beim nächsten Mal länger laufen, bevor du sie abbrichst.','good')}};
+ const log=(ph,msg,b)=>{s.h.push([rad(),ph]);draw();f(msg+' Radikale: '+b+' → '+rad()+'.','good');check()};
+ const act=(need,fn,ph,msg)=>()=>{const m=need();if(m)return bad(m);const b=rad();fn();log(ph,msg,b)};
+ const dot=`${N.X}•`,rr=`•${N.R}`;
+ const grp=(title,list)=>{btns.append(el('h3',null,title));const d=el('div','bar2');list.forEach(([t,fn])=>{const b=el('button','opt');b.innerHTML=rdt(t);b.onclick=fn;d.append(b)});btns.append(d)};
+ grp('Kettenstart',[[`${N.X2} → 2 ${dot}  (Licht)`,act(()=>s.X2<1?`Kein ${N.X2} mehr im Vorrat.`:'',()=>{s.X2--;s.X+=2;s.photons++},'s',`Kettenstart: ${N.X2} wird homolytisch gespalten.`)]]);
+ grp('Kettenfortpflanzung',[
+  [`${dot} + ${N.RH} → ${N.HX} + ${rr}`,act(()=>s.X<1?`Dafür wird ein ${dot} gebraucht. Starte zuerst die Kette.`:s.RH<1?`Kein ${N.RH} mehr im Vorrat.`:'',()=>{s.X--;s.R++;s.RH--;s.HX++},'f','Wasserstoffübertragung.')],
+  [`${rr} + ${N.X2} → ${N.RX} + ${dot}`,act(()=>s.R<1?`Dafür wird ein ${rr} gebraucht. Führe zuerst die Wasserstoffübertragung aus.`:s.X2<1?`Kein ${N.X2} mehr im Vorrat.`:'',()=>{s.R--;s.X++;s.X2--;s.RX++},'f',`${N.pre}übertragung.`)]]);
+ grp('Kettenabbruch',[
+  [`${dot} + ${dot} → ${N.X2}`,act(()=>s.X<2?`Dafür werden zwei ${dot} gebraucht.`:'',()=>{s.X-=2;s.aX2++},'a','Rekombination.')],
+  [`${rr} + ${rr} → ${N.RR}`,act(()=>s.R<2?`Dafür werden zwei ${rr} gebraucht.`:'',()=>{s.R-=2;s.aRR++},'a','Rekombination.')],
+  [`${rr} + ${dot} → ${N.RX}`,act(()=>s.R<1||s.X<1?`Dafür werden ein ${rr} und ein ${dot} gebraucht.`:'',()=>{s.R--;s.X--;s.aRX++},'a','Rekombination.')]]);
+ const rs=el('button','opt','Neu starten');rs.style.marginTop='14px';rs.onclick=show;btns.append(rs);
+ draw()}
+// ---------- Level 4 ----------
+function s4(){
+ const v=$('#v');v.append(...bar());const q=Q[sc],P=PIC[sc];let i=0;
+ const box=el('div','card');v.append(box);
+ (function ask(){box.innerHTML='';
+  if(i==q.length){done.add('4'+sc);nav();mark();f('');$('#why').open=true;
+   const rb=el('button','opt','Noch einmal');rb.onclick=show;
+   box.append(el('h2',null,'Mechanismus abgeschlossen'),el('p',null,'Fehlversuche in dieser Sitzung: '+err[4]+'. Die Zusammenfassung zu den drei Begriffen steht unten auf der Seite.'),rb);return}
+  const dots=el('div','dots');q.forEach((_,k)=>dots.append(el('span',k<i?'on':k==i?'cur':'')));
+  const fg=el('div','fig'),w=el('div','pool');
+  const put=(id,rv)=>{fg.hidden=!id;fg.innerHTML=id?svg(sc,id.slice(0,-1),id.slice(-1)=='1'):'';fg.classList.toggle('rv',!!rv)};
+  box.append(dots,el('p','qt',(i+1)+'/'+q.length+': '+q[i][0]),fg,w);put(P[i][0]);
+  sh(q[i][1].map((o,k)=>[o,k])).forEach(([o,k])=>{const b=el('button','opt',o);
+   b.onclick=()=>{ if(k==0){b.classList.add('ok');[...w.children].forEach(x=>x.disabled=true);put(P[i][1],true);f('Richtig. '+q[i][2],'good');
+     const nb=el('button','opt',i<q.length-1?'Weiter':'Fertig');nb.onclick=()=>{i++;f('');ask()};box.append(nb)}
+    else{err[4]++;b.disabled=true;f('Nicht ganz. '+q[i][3],'bad')}};w.append(b)})})()}
+show();
+</script></main></body></html>
