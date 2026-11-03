@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elektrophile Addition</title>
+<style>
+:root{--bg:#eef3f6;--c:#fff;--t:#16262e;--m:#51646e;--a:#1d4fd7;--ok:#1f7a3a;--no:#b3261e;--b:#c3d0d7;--br:#8a3a12;--grid:rgba(29,79,215,.08);--sel:rgba(29,79,215,.09)}
+@media(prefers-color-scheme:dark){:root{--bg:#0e151a;--c:#17212a;--t:#e5edf2;--m:#9fb0ba;--a:#8fb4ff;--ok:#7bd08f;--no:#ff9a91;--b:#33444f;--br:#f0a26b;--grid:rgba(143,180,255,.09);--sel:rgba(143,180,255,.12)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:17px/1.55 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
+main{max-width:880px;margin:auto;padding:16px 14px 24px}
+h1{font-size:1.6rem;line-height:1.2;margin:.1em 0 .1em}
+.sub{margin:0 0 14px;color:var(--m)}
+button{font:inherit;color:inherit;background:var(--c);border:1.5px solid var(--b);border-radius:8px;padding:10px 14px;min-height:44px;cursor:pointer;text-align:left;touch-action:manipulation}
+button:hover:not(:disabled){border-color:var(--a)}
+button:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+button:disabled{cursor:default;opacity:.6}
+#nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:14px}
+.tab{display:flex;flex-direction:column;gap:2px;padding:10px 14px}
+.tab small{color:var(--m);font-size:.82rem;line-height:1.3}
+.tab.on{border-color:var(--a);background:var(--sel);box-shadow:inset 0 -4px 0 var(--a)}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.opt.on{border-color:var(--a);background:var(--sel);box-shadow:inset 0 -4px 0 var(--a)}
+.opt.sel{border-color:var(--a);background:var(--sel);box-shadow:inset 0 -4px 0 var(--a)}
+.opt.ok,.opt.ok:disabled{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--c));opacity:1}
+.opt.term{font-weight:bold}
+.eq{padding:10px 14px;margin:0 0 12px;background:var(--c);border-left:5px solid var(--a);border-radius:0 8px 8px 0;font-size:1.1rem}
+.lead{margin:6px 0 12px}
+.g{display:grid;grid-template-columns:1fr 1.7fr;gap:10px}
+.g>div,.pool{display:flex;flex-direction:column;gap:8px}
+.pool{margin-bottom:12px}
+.fig{background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/24px 24px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/24px 24px,var(--c);border:1.5px solid var(--b);border-radius:8px;padding:4px}
+.fig[hidden]{display:none}
+.fig svg{display:block;width:100%;height:auto;max-width:640px;margin:auto}
+.steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:10px}
+.step p{margin:0 0 6px}
+.n{width:34px;height:34px;border-radius:50%;background:var(--a);color:var(--c);display:flex;align-items:center;justify-content:center;font-weight:bold}
+.card{background:var(--c);border:1.5px solid var(--b);border-radius:10px;padding:14px}
+.qt{font-size:1.12rem;font-weight:bold;margin:8px 0 12px}
+.dots{display:flex;gap:6px}.dots span{width:26px;height:6px;border-radius:3px;background:var(--b)}
+.dots .on{background:var(--ok)}.dots .cur{background:var(--a)}
+.card .fig{margin-bottom:12px}
+.card h2{margin:0 0 6px;font-size:1.2rem}
+#f{position:sticky;bottom:10px;margin:14px 0 0;padding:10px 14px;background:var(--c);border:1.5px solid var(--b);border-left-width:6px;border-radius:8px;font-weight:bold;max-height:40vh;overflow:auto}
+#f:empty{display:none}
+#f.bad{border-left-color:var(--no)}#f.good{border-left-color:var(--ok)}
+/* Zeichnung */
+svg text{font-family:Arial,Helvetica,sans-serif}
+.at{fill:var(--t)}.br{fill:var(--br);font-weight:bold}.cap,.dl{fill:var(--m);font-style:italic}
+.bd{stroke:var(--t);stroke-width:3;stroke-linecap:round}
+.lp{stroke:var(--t);stroke-width:2.6;stroke-linecap:round}
+.cc{fill:var(--c);stroke:var(--t);stroke-width:2}.cs{stroke:var(--t);stroke-width:2.2;stroke-linecap:round}
+.ar{fill:none;stroke:var(--a);stroke-width:3;stroke-linecap:round}.arh{fill:var(--a)}.num{fill:var(--a);font-weight:bold}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.rv .arw{animation:fi .6s ease-out}
+@media(prefers-reduced-motion:reduce){.rv .arw{animation:none}}
+@media(max-width:600px){.g{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>Elektrophile Addition an Ethen</h1>
+<p class="sub">Ethen mit Brom und mit Bromwasserstoff, Chemie Grundkurs Q2. Wähle eine Übung.</p>
+<nav id="nav" aria-label="Übungen"></nav><div id="v"></div><p id="f" role="status" aria-live="polite"></p>
+<script>
+const $=s=>document.querySelector(s), sh=a=>[...a].sort(()=>Math.random()-.5);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+// ---------- Inhalte ----------
+const T=[ // Begriff, Beschreibung, Hinweis bei Fehler
+['elektrophil','Elektronenarmes Teilchen, das Stellen mit hoher Elektronendichte angreift','Denke an die Wortherkunft: „elektronenliebend“. Wohin greift ein positiv polarisiertes Teilchen an?'],
+['nucleophil','Teilchen mit freiem Elektronenpaar, das positivierte Stellen angreift','Es sucht einen Atomkern (positive Stelle) und bringt dafür ein Elektronenpaar mit.'],
+['induzierter Dipol','Durch die Elektronen der C=C-Bindung verursachte Ladungsverschiebung in einem unpolaren Molekül','Br₂ ist unpolar. Die Polarisierung entsteht erst durch die Nähe der Doppelbindung.'],
+['heterolytische Spaltung','Bindungselektronenpaar geht vollständig an einen Partner, es entstehen Ionen','Bei der homolytischen Spaltung entstehen Radikale. Hier geht es um die andere Art.'],
+['Carbokation','Zwischenstufe mit positiv geladenem Kohlenstoffatom','Nach dem Angriff des Elektrophils fehlt einem C-Atom ein Bindungspartner.'],
+['Addition','Anlagerung von Teilchen unter Umwandlung der Doppel- in eine Einfachbindung','Es wird nichts abgespalten, die Teilchen werden an die C=C-Bindung gehängt.']];
+const EQ={A:'H₂C=CH₂ + Br₂ → BrH₂C–CH₂Br (1,2-Dibromethan)',B:'H₂C=CH₂ + HBr → CH₃–CH₂Br (Bromethan)'};
+const S={ // Reihenfolge: Text, warum noch nicht
+A:[['Br₂ nähert sich der C=C-Doppelbindung; deren Elektronen induzieren einen Dipol: Brδ⁺–Brδ⁻','Das ist der Startschritt, ohne Polarisierung kann nichts angreifen.'],
+['Das Elektronenpaar der C=C-Bindung greift das Brδ⁺ an, die Br–Br-Bindung wird heterolytisch gespalten','Erst muss das Br₂ polarisiert sein, sonst gibt es kein Elektrophil.'],
+['Es entstehen ein Carbokation (C⁺) und ein Bromid-Ion (Br⁻)','Zuerst muss das Elektrophil angegriffen und die Bindung gespalten worden sein.'],
+['Das Bromid-Ion (Nucleophil) greift das positiv geladene C-Atom an','Das Nucleophil braucht ein positives Ziel, das Carbokation muss also schon da sein.'],
+['Produkt: 1,2-Dibromethan','Das Produkt entsteht erst, wenn beide Brom-Atome gebunden sind.']],
+B:[['HBr nähert sich der C=C-Doppelbindung; HBr ist bereits polar: Hδ⁺–Brδ⁻','Startschritt: Das Elektrophil (Hδ⁺) muss erst in Reichweite sein.'],
+['Das Elektronenpaar der C=C-Bindung greift das Hδ⁺ an, die H–Br-Bindung wird heterolytisch gespalten','Erst muss das HBr nah genug sein.'],
+['Es entstehen ein Carbokation (CH₃–CH₂⁺) und ein Bromid-Ion (Br⁻)','Zuerst muss das Elektrophil angegriffen und die Bindung gespalten worden sein.'],
+['Das Bromid-Ion greift das positiv geladene C-Atom an','Dafür muss das Carbokation schon vorliegen.'],
+['Produkt: Bromethan','Das Produkt steht am Ende, nach dem Angriff des Nucleophils.']]};
+const Q={ // Frage, Optionen, richtig, Erklärung, Hinweis
+A:[['Warum wird das unpolare Br₂ in der Nähe von Ethen polar?',['Die Elektronen der C=C-Bindung stoßen die Elektronen im Br₂ ab (induzierter Dipol)','Br₂ ist immer polar','Ethen ist positiv geladen'],0,'Die Doppelbindung hat hohe Elektronendichte. Sie verschiebt die Elektronen im Br₂: das nähere Br wird δ⁺, das ferne δ⁻.','Br₂ besteht aus zwei gleichen Atomen, daher ist es ohne äußeren Einfluss unpolar.'],
+['Wohin zeigt der erste Elektronenpfeil?',['Vom Brδ⁺ zur C=C-Bindung','Vom Elektronenpaar der C=C-Bindung zum Brδ⁺','Vom C-Atom zum Brδ⁻'],1,'Elektronenpfeile zeigen die Bewegung von Elektronenpaaren: Sie starten am Elektronenpaar (C=C) und enden am Elektrophil (Brδ⁺).','Ein Pfeil startet immer an einem Elektronenpaar, nicht an einem Atom oder einer Teilladung.'],
+['Was passiert mit dem Bindungselektronenpaar der Br–Br-Bindung?',['Es bleibt gleichmäßig verteilt','Es geht vollständig an das Br⁻-Ende (heterolytische Spaltung)','Jedes Br bekommt ein Elektron'],1,'Das Paar wandert zum δ⁻-Br, dadurch entsteht ein Bromid-Ion.','Jedes Br bekommt ein Elektron ist die homolytische Spaltung (Radikale).'],
+['Welche Ladung hat die Zwischenstufe und warum?',['Negativ: ein C-Atom hat ein Elektronenpaar zu viel','Positiv: einem C-Atom fehlt ein Bindungspartner (Carbokation)','Neutral: es entsteht ein Radikal'],1,'Das C-Atom hat sein Elektronenpaar für die Bindung zum Br abgegeben und trägt nun eine positive Ladung.','Das Elektronenpaar der Doppelbindung wurde zum Br hin verwendet, das andere C hat also zu wenig Elektronen.'],
+['Wie beginnt der letzte Elektronenpfeil?',['Am freien Elektronenpaar des Br⁻','Am positiven C-Atom','Am Brom-Atom des Produkts'],0,'Das Nucleophil gibt ein freies Elektronenpaar an das positivierte C-Atom ab.','Der Pfeil startet beim Nucleophil, das Elektronen mitbringt.'],
+['Br₂ ist in einem unpolaren Lösungsmittel gelöst. Mit Ethen entfärbt sich die Lösung sofort, mit Ethan (im Dunkeln) nicht. Was erklärt den Unterschied am besten?',['Ethan ist polarer als Ethen','Nur die Doppelbindung des Ethens hat genug bewegliche Elektronendichte, um Br₂ zu polarisieren und anzugreifen','Ethen hat mehr Wasserstoffatome als Ethan','Ethan ist ein Nucleophil, Ethen nicht'],1,'Ethan hat nur Einfachbindungen, deren Elektronen fest gebunden sind. Die C=C-Bindung des Ethens kann Br₂ polarisieren und als Elektronenpaar-Donator angreifen.','Vergleiche, welche Bindungen beide Moleküle haben und wo sich Elektronen leichter verschieben lassen.'],
+['Welche Aussage über die beiden Brom-Atome im Mechanismus ist richtig?',['Beide Br-Atome binden im selben Moment an die beiden C-Atome','Das Br-Atom, das zuerst gebunden wird, wirkt als Elektrophil; das zweite bindet danach als Bromid-Ion (Nucleophil)','Das Bromid-Ion greift zuerst an, danach das Brδ⁺','Beide Br-Atome werden als Radikale gebunden'],1,'Zuerst bindet das Brδ⁺ unter Bildung des Carbokations, danach greift das bei der Heterolyse entstandene Br⁻ an. Die Addition verläuft also in zwei Schritten.','Die Addition läuft über eine Zwischenstufe. Überlege, was zwischen den beiden Bindungsbildungen passiert.']],
+B:[['Warum braucht HBr keinen induzierten Dipol?',['HBr ist wegen der unterschiedlichen Elektronegativität von H und Br schon polar','HBr ist unpolar','Ethen ist bereits positiv'],0,'Br ist elektronegativer als H, also Hδ⁺–Brδ⁻. Das Hδ⁺ ist das Elektrophil.','Vergleiche die Elektronegativitäten von H (2,2) und Br (3,0).'],
+['Wohin zeigt der erste Elektronenpfeil?',['Vom Hδ⁺ zur C=C-Bindung','Vom Elektronenpaar der C=C-Bindung zum Hδ⁺','Vom Brδ⁻ zum C-Atom'],1,'Der Pfeil startet am Elektronenpaar (C=C) und endet am Elektrophil (Hδ⁺).','Ein Pfeil startet immer an einem Elektronenpaar, nicht an einer Teilladung.'],
+['Was passiert mit dem Bindungselektronenpaar der H–Br-Bindung?',['Es geht vollständig an das Br (heterolytische Spaltung)','Es bleibt gleichmäßig verteilt','Jedes Atom bekommt ein Elektron'],0,'Das Paar wandert zum elektronegativeren Br, es entsteht ein Bromid-Ion.','Jedes Atom bekommt ein Elektron ist die homolytische Spaltung (Radikale).'],
+['Welche Ladung hat die Zwischenstufe CH₃–CH₂⁺ und warum?',['Negativ: ein C-Atom hat ein Elektronenpaar zu viel','Positiv: einem C-Atom fehlt ein Bindungspartner (Carbokation)','Neutral: es entsteht ein Radikal'],1,'Das Elektronenpaar der Doppelbindung wurde zum H hin verwendet, dem anderen C-Atom fehlt es nun.','Bedenke, wohin das Elektronenpaar der Doppelbindung gewandert ist.'],
+['Was ist das Produkt und warum entsteht nur ein Br-Atom im Molekül?',['Dibromethan, weil beide Teilchen Brom enthalten','Bromethan: Es werden H und Br angelagert','Ethan, weil H₂ addiert wird'],1,'HBr wird addiert: ein H an das eine C-Atom, ein Br an das andere. Es entsteht Bromethan.','Überlege, welche zwei Atome das HBr-Molekül zur Addition mitbringt.'],
+['Eine Schülerin zeichnet den ersten Elektronenpfeil vom Brδ⁻ des HBr zur C=C-Bindung. Was ist der Fehler?',['Der Pfeil ist richtig, weil Br das elektronegativere Atom ist','Das Brδ⁻ ist elektronenreich wie die C=C-Bindung; der Angriff muss von der C=C-Bindung auf das Hδ⁺ ausgehen','Pfeile dürfen nie an Teilladungen enden','Der Pfeil müsste von der C=C-Bindung zum Brδ⁻ zeigen'],1,'Nucleophil und Elektrophil müssen zusammenpassen: Die elektronenreiche Doppelbindung greift das elektronenarme Hδ⁺ an.','Vergleiche die Elektronendichte am Brδ⁻ und an der Doppelbindung. Wer greift wen an?'],
+['Warum handelt es sich bei der Reaktion von Ethen mit HBr um eine Addition?',['Ein H-Atom wird durch ein Br-Atom ersetzt und abgespalten','Die C=C-Doppelbindung wird zur Einfachbindung; beide Teile des HBr sind im Produkt gebunden, nichts wird abgespalten','Es entstehen zwei verschiedene Produkte','Die Kohlenstoffkette wird verlängert'],1,'Bei der Addition lagern sich Teilchen an die Doppelbindung an und es entsteht nur ein Produkt. Bei der Substitution würde ein Atom ersetzt und abgespalten.','Überlege, was mit der Doppelbindung passiert und ob im Produkt etwas fehlt.']]};
+// ---------- Strukturformeln (SVG) ----------
+// Bausteine: X Text, L Linie, DB Doppelbindung, CH Ladung im Kreis, LP freie Elektronenpaare, AR Elektronenpfeil
+const X=(x,y,t,c='at',s=28)=>`<text x="${x}" y="${y}" class="${c}" font-size="${s}" text-anchor="middle" dominant-baseline="central">${t}</text>`;
+const L=(a,b,c,d,k='bd')=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" class="${k}"/>`;
+const DB=(a,y,b)=>L(a,y-5,b,y-5)+L(a,y+5,b,y+5);
+const CH=(x,y,p)=>`<circle cx="${x}" cy="${y}" r="9" class="cc"/>`+L(x-5,y,x+5,y,'cs')+(p?L(x,y-5,x,y+5,'cs'):'');
+const LP=(x,y,s)=>(s.includes('t')?L(x-7,y-24,x+7,y-24,'lp'):'')+(s.includes('b')?L(x-7,y+24,x+7,y+24,'lp'):'')+(s.includes('l')?L(x-27,y-7,x-27,y+7,'lp'):'')+(s.includes('r')?L(x+27,y-7,x+27,y+7,'lp'):'');
+const AR=(d,n,x,y)=>`<g class="arw"><path d="${d}" class="ar" marker-end="url(#ah)"/>${n?X(x,y,n,'num',22):''}</g>`;
+const E=(cx,cy)=>X(cx-74,cy,'H₂C')+DB(cx-36,cy,cx+36)+X(cx+74,cy,'CH₂');
+const BR=(x,y)=>X(x,y,'Br','br');
+const bromid=()=>BR(342,70)+LP(342,70,'tlrb')+CH(380,48,0)+X(470,70,'Bromid-Ion','cap',20);
+const catA=()=>BR(130,190)+L(151,190,217,190)+X(250,190,'H₂C')+L(284,190,325,190)+X(358,190,'CH₂')+CH(404,172,1)+X(270,238,'Carbokation','cap',20);
+const catB=()=>X(250,190,'H₃C')+L(284,190,325,190)+X(358,190,'CH₂')+CH(404,172,1)+X(300,238,'Carbokation','cap',20);
+const A1='M 242 197 C 208 178, 208 156, 240 142';   // Pfeil 1: von der C=C-Bindung zum Elektrophil
+const A4='M 340 98 C 306 122, 306 146, 334 166';    // letzter Pfeil: vom Br⁻ zum C⁺
+const FIG={
+a0:()=>E(170,150)+X(320,150,'+')+BR(440,150)+L(460,150,520,150)+BR(540,150)+X(170,210,'Ethen','cap',20)+X(490,210,'Brom','cap',20),
+a1:()=>E(250,205)+BR(250,120)+L(273,113,397,77)+BR(420,70)+X(220,96,'δ+','dl',22)+X(452,46,'δ−','dl',22),
+a2:()=>FIG.a1()+AR(A1,'1',198,170)+AR('M 336 93 C 350 64, 372 54, 398 63','2',360,44),
+a3:()=>catA()+bromid(),
+a4:()=>catA()+bromid()+AR(A4),
+a5:()=>BR(150,140)+L(171,140,237,140)+X(270,140,'H₂C')+L(304,140,356,140)+X(390,140,'CH₂')+L(424,140,492,140)+BR(512,140)+X(330,200,'1,2-Dibromethan','cap',22),
+b0:()=>E(170,150)+X(320,150,'+')+X(444,150,'H')+L(461,150,516,150)+BR(536,150)+X(170,210,'Ethen','cap',20)+X(490,210,'Bromwasserstoff','cap',20),
+b1:()=>E(250,205)+X(250,120,'H')+L(267,114,377,78)+BR(400,70)+X(222,98,'δ+','dl',22)+X(430,46,'δ−','dl',22),
+b2:()=>FIG.b1()+AR(A1,'1',198,170)+AR('M 322 94 C 334 64, 354 54, 380 63','2',344,46),
+b3:()=>catB()+bromid(),
+b4:()=>catB()+bromid()+AR(A4),
+b5:()=>X(240,140,'H₃C')+L(274,140,327,140)+X(360,140,'CH₂')+L(394,140,460,140)+BR(480,140)+X(360,200,'Bromethan','cap',22)};
+const ALT={a0:'Ethen und ein Brom-Molekül nebeneinander',a1:'Brom-Molekül über der C=C-Doppelbindung, das nahe Br-Atom ist δ+, das ferne δ−',a2:'Wie zuvor, mit zwei Elektronenpfeilen: von der Doppelbindung zum Brδ+ und von der Br–Br-Bindung zum Brδ−',a3:'Carbokation BrCH₂–CH₂⁺ und Bromid-Ion Br⁻',a4:'Wie zuvor, mit Elektronenpfeil vom freien Elektronenpaar des Bromid-Ions zum positiven Kohlenstoffatom',a5:'1,2-Dibromethan',
+b0:'Ethen und ein HBr-Molekül nebeneinander',b1:'HBr über der C=C-Doppelbindung, H ist δ+, Br ist δ−',b2:'Wie zuvor, mit zwei Elektronenpfeilen: von der Doppelbindung zum Hδ+ und von der H–Br-Bindung zum Brδ−',b3:'Carbokation CH₃–CH₂⁺ und Bromid-Ion Br⁻',b4:'Wie zuvor, mit Elektronenpfeil vom freien Elektronenpaar des Bromid-Ions zum positiven Kohlenstoffatom',b5:'Bromethan'};
+let U=0;
+const svg=id=>{const u='ah'+(++U);return `<svg viewBox="0 0 640 260" role="img" aria-label="${ALT[id]}"><defs><marker id="${u}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" class="arh"/></marker></defs>${FIG[id]().replace(/#ah\)/g,'#'+u+')')}</svg>`};
+const SCN={A:['a1','a2','a3','a4','a5'],B:['b1','b2','b3','b4','b5']};
+// Bild vor / nach richtiger Antwort je Frage in Stufe 3 (0 = kein Bild)
+const PIC={A:[['a0','a1'],['a1','a2'],['a1','a2'],['a2','a3'],['a3','a4'],[0,0],[0,'a4']],
+           B:[['b0','b1'],['b1','b2'],['b1','b2'],['b2','b3'],['b3','b5'],[0,'b2'],[0,'b5']]};
+// ---------- Zustand ----------
+let st=1,sc='A',done=new Set(),err={1:new Set(),2:0,3:0};
+const f=(m,c)=>{$('#f').textContent=m;$('#f').className=c||''};
+const TABS=[['Begriffe zuordnen','Fachbegriffe und Beschreibungen'],['Ablauf ordnen','Teilschritte in die richtige Reihenfolge'],['Mechanismus verstehen','Fragen mit Strukturformeln']];
+const fin=i=>i==0?done.has('1'):done.has((i+1)+'A')&&done.has((i+1)+'B');
+function nav(){const n=$('#nav');n.innerHTML='';
+ TABS.forEach(([a,b],i)=>{const x=el('button','tab'+(i+1==st?' on':''));x.setAttribute('aria-current',i+1==st);
+  x.append(el('b',null,(i+1)+'  '+a+(fin(i)?'  ✓':'')),el('small',null,b));x.onclick=()=>{st=i+1;show()};n.append(x)})}
+const lbl=k=>({A:'A: Ethen + Br₂',B:'B: Ethen + HBr (schwerer)'}[k])+(done.has(st+k)?'  ✓':'');
+const mark=()=>document.querySelectorAll('[data-k]').forEach(b=>b.textContent=lbl(b.dataset.k));
+function bar(){const d=el('div','seg');
+ ['A','B'].forEach(k=>{const b=el('button','opt'+(k==sc?' on':''),lbl(k));b.dataset.k=k;b.onclick=()=>{sc=k;show()};d.append(b)});
+ return [d,el('div','eq',EQ[sc])]}
+function show(){nav();f('');$('#v').innerHTML='';[s1,s2,s3][st-1]()}
+// ---------- Stufe 1: Begriffe ----------
+function s1(){
+ const v=$('#v');v.append(el('p','lead','Tippe zuerst einen Begriff an, dann die passende Beschreibung.'));
+ const g=el('div','g'),l=el('div'),r=el('div');g.append(l,r);v.append(g);
+ let sel=null,n=0;
+ const mk=(txt,i,k)=>{const b=el('button','opt'+(k=='t'?' term':''),txt);b.dataset.i=i;
+  b.onclick=()=>{ if(b.disabled)return;
+   if(k=='t'){l.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel=b;b.classList.add('sel');f('');return}
+   if(!sel){f('Wähle zuerst einen Begriff aus.','bad');return}
+   if(sel.dataset.i==b.dataset.i){sel.disabled=b.disabled=true;sel.classList.remove('sel');sel.classList.add('ok');b.classList.add('ok');sel=null;
+    if(++n==T.length){done.add('1');nav();const u=[...err[1]];
+     f(u.length?'Alle Begriffe zugeordnet. Noch unsicher: '+u.join(', ')+'.':'Alle Begriffe ohne Fehler zugeordnet.','good');
+     const rb=el('button','opt','Noch einmal');rb.style.marginTop='12px';rb.onclick=()=>{err[1]=new Set();show()};v.append(rb)}
+    else f('Richtig. '+n+' von '+T.length+' zugeordnet.','good')}
+   else{const i=+sel.dataset.i;err[1].add(T[i][0]);f('Nicht passend zu „'+T[i][0]+'“. Hinweis: '+T[i][2],'bad');sel.classList.remove('sel');sel=null}};return b};
+ T.forEach((t,i)=>l.append(mk(t[0],i,'t')));
+ sh(T.map((_,i)=>i)).forEach(i=>r.append(mk(T[i][1],i,'d')))}
+// ---------- Stufe 2: Ablauf ----------
+function s2(){
+ const v=$('#v');v.append(...bar(),el('p','lead','Tippe die Teilschritte in der richtigen Reihenfolge an. Zu jedem richtigen Schritt erscheint die Darstellung.'));
+ const pool=el('div','pool'),ol=el('ol','steps');v.append(pool,ol);
+ let nx=0;const a=S[sc],ids=SCN[sc];
+ sh(a.map((_,i)=>i)).forEach(i=>{const b=el('button','opt',a[i][0]);
+  b.onclick=()=>{ if(i==nx){
+    const li=el('li','step rv'),box=el('div'),fg=el('div','fig');fg.innerHTML=svg(ids[i]);
+    box.append(el('p',null,a[i][0]),fg);li.append(el('span','n',String(i+1)),box);ol.append(li);b.remove();nx++;
+    if(nx==a.length){done.add('2'+sc);nav();mark();f('Alle Schritte stehen in der richtigen Reihenfolge. Fehlversuche in dieser Sitzung: '+err[2]+'.','good');
+     const rb=el('button','opt','Neu mischen');rb.onclick=show;pool.append(rb)}
+    else f('Richtig.','good')}
+   else{err[2]++;f('Noch nicht. '+a[i][1],'bad')}};pool.append(b)})}
+// ---------- Stufe 3: Mechanismus ----------
+function s3(){
+ const v=$('#v');v.append(...bar());const q=Q[sc],P=PIC[sc];let i=0;
+ const box=el('div','card');v.append(box);
+ (function ask(){box.innerHTML='';
+  if(i==q.length){done.add('3'+sc);nav();mark();f('');
+   const rb=el('button','opt','Noch einmal');rb.onclick=show;
+   box.append(el('h2',null,'Mechanismus abgeschlossen'),el('p',null,'Fehlversuche in dieser Sitzung: '+err[3]+'.'),rb);return}
+  const dots=el('div','dots');q.forEach((_,k)=>dots.append(el('span',k<i?'on':k==i?'cur':'')));
+  const fg=el('div','fig');
+  const put=(id,rv)=>{fg.hidden=!id;fg.innerHTML=id?svg(id):'';fg.classList.toggle('rv',!!rv)};
+  const w=el('div','pool');
+  box.append(dots,el('p','qt',(i+1)+'/'+q.length+': '+q[i][0]),fg,w);put(P[i][0]);
+  sh(q[i][1].map((o,k)=>[o,k])).forEach(([o,k])=>{const b=el('button','opt',o);
+   b.onclick=()=>{ if(k==q[i][2]){b.classList.add('ok');[...w.children].forEach(x=>x.disabled=true);put(P[i][1],true);f('Richtig. '+q[i][3],'good');
+     const nb=el('button','opt',i<q.length-1?'Weiter':'Fertig');nb.onclick=()=>{i++;f('');ask()};box.append(nb)}
+    else{err[3]++;b.disabled=true;f('Nicht ganz. '+q[i][4],'bad')}};w.append(b)})})()}
+show();
+</script></main></body></html>
