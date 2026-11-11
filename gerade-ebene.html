@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Von der Geraden zur Ebene</title>
+<style>
+:root{
+  --bg:#f3f5fa; --card:#fff; --ink:#1d2433; --mut:#5b6476; --line:#d9deea;
+  --pri:#2b59c3; --pri2:#e8eefc; --ok:#17834a; --okbg:#e7f6ec;
+  --bad:#b83227; --badbg:#fdeceb; --acc:#e8890c; --accbg:#fff6e6; --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body.kp-open{padding-bottom:190px}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.hidden{display:none!important}
+.screen{display:none;min-height:100vh}
+.screen.on{display:block}
+
+/* ---------- Mathematische Schreibweise ---------- */
+.f{font-family:"Cambria Math",Cambria,"STIX Two Text","Times New Roman",Times,serif;font-size:1.1em;white-space:nowrap}
+.f i, i{font-style:italic}
+/* Spaltenvektor mit runden Klammern */
+.cv{display:inline-flex;flex-direction:column;vertical-align:middle;position:relative;
+  padding:.08em .5em;margin:0 .12em;line-height:1.22;text-align:center;
+  font-family:"Cambria Math",Cambria,"STIX Two Text","Times New Roman",Times,serif}
+.cv>span{min-width:1.2em}
+.cv::before,.cv::after{content:"";position:absolute;top:0;bottom:0;width:.42em;border:0 solid currentColor}
+.cv::before{left:0;border-left-width:1.5px;border-radius:.42em 0 0 .42em/50% 0 0 50%}
+.cv::after{right:0;border-right-width:1.5px;border-radius:0 .42em .42em 0/0 50% 50% 0}
+/* Vektorpfeil über beliebig langen Namen (x⃗, AB⃗ ...) */
+.vn{position:relative;display:inline-block;font-style:italic;padding:0 .04em;
+  font-family:"Cambria Math",Cambria,"STIX Two Text","Times New Roman",Times,serif}
+.vn::after{content:"";position:absolute;left:.06em;right:.06em;top:-.02em;border-top:1.3px solid currentColor}
+.vn::before{content:"";position:absolute;right:.02em;top:-.115em;width:.2em;height:.2em;
+  border-top:1.3px solid currentColor;border-right:1.3px solid currentColor;transform:rotate(45deg)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.85em;line-height:1.1}
+.frac>span:first-child{border-bottom:1.2px solid currentColor;padding:0 .15em}
+.eqb{margin:.5em 0;padding:.45em .7em;background:#f6f8fd;border-radius:10px;overflow-x:auto}
+.lgs{display:inline-grid;grid-template-columns:auto auto;column-gap:.8em;row-gap:.3em;
+  padding:.3em .8em;border-left:2px solid #9aa3b5;margin:.45em 0}
+.lgs .rn{font-family:system-ui,sans-serif;font-weight:600;color:var(--mut);font-size:.85em;align-self:center}
+
+/* ---------- Startseite ---------- */
+.hero{max-width:1100px;margin:0 auto;padding:28px 20px 8px}
+.hero h1{margin:0;font-size:30px;line-height:1.2}
+.hero p{margin:6px 0 0;color:var(--mut)}
+.stgrid{max-width:1100px;margin:0 auto;padding:16px 20px;display:grid;gap:16px}
+@media(min-width:700px){.stgrid{grid-template-columns:1fr 1fr}}
+.stcard{display:flex;gap:14px;text-align:left;background:#fff;border:1px solid var(--line);
+  border-radius:var(--r);padding:18px;box-shadow:0 2px 6px rgba(20,30,60,.05)}
+.stcard:active{transform:scale(.99)}
+.stcard.done{border-color:#a9d9bb}
+.sticon{flex:0 0 52px;height:52px;border-radius:12px;background:var(--pri2);color:var(--pri);
+  display:flex;align-items:center;justify-content:center;font-size:26px}
+.stcard.done .sticon{background:var(--okbg);color:var(--ok)}
+.stbody{flex:1;min-width:0}
+.stnum{font-size:13px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.sttitle{font-size:19px;font-weight:700;margin:2px 0}
+.stdesc{color:var(--mut);font-size:15px}
+.stprog{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:14px;color:var(--mut)}
+.pbar{flex:1;height:8px;background:#e6eaf3;border-radius:6px;overflow:hidden}
+.pbar>span{display:block;height:100%;background:var(--pri);border-radius:6px}
+.stcard.done .pbar>span{background:var(--ok)}
+.stst{color:var(--acc);font-weight:700}
+.stbtn{margin-top:10px;font-weight:600;color:var(--pri)}
+.homefoot{max-width:1100px;margin:0 auto;padding:4px 20px 40px}
+.info{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;color:var(--mut);font-size:15px}
+.info b{color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.badge{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px 6px 8px;font-size:14px}
+.badge .bi{font-size:22px}
+.badge.off{opacity:.38;filter:grayscale(1)}
+
+/* ---------- Buttons ---------- */
+.btn{min-height:48px;padding:10px 18px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-weight:600}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.sec{background:var(--pri2);border-color:#c9d6f5;color:var(--pri)}
+.btn.tip{background:var(--accbg);border-color:#f3d39f;color:#8a4f00}
+.btn:disabled{opacity:.5}
+
+/* ---------- Aufgabenseite ---------- */
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:#fff;border-bottom:1px solid var(--line)}
+.bar .ttl{flex:1;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots{display:flex;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;background:#dfe4ef}
+.dot.d{background:var(--ok)} .dot.c{background:var(--pri);box-shadow:0 0 0 3px var(--pri2)}
+.starc{font-weight:700;color:var(--acc);white-space:nowrap}
+.taskwrap{display:grid;gap:16px;padding:16px;max-width:1300px;margin:0 auto}
+@media(min-width:880px){
+  .taskwrap.has3d{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+  .taskwrap.has3d .viewcard{position:sticky;top:76px;height:calc(100vh - 110px);max-height:620px}
+}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;min-width:0}
+.tnum{font-size:13px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.card h2{margin:2px 0 10px;font-size:22px}
+.intro{overflow-x:auto}
+.form{margin:14px 0;padding:10px 0;overflow-x:auto}
+.fld{min-width:2.5em;height:1.8em;margin:.1em 0;border:1.5px solid #b8c2d8;border-radius:7px;
+  background:#fbfcff;font:inherit;font-size:1em;padding:0 .25em;color:var(--ink);font-style:normal}
+.fld.one{vertical-align:middle;margin:0 .2em}
+.fld.act{border-color:var(--pri);background:#fff;box-shadow:0 0 0 3px rgba(43,89,195,.22)}
+.fld:disabled{background:#f2f4f8;color:var(--ink)}
+.cv.inp{padding:.12em .55em}
+.opts{display:grid;gap:10px;margin:12px 0}
+.opt{text-align:left;padding:12px 16px;border:2px solid var(--line);background:#fff;border-radius:12px;min-height:52px;overflow-x:auto}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.wrong{border-color:var(--bad);background:var(--badbg);opacity:.85}
+.fb{margin:10px 0;border-radius:10px}
+.fb:empty{display:none}
+.fb.ok{background:var(--okbg);color:#0f5c33;padding:10px 14px}
+.fb.bad{background:var(--badbg);color:#8c2219;padding:10px 14px}
+.fb.info{background:var(--pri2);color:#1f3f8f;padding:10px 14px}
+.sm{font-size:14px;opacity:.85}
+.stars{color:var(--acc);letter-spacing:2px;margin-left:6px;font-size:18px}
+.box{border-radius:10px;padding:10px 14px;margin:10px 0;overflow-x:auto}
+.box h4{margin:0 0 4px;font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+.hint{background:var(--accbg);border-left:4px solid var(--acc)}
+.hint h4{color:#8a4f00}
+.sol{background:#eef3ff;border-left:4px solid var(--pri)}
+.sol h4{color:var(--pri)}
+.merke{background:var(--okbg);border-left:4px solid var(--ok)}
+.merke h4{color:var(--ok)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* 3D-Ansicht */
+.viewcard{background:#fff;border:1px solid var(--line);border-radius:var(--r);position:relative;height:400px;overflow:hidden}
+#cv{width:100%;height:100%;display:block;touch-action:none}
+.vctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:8px}
+.vctl button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.92);font-size:20px}
+.vhint{position:absolute;left:12px;bottom:10px;font-size:13px;color:var(--mut);background:rgba(255,255,255,.85);padding:2px 8px;border-radius:6px}
+
+/* Regler */
+.widget:empty{display:none}
+.widget{margin:12px 0}
+.note{background:var(--pri2);border-radius:10px;padding:10px 14px;margin-bottom:10px}
+.sl{display:flex;align-items:center;gap:14px;margin:8px 0}
+.sl .f{min-width:4.2em}
+input[type=range]{flex:1;height:40px;-webkit-appearance:none;appearance:none;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:8px;background:#dfe4ef;border-radius:4px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border-radius:50%;background:var(--pri);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+input[type=range]::-moz-range-track{height:8px;background:#dfe4ef;border-radius:4px}
+input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--pri);border:3px solid #fff}
+.live{margin-top:10px;padding:.4em .7em;background:#f6f8fd;border-radius:10px;overflow-x:auto}
+
+/* Zahlenfeld */
+.kp{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#e9edf5;border-top:1px solid #cdd4e2;
+  padding:6px 10px calc(10px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .2s}
+.kp.on{transform:none}
+.kptop{display:flex;justify-content:flex-end;max-width:760px;margin:0 auto 4px}
+.kptop button{border:0;background:transparent;color:var(--mut);font-size:14px;padding:4px 8px}
+.kpgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;max-width:760px;margin:0 auto}
+.kpgrid button{height:54px;border:0;border-radius:10px;background:#fff;font-size:22px;box-shadow:0 1px 0 #b9c1d1}
+.kpgrid .op{background:#d5dcea}
+.kpgrid .wide{grid-column:span 2;font-size:17px;font-weight:600;background:var(--pri);color:#fff}
+
+/* Ergebnis */
+.res{max-width:900px;margin:0 auto;padding:24px 20px 40px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+th,td{padding:12px 10px;text-align:center;border-bottom:1px solid var(--line)}
+th{background:#f6f8fd;font-size:14px;color:var(--mut)}
+td:first-child,th:first-child{text-align:left}
+tr.tot td{font-weight:700;background:#fafbfe}
+
+/* Modal & Toast */
+.modal{position:fixed;inset:0;background:rgba(20,28,45,.45);z-index:30;display:flex;align-items:center;justify-content:center;padding:20px}
+.mbox{background:#fff;border-radius:18px;padding:24px;max-width:520px;width:100%;text-align:center}
+.mbig{font-size:46px}
+.mstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0}
+.mstats div{background:#f6f8fd;border-radius:10px;padding:8px 4px}
+.mstats b{display:block;font-size:22px}
+.mstats span{font-size:12px;color:var(--mut)}
+.mbtns{display:flex;flex-direction:column;gap:10px}
+.toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-150%);z-index:40;background:#1d2433;color:#fff;
+  padding:12px 18px;border-radius:12px;max-width:92vw;transition:transform .3s;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.on{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<!-- ================= Startseite ================= -->
+<section id="scrHome" class="screen on">
+  <div class="hero">
+    <h1>Von der Geraden zur Ebene</h1>
+    <p>Parameterform von Geraden und Ebenen · Mathematik Q2</p>
+  </div>
+  <div class="stgrid" id="stations"></div>
+  <div class="homefoot">
+    <div class="info">
+      <b>So funktioniert's:</b> Vier Stationen mit je vier Aufgaben (die Zahlen werden jedes Mal neu erzeugt). Empfohlen ist die Reihenfolge 1 → 4.
+      Bei jeder Aufgabe kannst du bis zu <b>zwei Tipps</b> nutzen und dir danach die <b>Lösung</b> anzeigen lassen.
+      Sterne: ★★★ ohne Tipp, jeder Tipp oder Fehlversuch kostet einen Stern. Dein Fortschritt wird nur auf diesem Gerät gespeichert. Es werden keine Namen oder sonstigen Daten erfasst.
+    </div>
+    <h3 style="margin:22px 0 4px">Abzeichen</h3>
+    <div class="badges" id="homeBadges"></div>
+    <div class="row">
+      <button class="btn sec" id="btnRes">Meine Übersicht ansehen</button>
+      <button class="btn" id="btnResetHome">Alles zurücksetzen</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Aufgabenseite ================= -->
+<section id="scrTask" class="screen">
+  <header class="bar">
+    <button class="btn" id="btnBack">← Übersicht</button>
+    <div class="ttl" id="stTitle"></div>
+    <div class="dots" id="dots"></div>
+    <div class="starc" id="starCount"></div>
+  </header>
+  <div class="taskwrap" id="taskwrap">
+    <div class="card" id="taskCard">
+      <div class="tnum" id="tNum"></div>
+      <h2 id="tTitle"></h2>
+      <div class="intro" id="tIntro"></div>
+      <div class="widget" id="tWidget"></div>
+      <div class="form" id="tForm"></div>
+      <div class="opts" id="tOpts"></div>
+      <div class="fb" id="tFb"></div>
+      <div id="tHints"></div>
+      <div id="tSol"></div>
+      <div id="tMerke"></div>
+      <div class="actions">
+        <button class="btn pri" id="btnCheck">Prüfen</button>
+        <button class="btn tip" id="btnTip">Tipp 1</button>
+        <button class="btn sec hidden" id="btnSolView">Lösungsweg ansehen</button>
+        <button class="btn pri hidden" id="btnNext">Weiter →</button>
+      </div>
+    </div>
+    <div class="viewcard" id="viewCard">
+      <canvas id="cv"></canvas>
+      <div class="vctl">
+        <button data-z="in" aria-label="Vergrößern">+</button>
+        <button data-z="out" aria-label="Verkleinern">−</button>
+        <button data-z="reset" aria-label="Ansicht zurücksetzen">⟲</button>
+      </div>
+      <div class="vhint">Mit dem Finger drehen · mit zwei Fingern zoomen</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Übersicht / Ergebnis ================= -->
+<section id="scrRes" class="screen">
+  <header class="bar">
+    <button class="btn" id="btnBack2">← Übersicht</button>
+    <div class="ttl">Meine Übersicht</div>
+  </header>
+  <div class="res" id="resBody"></div>
+</section>
+
+<!-- Zahlenfeld (eigene Tastatur: die iPad-Zahlentastatur hat kein Minuszeichen) -->
+<div class="kp" id="kp">
+  <div class="kptop"><button data-k="close">Tastatur ausblenden ▾</button></div>
+  <div class="kpgrid">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button>
+    <button data-k="±" class="op" aria-label="Vorzeichen">±</button>
+    <button data-k="del" class="op" aria-label="Löschen">⌫</button>
+    <button data-k="6">6</button><button data-k="7">7</button><button data-k="8">8</button>
+    <button data-k="9">9</button><button data-k="0">0</button>
+    <button data-k="next" class="wide">nächstes Feld ›</button>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal"><div class="mbox" id="mbox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   1) MATHEMATIK-HILFSFUNKTIONEN  (alle Vektoren als Arrays [x1,x2,x3])
+   ===================================================================== */
+/*GEN-START*/
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const rndNZ=(a,b)=>{let x;do{x=rnd(a,b)}while(x===0);return x};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const add=(a,b)=>a.map((x,i)=>x+b[i]);
+const sub=(a,b)=>a.map((x,i)=>x-b[i]);
+const mul=(k,a)=>a.map(x=>k*x+0);              // +0 verhindert -0
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const isZero=a=>a.every(x=>x===0);
+const eqV=(a,b)=>a.every((x,i)=>x===b[i]);
+const parallel=(a,b)=>isZero(cross(a,b));        // Nullvektor gilt als parallel
+const lc=(p,r,u,s,v)=>add(add(p,mul(r,u)),mul(s,v)); // p + r·u + s·v
+const rv=(lo,hi)=>[rnd(lo,hi),rnd(lo,hi),rnd(lo,hi)];
+// Richtungsvektor: kein Nullvektor, höchstens eine Null-Komponente
+function rdir(lo,hi,allNZ){let v;do{v=allNZ?[rndNZ(lo,hi),rndNZ(lo,hi),rndNZ(lo,hi)]:rv(lo,hi)}while(isZero(v)||v.filter(x=>x===0).length>1);return v}
+// zwei nicht parallele Richtungsvektoren
+function rpair(lo,hi){let u,v;do{u=rdir(lo,hi);v=rdir(lo,hi)}while(parallel(u,v));return[u,v]}
+
+/* Brüche (für exakte Lösungswege) */
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1};
+const F=(n,d=1)=>{if(d<0){n=-n;d=-d}const g=gcd(n,d);return{n:n/g+0,d:d/g}};
+const Fadd=(a,b)=>F(a.n*b.d+b.n*a.d,a.d*b.d);
+const Fmul=(a,b)=>F(a.n*b.n,a.d*b.d);
+const Feq=(a,b)=>a.n===b.n&&a.d===b.d;
+
+/* =====================================================================
+   2) FORMALE SCHREIBWEISE (HTML-Bausteine)
+   ===================================================================== */
+const num=x=>x<0?'−'+(-x):String(x+0);           // echtes Minuszeichen U+2212
+const coef=x=>x<0?'('+num(x)+')':num(x);          // negative Faktoren in Klammern
+const fmtF=f=>f.d===1?num(f.n):`${f.n<0?'−':''}<span class="frac"><span>${Math.abs(f.n)}</span><span>${f.d}</span></span>`;
+const V=a=>`<span class="cv">${a.map(x=>`<span>${num(x)}</span>`).join('')}</span>`; // Spaltenvektor
+const VN=s=>`<span class="vn">${s}</span>`;                                           // Vektorpfeil
+const I=s=>`<i>${s}</i>`;
+const P=(n,a)=>`<span class="f">${n}(${a.map(num).join('&thinsp;|&thinsp;')})</span>`;  // Punkt A(1 | 2 | 3)
+const ROM=['I','II','III'];
+const XS=k=>`${I('x')}<sub>${k}</sub>`;
+const block=h=>`<div class="eqb">${h}</div>`;
+function eqLine(n,p,u,t='t'){return `<span class="f">${n}: ${VN('x')} = ${V(p)} + ${I(t)} · ${V(u)} &nbsp;mit ${I(t)} ∈ ℝ</span>`}
+function eqPlane(n,p,u,v,r='r',s='s'){return `<span class="f">${n}: ${VN('x')} = ${V(p)} + ${I(r)} · ${V(u)} + ${I(s)} · ${V(v)} &nbsp;mit ${I(r)}, ${I(s)} ∈ ℝ</span>`}
+// affiner Term, z. B. affine(1,[[2,'r'],[-1,'s']]) → "1 + 2r − s"
+function affine(c0,terms){
+  let out=c0!==0?num(c0):'';
+  for(const[c,x]of terms){
+    if(c===0)continue;
+    const a=Math.abs(c),body=(a===1?'':a)+I(x);
+    out+=out===''?(c<0?'−':'')+body:(c<0?' − ':' + ')+body;
+  }
+  return out===''?'0':out;
+}
+// Linearkombination von Vektoren (HTML), Vorzeichen immer vorangestellt: " + 2 · (..) − (..)"
+function combTail(cs,vs){let o='';cs.forEach((c,i)=>{if(c===0)return;const a=Math.abs(c);o+=(c<0?' − ':' + ')+(a===1?'':a+' · ')+vs[i]});return o}
+function comb(cs,vs){const s=combTail(cs,vs);return s.startsWith(' + ')?s.slice(3):s.startsWith(' − ')?'−'+s.slice(3):'0'}
+function lgs(rows){return `<span class="lgs f">${rows.map((r,i)=>`<span class="rn">${ROM[i]}</span><span>${r}</span>`).join('')}</span>`}
+
+/* LGS  X = p + r·u + s·v  lösen (zwei Zeilen nach r, s; dritte Zeile prüfen) */
+function solvePlane(p,u,v,X){
+  const b=sub(X,p);
+  for(const[i,j,k]of[[0,1,2],[0,2,1],[1,2,0]]){
+    const det=u[i]*v[j]-u[j]*v[i];
+    if(det!==0){
+      const r=F(b[i]*v[j]-b[j]*v[i],det), s=F(u[i]*b[j]-u[j]*b[i],det);
+      const val=Fadd(Fadd(F(p[k]),Fmul(F(u[k]),r)),Fmul(F(v[k]),s));
+      return{i,j,k,r,s,val,ok:Feq(val,F(X[k]))};
+    }
+  }
+}
+const planeRows=(p,u,v,X)=>[0,1,2].map(i=>`${num(X[i])} = ${affine(p[i],[[u[i],'r'],[v[i],'s']])}`);
+function planeTest(p,u,v,X,o){
+  const S=solvePlane(p,u,v,X),k=S.k,pr=f=>f.n<0?`(${fmtF(f)})`:fmtF(f);
+  return `${o.lead===''?'':(o.lead||'Gleichsetzen liefert das Gleichungssystem:')+'<br>'}${lgs(planeRows(p,u,v,X))}<br>
+  Aus ${ROM[S.i]} und ${ROM[S.j]} folgt (z.&nbsp;B. mit dem Additionsverfahren): <span class="f">${I('r')} = ${fmtF(S.r)}</span>, <span class="f">${I('s')} = ${fmtF(S.s)}</span>.<br>
+  Einsetzen in ${ROM[k]}: <span class="f">${num(p[k])} + ${coef(u[k])} · ${pr(S.r)} + ${coef(v[k])} · ${pr(S.s)} = ${fmtF(S.val)} ${S.ok?`= ${num(X[k])}`:`≠ ${num(X[k])}`}</span><br>${S.ok?o.yes:o.no}`;
+}
+
+/* Farben der 3D-Ansicht */
+const COL={plane:'43,89,195',plane2:'232,137,12',okrgb:'23,131,74',badrgb:'184,50,39',
+  g:'#7b3fbf',h:'#0e7c86',u:'#d9480f',v:'#1a8a4a',pt:'#1d2433',tgt:'#e8890c',ok:'#17834a',bad:'#b83227',gray:'#8a93a6'};
+const pt=(p,label,color=COL.pt,extra={})=>({type:'point',p,label,color,...extra});
+
+/* Prüfung einer eingegebenen Ebene gegen die Soll-Ebene (Punkt A, Normalenrichtung n) */
+function checkPlane(ans,A,n,posVecs){
+  const{p,u,v}=ans;
+  if(isZero(u)||isZero(v))return{ok:false,msg:'Der Nullvektor ist als Richtungsvektor nicht erlaubt.'};
+  if(parallel(u,v))return{ok:false,msg:'Deine beiden Richtungsvektoren sind parallel. Sie spannen keine Ebene auf, sondern nur eine Gerade.'};
+  if(dot(u,n)!==0||dot(v,n)!==0){
+    if(posVecs.some(b=>eqV(u,b)||eqV(v,b)))
+      return{ok:false,msg:`Achtung: Du hast offenbar einen <b>Ortsvektor</b> (z.&nbsp;B. ${VN('b')}) als Richtungsvektor verwendet. Richtungsvektoren sind Verbindungsvektoren, z.&nbsp;B. <span class="f">${VN('AB')} = ${VN('b')} − ${VN('a')}</span>.`};
+    return{ok:false,msg:'Mindestens ein Richtungsvektor liegt nicht in der Ebene. Er zeigt aus ihr heraus.'};
+  }
+  if(dot(sub(p,A),n)!==0)return{ok:false,msg:'Die Richtungsvektoren passen, aber der Stützpunkt liegt nicht in der Ebene.'};
+  return{ok:true,msg:'Richtig!'};
+}
+const planeAns=(a,ok)=>(isZero(a.u)||isZero(a.v)||parallel(a.u,a.v))?[]:
+  [{type:'plane',p:a.p,u:a.u,v:a.v,range:1.5,rgb:ok?COL.okrgb:COL.badrgb,noFit:true,grid:false,label:'deine Ebene'}];
+const pickName=()=>pick(['Lena','Tim','Aylin','Jonas','Mia','Emre','Sophie','Luca']);
+
+/* =====================================================================
+   3) AUFGABENGENERATOREN
+   Jede Funktion liefert ein Aufgabenobjekt:
+   {title,intro,kind:'vec'|'mc'|'explore',form,check,options,hints[2],solution,
+    scene,ansScene,solvedScene,mount,onSolution,okMsg,merke,trap}
+   ===================================================================== */
+
+/* ---------- Station 1: Geraden ---------- */
+function g1_aufstellen(){
+  const A=rv(-4,4),d=rdir(-3,3),B=add(A,d);
+  return{title:'Gerade durch zwei Punkte',kind:'vec',
+    intro:`Stelle eine Gleichung der Geraden ${I('g')} durch die Punkte ${P('A',A)} und ${P('B',B)} in Parameterform auf.`,
+    form:`<span class="f">${I('g')}: ${VN('x')} = {{v:p}} + ${I('t')} · {{v:u}}</span>`,
+    check({p,u}){
+      if(isZero(u))return{ok:false,msg:'Der Nullvektor kann kein Richtungsvektor sein.'};
+      if(!parallel(u,d)){
+        if(eqV(u,B)||eqV(u,A))return{ok:false,msg:`Achtung: Du hast einen <b>Ortsvektor</b> als Richtungsvektor verwendet. Der Richtungsvektor ist der Verbindungsvektor <span class="f">${VN('AB')} = ${VN('b')} − ${VN('a')}</span>.`};
+        return{ok:false,msg:'Der Richtungsvektor zeigt nicht in Richtung der Geraden durch A und B.'};
+      }
+      if(!parallel(sub(p,A),d))return{ok:false,msg:'Der Richtungsvektor stimmt, aber der Stützvektor gehört zu keinem Punkt der Geraden.'};
+      const std=(eqV(p,A)||eqV(p,B))&&(eqV(u,d)||eqV(u,mul(-1,d)));
+      return{ok:true,msg:std?'Richtig!':'Richtig! Deine Gleichung sieht anders aus als die Musterlösung, beschreibt aber dieselbe Gerade. Die Parameterform ist nicht eindeutig.'};
+    },
+    hints:[`Als Stützvektor eignet sich der Ortsvektor eines der beiden Punkte, z.&nbsp;B. <span class="f">${VN('a')} = ${VN('OA')}</span>.`,
+      `Der Richtungsvektor ist der Verbindungsvektor: <span class="f">${VN('AB')} = ${VN('b')} − ${VN('a')} = ${V(B)} − ${V(A)}</span>.`],
+    solution:`<span class="f">${VN('AB')} = ${V(B)} − ${V(A)} = ${V(d)}</span>, also${block(eqLine(I('g'),A,d))}`,
+    scene:[pt(A,'A'),pt(B,'B')],
+    ansScene:(a,ok)=>isZero(a.u)?[]:[{type:'line',p:a.p,d:a.u,color:ok?COL.ok:COL.bad,label:'deine Gerade',noFit:true}],
+    solvedScene:[{type:'line',p:A,d,color:COL.ok}],_ans:{p:A,u:d}
+  };
+}
+
+function g1_punktprobe(){
+  const p=rv(-3,3),u=rdir(-3,3,true),t0=rndNZ(-2,2),X=add(p,mul(t0,u));
+  if(Math.random()<.5)X[rnd(0,2)]+=pick([-2,-1,1,2]);   // P aus der Geraden "schieben"
+  const ts=[0,1,2].map(i=>F(X[i]-p[i],u[i])), on=ts.every(t=>Feq(t,ts[0]));
+  const rows=[0,1,2].map(i=>`${num(X[i])} = ${affine(p[i],[[u[i],'t']])} &nbsp;⇒&nbsp; ${I('t')} = ${fmtF(ts[i])}`);
+  const fb='Das stimmt leider nicht. Prüfe alle drei Zeilen.';
+  return{title:'Punktprobe bei einer Geraden',kind:'mc',keepOrder:true,
+    intro:`Gegeben ist die Gerade${block(eqLine(I('g'),p,u))}Liegt der Punkt ${P('P',X)} auf ${I('g')}?`,
+    options:[{html:`Ja, P liegt auf ${I('g')}.`,ok:on,fb},{html:`Nein, P liegt nicht auf ${I('g')}.`,ok:!on,fb}],
+    hints:[`Mache eine <b>Punktprobe</b>: Setze ${VN('OP')} mit der Geradengleichung gleich. Du erhältst drei Gleichungen für ${I('t')}.`,
+      `Erste Zeile: <span class="f">${rows[0]}</span>. Liefern die anderen beiden Zeilen denselben Wert für ${I('t')}?`],
+    solution:`Gleichsetzen liefert:<br>${lgs(rows)}<br>`+(on?`Alle drei Gleichungen liefern ${I('t')} = ${fmtF(ts[0])}. ⇒ P liegt auf ${I('g')}.`:`Die Werte für ${I('t')} stimmen nicht überein (Widerspruch). ⇒ P liegt nicht auf ${I('g')}.`),
+    scene:[{type:'line',p,d:u,color:COL.g,label:'g'},pt(X,'P')]
+  };
+}
+
+function g1_flug(){
+  const p=[rnd(-6,6),rnd(-6,6),rnd(1,3)],u=[rndNZ(-3,3),rndNZ(-3,3),rnd(0,1)],k=rnd(2,4),Q=add(p,mul(k,u));
+  return{title:'Interpretation: Flugbahn',kind:'vec',
+    intro:`Ein Flugzeug fliegt geradlinig mit konstanter Geschwindigkeit. Seine Position wird beschrieben durch${block(eqLine(I('f'),p,u))}Dabei ist ${I('t')} die Zeit in Minuten seit Beobachtungsbeginn; die Koordinaten sind in km angegeben.<br><b>Wo befindet sich das Flugzeug nach ${k} Minuten?</b>`,
+    form:`Ortsvektor der Position: <span class="f">{{v:q}}</span>`,
+    check({q}){
+      if(eqV(q,Q))return{ok:true,msg:`Richtig! Das Flugzeug befindet sich im Punkt ${P('Q',Q)}. Der Richtungsvektor gibt an, wie weit es sich pro Minute bewegt.`};
+      if(eqV(q,add(p,u)))return{ok:false,msg:`Das ist die Position nach 1 Minute. Setze ${I('t')} = ${k} ein.`};
+      if(eqV(q,mul(k,u)))return{ok:false,msg:'Du hast den Stützvektor vergessen. Das Flugzeug startet nicht im Ursprung.'};
+      if(eqV(q,p))return{ok:false,msg:`Das ist die Startposition (${I('t')} = 0).`};
+      return{ok:false,msg:'Das stimmt noch nicht. Rechne komponentenweise und achte auf die Vorzeichen.'};
+    },
+    hints:[`Setze ${I('t')} = ${k} in die Geradengleichung ein.`,
+      `Rechne komponentenweise, z.&nbsp;B. <span class="f">${XS(1)} = ${num(p[0])} + ${k} · ${coef(u[0])}</span>.`],
+    solution:`<span class="f">${VN('x')} = ${V(p)} + ${k} · ${V(u)} = ${V(p)} + ${V(mul(k,u))} = ${V(Q)}</span><br>Nach ${k} Minuten ist das Flugzeug im Punkt ${P('Q',Q)}.`,
+    scene:[{type:'line',p,d:u,color:COL.g,label:'Flugbahn'},pt(p,'Start')],
+    ansScene:(a,ok)=>[pt(a.q,ok?'Q':'?',ok?COL.ok:COL.bad,{noFit:true})],
+    solvedScene:[pt(Q,'Q',COL.ok)],_ans:{q:Q}
+  };
+}
+
+function g1_fehler(){
+  let A,B;do{A=rv(-3,3);B=rv(-3,3)}while(eqV(A,B)||parallel(A,B));
+  const n=pickName(),AB=sub(B,A),T1=add(A,B);
+  return{title:'Fehler finden',kind:'mc',trap:true,
+    intro:`${n} soll eine Gleichung der Geraden durch ${P('A',A)} und ${P('B',B)} aufstellen und schreibt:${block(eqLine(I('g'),A,B))}Was ist an dieser Gleichung falsch?`,
+    options:[
+      {html:`Als Richtungsvektor muss der Verbindungsvektor <span class="f">${VN('AB')} = ${VN('b')} − ${VN('a')}</span> verwendet werden, nicht der Ortsvektor von B.`,ok:true},
+      {html:`Der Parameter muss ${I('r')} heißen, nicht ${I('t')}.`,fb:'Der Name des Parameters ist frei wählbar.'},
+      {html:'Der Stützvektor muss der Ortsvektor von B sein.',fb:'Als Stützpunkt eignet sich jeder Punkt der Geraden, also auch A.'},
+      {html:'Die Gleichung ist richtig.',fb:`Prüfe, ob B auf dieser Geraden liegt: Welchen Punkt erhältst du für ${I('t')} = 1?`}],
+    hints:[`Prüfe, ob B überhaupt auf der angegebenen Geraden liegt. Setze z.&nbsp;B. ${I('t')} = 1 ein.`,
+      `Für ${I('t')} = 1 erhält man den Punkt ${P('',T1)}, das ist nicht B. Der Richtungsvektor muss von A nach B zeigen.`],
+    solution:`Der Richtungsvektor muss von A nach B zeigen: <span class="f">${VN('AB')} = ${V(B)} − ${V(A)} = ${V(AB)}</span>. Richtig ist also z.&nbsp;B.${block(eqLine(I('g'),A,AB))}`,
+    okMsg:'Richtig erkannt! Der Ortsvektor von B zeigt vom Ursprung zu B, nicht von A nach B.',
+    scene:[pt(A,'A'),pt(B,'B'),{type:'line',p:A,d:B,color:COL.bad,label:'falsche Gerade'}],
+    solvedScene:[{type:'line',p:A,d:AB,color:COL.ok,label:'richtig'}]
+  };
+}
+
+/* ---------- Station 2: Von der Geraden zur Ebene ---------- */
+function g2_entdecken(){
+  const p=rv(-2,2),[u,v]=rpair(-2,2),r0=rndNZ(-2,2),s0=rndNZ(-2,2),Q=lc(p,r0,u,s0,v);
+  let r=0,s=0,phase=1,el,view,api;
+  const objs=()=>{
+    const X=lc(p,r,u,s,v),o=[];
+    if(phase===2)o.push({type:'plane',p,u,v,range:2.5,rgb:COL.plane,label:'E'});
+    o.push({type:'line',p,d:u,color:COL.g,label:'g'});
+    o.push({type:'arrow',from:[0,0,0],to:p,color:COL.gray,label:'p'});
+    o.push({type:'arrow',from:p,to:add(p,u),color:COL.u,label:'u'});
+    if(phase===2){o.push({type:'arrow',from:p,to:add(p,v),color:COL.v,label:'v'});o.push(pt(Q,'Q',COL.tgt,{ring:true}))}
+    o.push(pt(X,'X',COL.pt,{r:6}));
+    return o;
+  };
+  const live=()=>{const X=lc(p,r,u,s,v);
+    return `<span class="f">${VN('x')} = ${V(p)} + ${coef(r)} · ${V(u)}${phase===2?` + ${coef(s)} · ${V(v)}`:''} = ${V(X)}</span>`};
+  const upd=()=>{
+    el.querySelector('#rv').textContent=num(r);el.querySelector('#sv').textContent=num(s);
+    el.querySelector('#live').innerHTML=live();view.set(objs(),false);
+    if(phase===2&&eqV(lc(p,r,u,s,v),Q)&&!api.done())api.solved();
+  };
+  const toPhase2=()=>{phase=2;el.querySelector('#sRow').classList.remove('hidden');el.querySelector('#addV').classList.add('hidden');
+    el.querySelector('#note').innerHTML=`Mit dem zweiten Richtungsvektor ${VN('v')} erreicht X jetzt alle Punkte einer <b>Ebene</b> E. Die Gitterlinien gehören zu ganzzahligen Werten von ${I('r')} und ${I('s')}.<br><b>Stelle ${I('r')} und ${I('s')} so ein, dass X auf dem Zielpunkt Q liegt.</b>`;upd()};
+  return{title:'Von der Geraden zur Ebene',kind:'explore',view:true,
+    intro:`Du kennst die Gerade${block(eqLine(I('g'),p,u,'r'))}Für jeden Wert von ${I('r')} erhältst du einen Punkt X der Geraden.`,
+    mount(e,vw,a){el=e;view=vw;api=a;
+      el.innerHTML=`<div class="note" id="note">Bewege den Regler ${I('r')}: Der Punkt X wandert auf der Geraden ${I('g')} entlang.</div>
+        <div class="sl"><span class="f">${I('r')} = <b id="rv">0</b></span><input type="range" id="rS" min="-2" max="2" step="1" value="0"></div>
+        <div class="sl hidden" id="sRow"><span class="f">${I('s')} = <b id="sv">0</b></span><input type="range" id="sS" min="-2" max="2" step="1" value="0"></div>
+        <button class="btn sec" id="addV">+ zweiten Richtungsvektor ${VN('v')} = ${V(v)} hinzufügen</button>
+        <div class="live" id="live"></div>`;
+      el.querySelector('#rS').oninput=ev=>{r=+ev.target.value;upd()};
+      el.querySelector('#sS').oninput=ev=>{s=+ev.target.value;upd()};
+      el.querySelector('#addV').onclick=toPhase2;
+      phase=2;view.fit(objs());phase=1;   // Ansicht gleich passend für die ganze Ebene wählen
+      upd();},
+    hints:[`Füge zuerst den zweiten Richtungsvektor hinzu. Jeder Punkt der Ebene entsteht so: Vom Stützpunkt aus geht man ein Vielfaches von ${VN('u')} und ein Vielfaches von ${VN('v')}.`,
+      `Für den Zielpunkt Q gilt ${I('r')} = ${num(r0)}. Welcher Wert für ${I('s')} passt?`],
+    solution:`<span class="f">${VN('q')} = ${V(p)} + ${coef(r0)} · ${V(u)} + ${coef(s0)} · ${V(v)} = ${V(Q)}</span>, also ${I('r')} = ${num(r0)} und ${I('s')} = ${num(s0)}.`,
+    onSolution(){if(phase===1)toPhase2();r=r0;s=s0;el.querySelector('#rS').value=r;el.querySelector('#sS').value=s;upd()},
+    okMsg:'Treffer! X liegt auf Q.',
+    merke:`Eine <b>Ebene in Parameterform</b>:${block(`<span class="f">E: ${VN('x')} = ${VN('p')} + ${I('r')} · ${VN('u')} + ${I('s')} · ${VN('v')} &nbsp;mit ${I('r')}, ${I('s')} ∈ ℝ</span>`)}${VN('p')}: Stützvektor (Ortsvektor eines Punktes der Ebene), ${VN('u')}, ${VN('v')}: Richtungs- bzw. Spannvektoren. Sie dürfen nicht parallel sein.`
+  };
+}
+
+function g2_berechnen(){
+  const p=rv(-3,3),[u,v]=rpair(-3,3),r0=rndNZ(-3,3),s0=rndNZ(-3,3),X=lc(p,r0,u,s0,v);
+  return{title:'Punkt einer Ebene berechnen',kind:'vec',
+    intro:`Gegeben ist die Ebene${block(eqPlane('E',p,u,v))}Berechne den Punkt X der Ebene, der zu ${I('r')} = ${num(r0)} und ${I('s')} = ${num(s0)} gehört.`,
+    form:`<span class="f">${VN('x')} = {{v:x}}</span>`,
+    check({x}){
+      if(eqV(x,X))return{ok:true,msg:`Richtig! X hat die Koordinaten ${P('X',X)}.`};
+      if(eqV(x,add(mul(r0,u),mul(s0,v))))return{ok:false,msg:'Du hast den Stützvektor vergessen.'};
+      if(eqV(x,lc(p,s0,u,r0,v)))return{ok:false,msg:`Du hast ${I('r')} und ${I('s')} vertauscht.`};
+      return{ok:false,msg:'Das stimmt noch nicht. Rechne komponentenweise und achte auf die Vorzeichen.'};
+    },
+    hints:[`Setze ${I('r')} = ${num(r0)} und ${I('s')} = ${num(s0)} in die Ebenengleichung ein.`,
+      `<span class="f">${VN('x')} = ${V(p)} + ${V(mul(r0,u))} + ${V(mul(s0,v))}</span>. Addiere nun komponentenweise.`],
+    solution:`<span class="f">${VN('x')} = ${V(p)} + ${coef(r0)} · ${V(u)} + ${coef(s0)} · ${V(v)} = ${V(p)} + ${V(mul(r0,u))} + ${V(mul(s0,v))} = ${V(X)}</span>`,
+    scene:[{type:'plane',p,u,v,range:2,rgb:COL.plane,label:'E'},{type:'arrow',from:p,to:add(p,u),color:COL.u,label:'u'},{type:'arrow',from:p,to:add(p,v),color:COL.v,label:'v'}],
+    ansScene:(a,ok)=>[pt(a.x,'X',ok?COL.ok:COL.bad,{noFit:true})],
+    solvedScene:[pt(X,'X',COL.ok)],_ans:{x:X}
+  };
+}
+
+function g2_parallel(){
+  const p=rv(-2,2),u=rdir(-2,2),k=pick([2,-1,-2]),v=mul(k,u),n=pickName();
+  let r=0,s=0,el,view;const trail=new Map();
+  const objs=()=>{const X=lc(p,r,u,s,v);trail.set(X.join(','),X);
+    return[{type:'arrow',from:[0,0,0],to:p,color:COL.gray,label:'p'},{type:'arrow',from:p,to:add(p,u),color:COL.u,label:'u'},
+      {type:'arrow',from:p,to:add(p,v),color:COL.v,label:'v'},...[...trail.values()].map(t=>({type:'dot',p:t})),pt(X,'X',COL.pt,{r:6})]};
+  const upd=()=>{el.querySelector('#rv').textContent=num(r);el.querySelector('#sv').textContent=num(s);
+    el.querySelector('#live').innerHTML=`<span class="f">${VN('x')} = ${V(p)} + ${coef(r)} · ${V(u)} + ${coef(s)} · ${V(v)} = ${V(lc(p,r,u,s,v))}</span>`;
+    view.set(objs(),false)};
+  const sk=Math.abs(k)===1?'':Math.abs(k);
+  return{title:'Spannen diese Vektoren eine Ebene auf?',kind:'mc',trap:true,view:true,
+    intro:`${n} behauptet, dass die folgende Gleichung eine Ebene beschreibt:${block(eqPlane('E',p,u,v))}Bewege beide Regler und beobachte die Spur des Punktes X. Was beschreibt die Gleichung tatsächlich?`,
+    mount(e,vw){el=e;view=vw;
+      el.innerHTML=`<div class="sl"><span class="f">${I('r')} = <b id="rv">0</b></span><input type="range" id="rS" min="-3" max="3" step="1" value="0"></div>
+        <div class="sl"><span class="f">${I('s')} = <b id="sv">0</b></span><input type="range" id="sS" min="-3" max="3" step="1" value="0"></div>
+        <div class="live" id="live"></div>`;
+      el.querySelector('#rS').oninput=ev=>{r=+ev.target.value;upd()};
+      el.querySelector('#sS').oninput=ev=>{s=+ev.target.value;upd()};
+      const m=3+3*Math.abs(k);view.fit([pt(add(p,mul(m,u))),pt(add(p,mul(-m,u))),pt(p)]);upd();},
+    options:[{html:'eine Ebene',fb:'Bewege beide Regler: Verlässt X jemals eine bestimmte Linie?'},{html:'eine Gerade',ok:true},
+      {html:'einen einzelnen Punkt',fb:'X bewegt sich doch, wenn du die Regler veränderst.'},{html:'den gesamten Raum',fb:'Mit zwei Parametern lässt sich höchstens eine Ebene beschreiben.'}],
+    hints:[`Vergleiche die beiden Richtungsvektoren <span class="f">${V(u)}</span> und <span class="f">${V(v)}</span>. Fällt dir ein Zusammenhang auf?`,
+      `Es gilt <span class="f">${VN('v')} = ${coef(k)} · ${VN('u')}</span>. Die Richtungsvektoren sind also parallel.`],
+    solution:`Wegen <span class="f">${VN('v')} = ${coef(k)} · ${VN('u')}</span> gilt:${block(`<span class="f">${VN('x')} = ${VN('p')} + ${I('r')} · ${VN('u')} + ${I('s')} · ${coef(k)} · ${VN('u')} = ${VN('p')} + (${I('r')} ${k<0?'−':'+'} ${sk}${I('s')}) · ${VN('u')}</span>`)}Das ist eine <b>Gerade</b>. Für eine Ebene dürfen die Richtungsvektoren nicht parallel sein.`,
+    okMsg:'Richtig! Die Richtungsvektoren sind parallel, deshalb bleibt X immer auf einer Geraden.',
+    merke:'Die beiden Richtungsvektoren einer Ebene dürfen keine Vielfachen voneinander sein (sie müssen <b>linear unabhängig</b> sein).'
+  };
+}
+
+function g2_formal(){
+  const p=rv(-3,3),[u,v]=rpair(-3,3),k=pick([2,-2,3]);
+  return{title:'Welche Gleichung beschreibt eine Ebene?',kind:'mc',trap:true,
+    intro:'Genau eine der folgenden Gleichungen beschreibt eine Ebene. Welche?',
+    options:[
+      {html:eqPlane('E',p,u,v),ok:true},
+      {html:eqPlane('E',p,u,mul(k,u)),fb:`Der zweite Richtungsvektor ist das ${num(k)}-Fache des ersten. Die Vektoren sind parallel, die Gleichung beschreibt nur eine Gerade.`},
+      {html:`<span class="f">E: ${VN('x')} = ${V(p)} + ${I('r')} · ${V(u)} + ${I('r')} · ${V(v)} &nbsp;mit ${I('r')} ∈ ℝ</span>`,fb:`Hier gibt es nur <b>einen</b> Parameter. Die Gleichung lässt sich zu <span class="f">${VN('x')} = ${VN('p')} + ${I('r')} · (${VN('u')} + ${VN('v')})</span> zusammenfassen und beschreibt eine Gerade.`},
+      {html:eqLine('E',p,u,'r'),fb:'Mit nur einem Richtungsvektor erhält man eine Gerade.'}],
+    hints:['Eine Ebene benötigt <b>zwei verschiedene Parameter</b> und zwei Richtungsvektoren.',
+      'Prüfe außerdem: Sind die beiden Richtungsvektoren Vielfache voneinander? Dann entsteht nur eine Gerade.'],
+    solution:`Richtig ist${block(eqPlane('E',p,u,v))}Sie hat zwei Parameter und zwei Richtungsvektoren, die nicht parallel sind.`,
+    solvedScene:[{type:'plane',p,u,v,range:2,rgb:COL.plane,label:'E'}]
+  };
+}
+
+/* ---------- Station 3: Ebenen aufstellen ---------- */
+const planeForm=`<span class="f">E: ${VN('x')} = {{v:p}} + ${I('r')} · {{v:u}} + ${I('s')} · {{v:v}}</span>`;
+
+function g3_drei(){
+  const A=rv(-3,3),[d1,d2]=rpair(-3,3),B=add(A,d1),C=add(A,d2),n=cross(d1,d2);
+  return{title:'Ebene durch drei Punkte',kind:'vec',form:planeForm,
+    intro:`Stelle eine Gleichung der Ebene E durch die Punkte ${P('A',A)}, ${P('B',B)} und ${P('C',C)} in Parameterform auf.`,
+    check:a=>checkPlane(a,A,n,[A,B,C]),
+    hints:[`Wähle einen der drei Punkte als Stützpunkt, z.&nbsp;B. A mit dem Ortsvektor ${VN('a')}.`,
+      `Als Richtungsvektoren eignen sich zwei Verbindungsvektoren, z.&nbsp;B. <span class="f">${VN('AB')} = ${VN('b')} − ${VN('a')}</span> und <span class="f">${VN('AC')} = ${VN('c')} − ${VN('a')}</span>.`],
+    solution:`<span class="f">${VN('AB')} = ${V(B)} − ${V(A)} = ${V(d1)}</span>, &nbsp;<span class="f">${VN('AC')} = ${V(C)} − ${V(A)} = ${V(d2)}</span>${block(eqPlane('E',A,d1,d2))}`,
+    scene:[pt(A,'A'),pt(B,'B'),pt(C,'C')],ansScene:planeAns,
+    solvedScene:[{type:'plane',p:A,u:d1,v:d2,range:1.3,rgb:COL.plane,grid:false}],_ans:{p:A,u:d1,v:d2}
+  };
+}
+
+function g3_gp(){
+  const q=rv(-3,3),w=rdir(-3,3);let d;do{d=rdir(-3,3)}while(parallel(d,w));
+  const X=add(q,d),n=cross(w,d);
+  return{title:'Ebene aus Gerade und Punkt',kind:'vec',form:planeForm,
+    intro:`Gegeben sind die Gerade${block(eqLine(I('g'),q,w))}und der Punkt ${P('P',X)}, der nicht auf ${I('g')} liegt. Stelle eine Gleichung der Ebene E auf, die ${I('g')} und P enthält.`,
+    check:a=>checkPlane(a,q,n,[X,q]),
+    hints:[`Die Gerade ${I('g')} liegt in E. Ihren Stützvektor und ihren Richtungsvektor kannst du direkt übernehmen.`,
+      `Als zweiten Richtungsvektor nimmst du den Verbindungsvektor vom Stützpunkt ${P('Q',q)} der Geraden zum Punkt P: <span class="f">${VN('QP')} = ${VN('p')} − ${VN('q')}</span>.`],
+    solution:`<span class="f">${VN('QP')} = ${V(X)} − ${V(q)} = ${V(d)}</span>${block(eqPlane('E',q,w,d))}`,
+    scene:[{type:'line',p:q,d:w,color:COL.g,label:'g'},pt(q,'Q',COL.gray),pt(X,'P')],ansScene:planeAns,
+    solvedScene:[{type:'plane',p:q,u:w,v:d,range:1.3,rgb:COL.plane,grid:false}],_ans:{p:q,u:w,v:d}
+  };
+}
+
+function g3_gg(){
+  const S=rv(-3,3),[u,v]=rpair(-2,2),k1=rndNZ(-2,2),k2=rndNZ(-2,2),a=add(S,mul(k1,u)),b=add(S,mul(k2,v)),n=cross(u,v);
+  return{title:'Ebene aus zwei sich schneidenden Geraden',kind:'vec',form:planeForm,
+    intro:`Die Geraden${block(eqLine(I('g'),a,u,'t'))}und${block(eqLine(I('h'),b,v,'k'))}schneiden sich im Punkt ${P('S',S)}. Stelle eine Gleichung der Ebene E auf, die beide Geraden enthält.`,
+    check:ans=>checkPlane(ans,S,n,[]),
+    hints:[`Beide Geraden liegen in E. Also liegen auch ihre Richtungsvektoren in E.`,
+      `Als Stützpunkt eignet sich S oder der Stützpunkt einer der beiden Geraden. Die Richtungsvektoren von ${I('g')} und ${I('h')} sind die Richtungsvektoren der Ebene.`],
+    solution:`Stützpunkt S, Richtungsvektoren von ${I('g')} und ${I('h')}:${block(eqPlane('E',S,u,v))}Ebenso richtig ist z.&nbsp;B. (Stützpunkt von ${I('g')}):${block(eqPlane('E',a,u,v))}`,
+    scene:[{type:'line',p:a,d:u,color:COL.g,label:'g'},{type:'line',p:b,d:v,color:COL.h,label:'h'},pt(S,'S')],ansScene:planeAns,
+    solvedScene:[{type:'plane',p:S,u,v,range:1.5,rgb:COL.plane,grid:false}],_ans:{p:a,u,v}
+  };
+}
+
+function g3_koll(){
+  const A=rv(-3,3),d=rdir(-2,2),k1=pick([1,2,-1]);let m;do{m=pick([2,3,-1,-2])}while(m===k1);
+  const col=Math.random()<.5,B=add(A,mul(k1,d));let C;
+  if(col)C=add(A,mul(m,d));else{let e;do{e=rdir(-2,2)}while(parallel(e,d));C=add(A,e)}
+  const AB=sub(B,A),AC=sub(C,A);
+  return{title:'Legen drei Punkte eine Ebene fest?',kind:'mc',keepOrder:true,trap:true,
+    intro:`Gegeben sind die Punkte ${P('A',A)}, ${P('B',B)} und ${P('C',C)}. Legen diese drei Punkte eindeutig eine Ebene fest?`,
+    options:[{html:'Ja, sie legen genau eine Ebene fest.',ok:!col,fb:'Das stimmt leider nicht.'},{html:'Nein, sie legen keine eindeutige Ebene fest.',ok:col,fb:'Das stimmt leider nicht.'}],
+    hints:['Drei Punkte legen genau dann eine Ebene fest, wenn sie <b>nicht</b> auf einer gemeinsamen Geraden liegen.',
+      `Berechne ${VN('AB')} und ${VN('AC')}. Ist einer der Vektoren ein Vielfaches des anderen?`],
+    solution:`<span class="f">${VN('AB')} = ${V(AB)}</span>, &nbsp;<span class="f">${VN('AC')} = ${V(AC)}</span>.<br>`+
+      (col?`Es gilt <span class="f">${VN('AC')} = ${fmtF(F(m,k1))} · ${VN('AB')}</span>. Die Vektoren sind parallel, also liegen A, B und C auf einer Geraden. Es gibt unendlich viele Ebenen, die diese Gerade enthalten. Die Ebene ist <b>nicht eindeutig</b> festgelegt.`
+          :`${VN('AC')} ist kein Vielfaches von ${VN('AB')}. A, B und C liegen nicht auf einer Geraden und legen daher <b>genau eine</b> Ebene fest.`),
+    okMsg:col?'Richtig erkannt! Die Punkte liegen auf einer Geraden. Das ist eine typische Fehlerfalle.':'Richtig!',
+    scene:[pt(A,'A'),pt(B,'B'),pt(C,'C')]
+  };
+}
+
+/* ---------- Station 4: Verstehen und Anwenden ---------- */
+function g4_pp(){
+  const p=rv(-3,3),[u,v]=rpair(-2,2),n=cross(u,v);let r0,s0;do{r0=rnd(-2,2);s0=rnd(-2,2)}while(r0===0&&s0===0);
+  const on=Math.random()<.5;let X=lc(p,r0,u,s0,v);
+  if(!on){do{X=lc(p,r0,u,s0,v);X[rnd(0,2)]+=pick([-2,-1,1,2])}while(dot(sub(X,p),n)===0)}
+  const fb='Das stimmt leider nicht. Rechne die Punktprobe sorgfältig durch.';
+  return{title:'Punktprobe bei einer Ebene',kind:'mc',keepOrder:true,
+    intro:`Gegeben ist die Ebene${block(eqPlane('E',p,u,v))}Liegt der Punkt ${P('P',X)} in E?`,
+    options:[{html:'Ja, P liegt in E.',ok:on,fb},{html:'Nein, P liegt nicht in E.',ok:!on,fb}],
+    hints:[`Setze ${VN('OP')} mit der Ebenengleichung gleich. Du erhältst ein Gleichungssystem mit <b>drei</b> Gleichungen und den <b>zwei</b> Unbekannten ${I('r')} und ${I('s')}.`,
+      `Bestimme ${I('r')} und ${I('s')} aus zwei der Gleichungen und prüfe dann, ob die dritte Gleichung erfüllt ist.`],
+    solution:planeTest(p,u,v,X,{yes:'Auch die dritte Gleichung ist erfüllt. ⇒ P liegt in E.',no:'Widerspruch. ⇒ P liegt nicht in E.'}),
+    solvedScene:[{type:'plane',p,u,v,range:2,rgb:COL.plane,label:'E'},pt(X,'P',on?COL.ok:COL.bad)]
+  };
+}
+
+function g4_params(){
+  const p=rv(-3,3),[u,v]=rpair(-2,2);let r0,s0;do{r0=rnd(-3,3);s0=rnd(-3,3)}while(r0===0||s0===0);
+  const X=lc(p,r0,u,s0,v);
+  return{title:'Parameter bestimmen',kind:'vec',
+    intro:`Der Punkt ${P('P',X)} liegt in der Ebene${block(eqPlane('E',p,u,v))}Bestimme die Parameterwerte ${I('r')} und ${I('s')}, die zu P gehören.`,
+    form:`<span class="f">${I('r')} = {{n:r}} &emsp; ${I('s')} = {{n:s}}</span>`,
+    check({r,s}){
+      if(r===r0&&s===s0)return{ok:true,msg:'Richtig!'};
+      if(r===s0&&s===r0)return{ok:false,msg:`Du hast ${I('r')} und ${I('s')} vertauscht.`};
+      if(r===r0)return{ok:false,msg:`${I('r')} stimmt, ${I('s')} noch nicht.`};
+      if(s===s0)return{ok:false,msg:`${I('s')} stimmt, ${I('r')} noch nicht.`};
+      return{ok:false,msg:'Das stimmt noch nicht. Setze deine Werte zur Kontrolle in alle drei Gleichungen ein.'};
+    },
+    hints:[`Setze ${VN('OP')} mit der Ebenengleichung gleich und schreibe das Gleichungssystem zeilenweise auf.`,
+      `Das Gleichungssystem lautet:<br>${lgs(planeRows(p,u,v,X))}<br>Löse zwei der Gleichungen nach ${I('r')} und ${I('s')} auf.`],
+    solution:planeTest(p,u,v,X,{yes:`Also gilt ${I('r')} = ${num(r0)} und ${I('s')} = ${num(s0)}.`,no:''}),
+    scene:[{type:'plane',p,u,v,range:Math.max(2,Math.abs(r0),Math.abs(s0)),rgb:COL.plane,label:'E'},pt(X,'P'),
+      {type:'arrow',from:p,to:add(p,u),color:COL.u,label:'u'},{type:'arrow',from:p,to:add(p,v),color:COL.v,label:'v'}],_ans:{r:r0,s:s0}
+  };
+}
+
+function g4_same(){
+  const p=rv(-2,2),[u,v]=rpair(-2,2),n=cross(u,v);
+  const pairs=[[1,1],[1,-1],[2,1],[1,2],[0,1],[1,0],[-1,1],[2,-1],[0,-1],[-1,0]];
+  let c,d;do{c=pick(pairs);d=pick(pairs)}while(c[0]*d[1]-c[1]*d[0]===0||(c[0]===1&&c[1]===0&&d[0]===0&&d[1]===1));
+  let a,b;do{a=rnd(-1,1);b=rnd(-1,1)}while(a===0&&b===0);
+  const type=pick(['same','same','par','cut']);
+  let q=lc(p,a,u,b,v);const w=lc([0,0,0],c[0],u,c[1],v);let z=lc([0,0,0],d[0],u,d[1],v);
+  if(type==='par'){do{q=lc(p,a,u,b,v);q[rnd(0,2)]+=pick([-1,1,2])}while(dot(sub(q,p),n)===0)}
+  if(type==='cut'){const z0=z.slice();do{z=z0.slice();z[rnd(0,2)]+=pick([-1,1])}while(dot(z,n)===0?true:false)}
+  const E1='E<sub>1</sub>',E2='E<sub>2</sub>',UV=[V(u),V(v)];
+  const qIn=`<span class="f">${V(q)} = ${V(p)}${combTail([a,b],UV)}</span>`;
+  let sol;
+  if(type==='same')sol=`Der Stützpunkt ${P('Q',q)} von ${E2} liegt in ${E1}, denn ${qIn}.<br>
+    Die Richtungsvektoren von ${E2} lassen sich durch die von ${E1} darstellen: <span class="f">${V(w)} = ${comb(c,UV)}</span> und <span class="f">${V(z)} = ${comb(d,UV)}</span>. Beide liegen in ${E1} und sind nicht parallel.<br>⇒ ${E1} und ${E2} beschreiben <b>dieselbe Ebene</b>.`;
+  if(type==='par')sol=`Die Richtungsvektoren von ${E2} lassen sich durch die von ${E1} darstellen: <span class="f">${V(w)} = ${comb(c,UV)}</span>, <span class="f">${V(z)} = ${comb(d,UV)}</span>.<br>
+    Punktprobe für den Stützpunkt ${P('Q',q)} von ${E2} in ${E1}:<br>`+planeTest(p,u,v,q,{lead:'',yes:'',no:`Widerspruch. Q liegt nicht in ${E1}. ⇒ ${E1} und ${E2} sind <b>verschiedene</b>, zueinander parallele Ebenen.`});
+  if(type==='cut')sol=`Der Stützpunkt ${P('Q',q)} von ${E2} liegt in ${E1}, denn ${qIn}.<br>
+    Prüfe, ob sich der Richtungsvektor <span class="f">${V(z)}</span> von ${E2} als <span class="f">${I('r')} · ${V(u)} + ${I('s')} · ${V(v)}</span> darstellen lässt:<br>`+
+    planeTest([0,0,0],u,v,z,{lead:'',yes:'',no:`Widerspruch. Dieser Richtungsvektor liegt nicht in ${E1}. ⇒ ${E1} und ${E2} sind <b>verschiedene</b> Ebenen (sie schneiden sich).`});
+  return{title:'Dieselbe Ebene?',kind:'mc',keepOrder:true,
+    intro:`Beschreiben die beiden Gleichungen dieselbe Ebene?${block(eqPlane(E1,p,u,v))}${block(eqPlane(E2,q,w,z,'k','l'))}`,
+    options:[{html:`Ja, ${E1} und ${E2} beschreiben dieselbe Ebene.`,ok:type==='same',fb:'Das stimmt leider nicht.'},
+      {html:`Nein, ${E1} und ${E2} beschreiben verschiedene Ebenen.`,ok:type!=='same',fb:'Das stimmt leider nicht.'}],
+    hints:[`Zwei Gleichungen beschreiben dieselbe Ebene, wenn (1) der Stützpunkt von ${E2} in ${E1} liegt und (2) beide Richtungsvektoren von ${E2} in ${E1} liegen.`,
+      `Mache zuerst eine Punktprobe mit dem Stützpunkt ${P('Q',q)} in ${E1}. Prüfe danach, ob sich die Richtungsvektoren von ${E2} als <span class="f">${I('r')} · ${VN('u')} + ${I('s')} · ${VN('v')}</span> mit den Richtungsvektoren ${VN('u')}, ${VN('v')} von ${E1} schreiben lassen.`],
+    solution:sol,
+    okMsg:type==='same'?'Richtig! Eine Ebene hat unendlich viele verschiedene Parameterdarstellungen.':'Richtig!',
+    solvedScene:[{type:'plane',p,u,v,range:2,rgb:COL.plane,label:'E₁'},{type:'plane',p:q,u:type==='cut'?w:u,v:type==='cut'?z:v,range:1.5,rgb:COL.plane2,label:'E₂',grid:false}]
+  };
+}
+
+function g4_koord(){
+  const which=rnd(0,2),axes=[[0,1],[0,2],[1,2]],zero=[2,1,0];
+  const name=w=>`<span class="f">${XS(axes[w][0]+1)}${XS(axes[w][1]+1)}</span>-Ebene`;
+  const mk=(w,shift)=>{const[i,j]=axes[w],p=[0,0,0],u=[0,0,0],v=[0,0,0];p[i]=rnd(-2,2);p[j]=rnd(-2,2);
+    if(shift)p[zero[w]]=rndNZ(-2,2);u[i]=pick([1,2,-1]);v[j]=pick([1,2,-1]);return{p,u,v}};
+  const c=mk(which,false),sh=mk(which,true),others=[0,1,2].filter(o=>o!==which),kz=zero[which]+1;
+  const opt=(e,ok,fb)=>({html:eqPlane('E',e.p,e.u,e.v),ok,fb});
+  return{title:'Koordinatenebenen',kind:'mc',
+    intro:`Welche Gleichung beschreibt die ${name(which)}?`,
+    options:[opt(c,true),...others.map(o=>opt(mk(o,false),false,`Diese Gleichung beschreibt die ${name(o)}.`)),
+      opt(sh,false,`Diese Ebene ist parallel zur ${name(which)}, enthält aber nicht den Ursprung: Für ihre Punkte gilt <span class="f">${XS(kz)} = ${num(sh.p[zero[which]])}</span>.`)],
+    hints:[`Die ${name(which)} enthält den Ursprung sowie die ${XS(axes[which][0]+1)}- und die ${XS(axes[which][1]+1)}-Achse. Für alle ihre Punkte gilt <span class="f">${XS(kz)} = 0</span>.`,
+      `Prüfe bei jeder Gleichung: Ist die ${kz}. Koordinate des Stützvektors und beider Richtungsvektoren gleich 0?`],
+    solution:`Richtig ist${block(eqPlane('E',c.p,c.u,c.v))}Stützvektor und Richtungsvektoren haben die ${kz}. Koordinate 0, also gilt für jeden Punkt <span class="f">${XS(kz)} = 0</span>, und die beiden Achsenrichtungen werden aufgespannt.`,
+    scene:[],
+    solvedScene:[{type:'plane',p:c.p,u:c.u,v:c.v,range:2.5,rgb:COL.plane,label:'E'}]
+  };
+}
+
+const STATIONS=[
+  {icon:'↗',title:'Aufwärmen: Geraden',desc:'Geradengleichungen aufstellen, prüfen und deuten',gens:[g1_aufstellen,g1_punktprobe,g1_flug,g1_fehler]},
+  {icon:'▱',title:'Von der Geraden zur Ebene',desc:'Entdecke, wie aus einer Geraden eine Ebene wird',gens:[g2_entdecken,g2_berechnen,g2_parallel,g2_formal]},
+  {icon:'✎',title:'Ebenen aufstellen',desc:'Aus Punkten und Geraden eine Ebenengleichung bilden',gens:[g3_drei,g3_gp,g3_gg,g3_koll]},
+  {icon:'⌕',title:'Verstehen und Anwenden',desc:'Punktprobe, Parameter, verschiedene Darstellungen',gens:[g4_pp,g4_params,g4_same,g4_koord]}
+];
+/*GEN-END*/
+
+/* =====================================================================
+   4) 3D-ANSICHT (eigener kleiner Renderer, Orthogonalprojektion)
+   Schulübliche Lage: x1 nach vorne links, x2 nach rechts, x3 nach oben
+   ===================================================================== */
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+class View3D{
+  constructor(cv){
+    this.cv=cv;this.ctx=cv.getContext('2d');this.objs=[];this.R=5;this.reset();this.ptr=new Map();
+    cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);this.ptr.set(e.pointerId,{x:e.clientX,y:e.clientY})});
+    cv.addEventListener('pointermove',e=>{
+      if(!this.ptr.has(e.pointerId))return;
+      const old=this.ptr.get(e.pointerId),now={x:e.clientX,y:e.clientY};
+      if(this.ptr.size===1){
+        this.yaw-=(now.x-old.x)*0.01;this.pitch=clamp(this.pitch+(now.y-old.y)*0.01,-1.45,1.45);
+      }else if(this.ptr.size===2){   // Pinch-Zoom
+        const[a,b]=[...this.ptr.values()],d0=Math.hypot(a.x-b.x,a.y-b.y);
+        this.ptr.set(e.pointerId,now);
+        const[c,d]=[...this.ptr.values()],d1=Math.hypot(c.x-d.x,c.y-d.y);
+        if(d0>0)this.zoom=clamp(this.zoom*d1/d0,.4,4);
+      }
+      this.ptr.set(e.pointerId,now);this.draw();
+    });
+    const up=e=>this.ptr.delete(e.pointerId);
+    cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+    cv.addEventListener('wheel',e=>{e.preventDefault();this.zoom=clamp(this.zoom*(e.deltaY<0?1.1:.9),.4,4);this.draw()},{passive:false});
+    if(window.ResizeObserver)new ResizeObserver(()=>this.draw()).observe(cv);
+  }
+  reset(){this.yaw=-0.6;this.pitch=0.38;this.zoom=1}
+  fit(objs){
+    const pts=[];
+    for(const o of objs){
+      if(o.noFit)continue;
+      if(o.type==='point'||o.type==='dot'||o.type==='line')pts.push(o.p);
+      if(o.type==='arrow')pts.push(o.from,o.to);
+      if(o.type==='plane'){const g=o.range||2;pts.push(lc(o.p,g,o.u,g,o.v),lc(o.p,-g,o.u,-g,o.v),lc(o.p,g,o.u,-g,o.v),lc(o.p,-g,o.u,g,o.v))}
+    }
+    let m=3;for(const p of pts)m=Math.max(m,Math.hypot(p[0],p[1],p[2]));
+    this.R=m*1.05;
+  }
+  set(objs,refit=true){this.objs=objs;if(refit)this.fit(objs);this.draw()}
+  draw(){
+    const cv=this.cv,dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+    if(!w||!h)return;
+    if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+    const c=this.ctx;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+    const k=Math.min(w,h)/(2.1*this.R)*this.zoom,cx=w/2,cy=h/2;
+    const ca=Math.cos(this.yaw),sa=Math.sin(this.yaw),cb=Math.cos(this.pitch),sb=Math.sin(this.pitch);
+    const P=v=>{const x=v[0]*ca-v[1]*sa,y=v[0]*sa+v[1]*ca;return[cx+y*k,cy-(v[2]*cb-x*sb)*k]};
+    const seg=(a,b)=>{c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke()};
+    const head=(a,b,col,sz)=>{const an=Math.atan2(b[1]-a[1],b[0]-a[0]);c.fillStyle=col;c.beginPath();c.moveTo(b[0],b[1]);
+      c.lineTo(b[0]-sz*Math.cos(an-.4),b[1]-sz*Math.sin(an-.4));c.lineTo(b[0]-sz*Math.cos(an+.4),b[1]-sz*Math.sin(an+.4));c.closePath();c.fill()};
+    const label=(t,x,y,col,vec,ital)=>{
+      c.font=`${ital?'italic ':''}600 16px "Times New Roman",Times,serif`;c.fillStyle=col;c.fillText(t,x,y);
+      if(vec){const tw=c.measureText(t).width;c.strokeStyle=col;c.lineWidth=1.3;seg([x,y-13],[x+tw+1,y-13]);head([x,y-13],[x+tw+3,y-13],col,4)}
+    };
+    // Achsen
+    const A=Math.ceil(this.R*1.02),sub=['₁','₂','₃'];
+    for(let i=0;i<3;i++){
+      const e=[0,0,0];e[i]=1;const o=P([0,0,0]),pos=P(mul(A,e));
+      c.strokeStyle='#a4acbd';c.lineWidth=1.2;c.setLineDash([4,4]);seg(P(mul(-A,e)),o);c.setLineDash([]);seg(o,pos);head(o,pos,'#a4acbd',9);
+      c.fillStyle='#a4acbd';for(let t=1;t<A;t++){const q=P(mul(t,e));c.beginPath();c.arc(q[0],q[1],1.8,0,7);c.fill()}
+      const l=P(mul(A+.55,e));c.font='italic 16px "Times New Roman",serif';c.fillStyle='#6b7385';c.fillText('x'+sub[i],l[0]-6,l[1]+5);
+    }
+    const by=t=>this.objs.filter(o=>o.type===t);
+    for(const o of by('plane')){
+      const g=o.range||2,col=o.rgb||COL.plane;
+      const cor=[[-g,-g],[g,-g],[g,g],[-g,g]].map(([a,b])=>P(lc(o.p,a,o.u,b,o.v)));
+      c.fillStyle=`rgba(${col},.15)`;c.beginPath();cor.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.closePath();c.fill();
+      c.strokeStyle=`rgba(${col},.75)`;c.lineWidth=1.3;c.stroke();
+      if(o.grid!==false){c.strokeStyle=`rgba(${col},.33)`;c.lineWidth=1;
+        for(let i=Math.ceil(-g);i<=Math.floor(g);i++){seg(P(lc(o.p,i,o.u,-g,o.v)),P(lc(o.p,i,o.u,g,o.v)));seg(P(lc(o.p,-g,o.u,i,o.v)),P(lc(o.p,g,o.u,i,o.v)))}}
+      if(o.label){const q=P(lc(o.p,g,o.u,g,o.v));label(o.label,q[0]+4,q[1]-4,`rgb(${col})`,false,true)}
+    }
+    for(const o of by('line')){
+      const L=Math.hypot(o.d[0],o.d[1],o.d[2]);if(!L)continue;const T=1.25*this.R/L;
+      c.strokeStyle=o.color;c.lineWidth=2.4;seg(P(add(o.p,mul(-T,o.d))),P(add(o.p,mul(T,o.d))));
+      if(o.label){const q=P(add(o.p,mul(T*.8,o.d)));label(o.label,q[0]+6,q[1]-6,o.color,false,true)}
+    }
+    for(const o of by('arrow')){
+      const a=P(o.from),b=P(o.to);if(Math.hypot(a[0]-b[0],a[1]-b[1])<2)continue;
+      c.strokeStyle=o.color;c.lineWidth=2.6;seg(a,b);head(a,b,o.color,12);
+      if(o.label)label(o.label,(a[0]+b[0])/2+7,(a[1]+b[1])/2-7,o.color,true,true);
+    }
+    c.fillStyle='rgba(29,36,51,.35)';for(const o of by('dot')){const q=P(o.p);c.beginPath();c.arc(q[0],q[1],3.5,0,7);c.fill()}
+    for(const o of by('point')){
+      const q=P(o.p),r=o.r||5,col=o.color||COL.pt;
+      if(o.ring){c.strokeStyle=col;c.lineWidth=3;c.beginPath();c.arc(q[0],q[1],r+6,0,7);c.stroke()}
+      c.fillStyle=col;c.beginPath();c.arc(q[0],q[1],r,0,7);c.fill();
+      if(o.label){c.font='600 15px system-ui,sans-serif';c.fillStyle=col;c.fillText(o.label,q[0]+9,q[1]-9)}
+    }
+  }
+}
+
+/* =====================================================================
+   5) SPIELABLAUF, SPEICHERUNG, ABZEICHEN
+   ===================================================================== */
+const $=s=>document.querySelector(s);
+const STORE='geradeEbene_v1';
+const BADGES={
+  erste:{icon:'🚀',name:'Erster Schritt',desc:'Erste Aufgabe gelöst'},
+  durchblick:{icon:'🔭',name:'Durchblick',desc:'5 Aufgaben in Folge ohne Tipp'},
+  fehlerjaeger:{icon:'🕵️',name:'Fehlerjäger',desc:'3 Fehlerfallen auf Anhieb erkannt'},
+  selbst:{icon:'💪',name:'Selbstständig',desc:'Eine Station ganz ohne Tipps'},
+  entdecker:{icon:'🧭',name:'Ebenen-Entdecker',desc:'Alle vier Stationen abgeschlossen'}
+};
+function load(){try{const s=JSON.parse(localStorage.getItem(STORE));if(s&&Array.isArray(s.st))return s}catch(e){}return{st:[[],[],[],[]],badges:[],streak:0,traps:0}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}  // z. B. privater Modus: dann ohne Speicherung
+let S=load(),cur=null;
+const view=new View3D($('#cv'));
+const totalStars=()=>S.st.flat().reduce((a,r)=>a+r.stars,0);
+const starsHTML=n=>`<span class="stars">${'★'.repeat(n)}${'☆'.repeat(3-n)}</span>`;
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));closeKeypad();window.scrollTo(0,0)}
+let toastQ=[],toastBusy=false;
+function toast(h){toastQ.push(h);if(!toastBusy)nextToast()}
+function nextToast(){const h=toastQ.shift();if(!h){toastBusy=false;return}toastBusy=true;const t=$('#toast');t.innerHTML=h;t.classList.add('on');
+  setTimeout(()=>{t.classList.remove('on');setTimeout(nextToast,350)},2600)}
+function award(id){if(S.badges.includes(id))return;S.badges.push(id);const b=BADGES[id];toast(`${b.icon} Abzeichen: <b>${b.name}</b> – ${b.desc}`)}
+const badgeHTML=()=>Object.entries(BADGES).map(([id,b])=>`<div class="badge ${S.badges.includes(id)?'':'off'}"><span class="bi">${b.icon}</span><span><b>${b.name}</b><br><span class="sm">${b.desc}</span></span></div>`).join('');
+
+/* ---------- Startseite ---------- */
+function renderHome(){
+  $('#stations').innerHTML=STATIONS.map((st,i)=>{
+    const res=S.st[i],n=st.gens.length,k=Math.min(res.length,n),done=k>=n,stars=res.reduce((a,r)=>a+r.stars,0);
+    return `<button class="stcard ${done?'done':''}" data-i="${i}"><div class="sticon">${done?'✓':st.icon}</div><div class="stbody">
+      <div class="stnum">Station ${i+1}</div><div class="sttitle">${st.title}</div><div class="stdesc">${st.desc}</div>
+      <div class="stprog"><div class="pbar"><span style="width:${k/n*100}%"></span></div><span>${k}/${n}</span><span class="stst">★ ${stars}</span></div>
+      <div class="stbtn">${done?'Wiederholen (neue Aufgaben)':k?'Weitermachen →':'Starten →'}</div></div></button>`}).join('');
+  $('#homeBadges').innerHTML=badgeHTML();
+}
+$('#stations').addEventListener('click',e=>{const b=e.target.closest('.stcard');if(!b)return;const i=+b.dataset.i;
+  if(S.st[i].length>=STATIONS[i].gens.length){S.st[i]=[];save()}startStation(i)});
+
+/* ---------- Aufgaben ---------- */
+function startStation(i){cur={s:i};show('scrTask');nextTask()}
+function nextTask(){
+  const st=STATIONS[cur.s],idx=S.st[cur.s].length;
+  if(idx>=st.gens.length){stationDone();return}
+  cur.idx=idx;cur.def=st.gens[idx]();cur.rec={errors:0,tips:0,sol:false};cur.done=false;cur.act=null;
+  renderTask();
+}
+function renderTask(){
+  const d=cur.def,st=STATIONS[cur.s],n=st.gens.length;
+  $('#stTitle').textContent=`Station ${cur.s+1}: ${st.title}`;
+  $('#dots').innerHTML=st.gens.map((g,i)=>`<span class="dot ${i<cur.idx?'d':''} ${i===cur.idx?'c':''}"></span>`).join('');
+  $('#starCount').textContent=`★ ${totalStars()}`;
+  $('#tNum').textContent=`Aufgabe ${cur.idx+1} von ${n}`;
+  $('#tTitle').innerHTML=d.title;$('#tIntro').innerHTML=d.intro;
+  $('#tForm').innerHTML=d.form?buildForm(d.form):'';$('#tForm').classList.toggle('hidden',!d.form);
+  document.querySelectorAll('#tForm .fld').forEach(f=>f.onclick=()=>setActive(f));
+  const o=$('#tOpts');o.innerHTML='';
+  if(d.kind==='mc'){cur.opts=d.keepOrder?d.options:shuffle(d.options);
+    cur.opts.forEach(op=>{const b=document.createElement('button');b.className='opt';b.innerHTML=op.html;b.onclick=()=>mcClick(b,op);op.btn=b;o.appendChild(b)})}
+  fb('','');$('#tHints').innerHTML='';$('#tSol').innerHTML='';$('#tMerke').innerHTML='';
+  $('#btnCheck').classList.toggle('hidden',d.kind!=='vec');
+  $('#btnTip').classList.remove('hidden');$('#btnTip').textContent='Tipp 1';
+  $('#btnNext').classList.add('hidden');$('#btnSolView').classList.add('hidden');
+  const has3d=d.scene!==undefined||!!d.view;
+  $('#viewCard').classList.toggle('hidden',!has3d);$('#taskwrap').classList.toggle('has3d',has3d);
+  view.reset();if(has3d)view.set(d.scene||[]);
+  $('#tWidget').innerHTML='';
+  if(d.mount)d.mount($('#tWidget'),view,{solved:()=>finish(true,d.okMsg),done:()=>cur.done});
+  closeKeypad();window.scrollTo(0,0);
+}
+function fb(cls,h){const e=$('#tFb');e.className='fb '+cls;e.innerHTML=h}
+function box(cls,title,h){return `<div class="box ${cls}"><h4>${title}</h4>${h}</div>`}
+
+/* Eingabefelder: {{v:name}} = Spaltenvektor mit 3 Feldern, {{n:name}} = einzelnes Zahlenfeld */
+function buildForm(h){
+  return h.replace(/\{\{v:(\w+)\}\}/g,(m,k)=>`<span class="cv inp">${[0,1,2].map(i=>`<button type="button" class="fld" data-k="${k}" data-i="${i}" aria-label="${k} Komponente ${i+1}"></button>`).join('')}</span>`)
+          .replace(/\{\{n:(\w+)\}\}/g,(m,k)=>`<button type="button" class="fld one" data-k="${k}" data-i="-1" aria-label="${k}"></button>`);
+}
+function readForm(){
+  const out={};
+  for(const f of document.querySelectorAll('#tForm .fld')){
+    const v=f.dataset.v||'';if(!/^-?\d+$/.test(v))return null;
+    const k=f.dataset.k,i=+f.dataset.i,x=parseInt(v,10)+0;
+    if(i<0)out[k]=x;else(out[k]=out[k]||[])[i]=x;
+  }
+  return out;
+}
+$('#btnCheck').onclick=()=>{
+  if(cur.done)return;const d=cur.def,ans=readForm();
+  if(!ans){fb('info','Bitte fülle zuerst alle Felder aus.');return}
+  const res=d.check(ans);
+  if(d.ansScene&&d.scene)view.set(d.scene.concat(d.ansScene(ans,res.ok)),false);
+  if(res.ok){closeKeypad();finish(true,res.msg)}
+  else{cur.rec.errors++;fb('bad',res.msg+(cur.rec.errors>=2&&cur.rec.tips<2?'<br><span class="sm">Ein Tipp kann dir weiterhelfen.</span>':''));
+    const c=$('#taskCard');c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake')}
+};
+function mcClick(b,op){
+  if(cur.done||b.disabled)return;
+  if(op.ok){b.classList.add('right');finish(true,cur.def.okMsg)}
+  else{cur.rec.errors++;b.classList.add('wrong');b.disabled=true;fb('bad',op.fb||'Das stimmt leider nicht.')}
+};
+$('#btnTip').onclick=()=>{
+  if(cur.done)return;const d=cur.def,r=cur.rec;
+  if(r.tips<d.hints.length){
+    r.tips++;$('#tHints').insertAdjacentHTML('beforeend',box('hint',`Tipp ${r.tips}`,d.hints[r.tips-1]));
+    $('#btnTip').textContent=r.tips<d.hints.length?`Tipp ${r.tips+1}`:'Lösung zeigen';
+  }else{r.sol=true;showSolution();finish(false)}
+};
+function showSolution(){$('#tSol').innerHTML=box('sol','Lösungsweg',cur.def.solution);$('#btnSolView').classList.add('hidden')}
+$('#btnSolView').onclick=showSolution;
+function finish(byStudent,msg){
+  if(cur.done)return;cur.done=true;
+  const d=cur.def,r=cur.rec;
+  r.stars=r.sol?0:Math.max(1,3-r.tips-(r.errors>0?1:0));
+  S.st[cur.s].push({errors:r.errors,tips:r.tips,sol:r.sol,stars:r.stars});
+  // Abzeichen
+  award('erste');
+  if(!r.sol&&r.tips===0)S.streak++;else S.streak=0;
+  if(S.streak>=5)award('durchblick');
+  if(d.trap&&!r.sol&&r.tips===0&&r.errors===0){S.traps++;if(S.traps>=3)award('fehlerjaeger')}
+  const res=S.st[cur.s];
+  if(res.length===STATIONS[cur.s].gens.length&&res.every(x=>x.tips===0&&!x.sol))award('selbst');
+  if(STATIONS.every((st,i)=>S.st[i].length>=st.gens.length))award('entdecker');
+  save();
+  // Oberfläche
+  document.querySelectorAll('#tForm .fld').forEach(f=>{f.disabled=true;f.classList.remove('act')});
+  if(d.kind==='mc')cur.opts.forEach(op=>{op.btn.disabled=true;if(op.ok)op.btn.classList.add('right')});
+  if(byStudent)fb('ok',`<b>${msg||'Richtig!'}</b>${starsHTML(r.stars)}`);
+  else fb('info','Schau dir den Lösungsweg in Ruhe an. Die Aufgabe zählt als bearbeitet.');
+  if(d.merke)$('#tMerke').innerHTML=box('merke','Merke',d.merke);
+  if(d.solvedScene){
+    if($('#viewCard').classList.contains('hidden')){$('#viewCard').classList.remove('hidden');$('#taskwrap').classList.add('has3d');view.reset();view.set(d.solvedScene)}
+    else view.set(view.objs.concat(d.solvedScene),false);
+  }
+  if(!byStudent&&d.onSolution)d.onSolution();
+  $('#btnCheck').classList.add('hidden');$('#btnTip').classList.add('hidden');
+  $('#btnSolView').classList.toggle('hidden',r.sol);
+  const last=cur.idx+1>=STATIONS[cur.s].gens.length;
+  $('#btnNext').textContent=last?'Station abschließen ✓':'Weiter →';$('#btnNext').classList.remove('hidden');
+  $('#starCount').textContent=`★ ${totalStars()}`;
+  closeKeypad();
+}
+$('#btnNext').onclick=nextTask;
+
+function stationDone(){
+  const i=cur.s,res=S.st[i],sum=k=>res.reduce((a,r)=>a+(k==='sol'?(r.sol?1:0):r[k]),0);
+  const next=STATIONS.findIndex((s,j)=>S.st[j].length<s.gens.length),allDone=next<0;
+  openModal(`<div class="mbig">${allDone?'🧭':'🎉'}</div><h2>Station ${i+1} abgeschlossen</h2><p>${STATIONS[i].title}</p>
+    <div class="mstats"><div><b>${res.length}</b><span>Aufgaben</span></div><div><b>${sum('errors')}</b><span>Fehlversuche</span></div>
+    <div><b>${sum('tips')}</b><span>Tipps</span></div><div><b>${sum('sol')}</b><span>Lösungen angesehen</span></div></div>
+    <div class="mbtns">${allDone?`<button class="btn pri" data-a="res">Gesamtübersicht ansehen</button>`:`<button class="btn pri" data-a="go" data-i="${next}">Weiter zu Station ${next+1}</button>`}
+    <button class="btn" data-a="home">Zur Übersicht</button></div>`);
+}
+function openModal(h){$('#mbox').innerHTML=h;$('#modal').classList.remove('hidden')}
+$('#modal').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('#modal').classList.add('hidden');
+  if(b.dataset.a==='go')startStation(+b.dataset.i);else if(b.dataset.a==='res')openResults();else goHome()});
+
+/* ---------- Übersicht (wertfrei) ---------- */
+function openResults(){
+  const rows=STATIONS.map((st,i)=>{const r=S.st[i];return{t:`${i+1}. ${st.title}`,n:st.gens.length,done:r.length,
+    err:r.reduce((a,x)=>a+x.errors,0),tips:r.reduce((a,x)=>a+x.tips,0),sol:r.filter(x=>x.sol).length}});
+  const T=k=>rows.reduce((a,r)=>a+r[k],0);
+  $('#resBody').innerHTML=`<h2 style="margin-top:0">Meine Übersicht</h2>
+    <p>Hier siehst du, wie du gearbeitet hast. Es gibt keine Bewertung. Fehlversuche und Tipps gehören zum Lernen dazu. Wenn deine Lehrkraft es möchte, kannst du einen Screenshot dieser Seite machen.</p>
+    <div style="overflow-x:auto"><table><tr><th>Station</th><th>Bearbeitet</th><th>Fehlversuche</th><th>Tipps</th><th>Lösungen angesehen</th></tr>
+    ${rows.map(r=>`<tr><td>${r.t}</td><td>${r.done}/${r.n}</td><td>${r.err}</td><td>${r.tips}</td><td>${r.sol}</td></tr>`).join('')}
+    <tr class="tot"><td>Gesamt</td><td>${T('done')}/${T('n')}</td><td>${T('err')}</td><td>${T('tips')}</td><td>${T('sol')}</td></tr></table></div>
+    <h3>Abzeichen</h3><div class="badges">${badgeHTML()}</div>
+    <div class="row"><button class="btn pri" id="resHome">Zur Übersicht</button><button class="btn" id="resReset">Alles zurücksetzen (neue Aufgaben)</button></div>`;
+  $('#resHome').onclick=goHome;armReset($('#resReset'));show('scrRes');
+}
+function goHome(){renderHome();show('scrHome')}
+function armReset(b){const txt=b.textContent;b.onclick=()=>{
+  if(b.dataset.arm){S={st:[[],[],[],[]],badges:[],streak:0,traps:0};save();goHome();return}
+  b.dataset.arm='1';b.textContent='Wirklich alles löschen? Nochmal tippen';
+  setTimeout(()=>{delete b.dataset.arm;b.textContent=txt},3500)}}
+$('#btnRes').onclick=openResults;armReset($('#btnResetHome'));
+$('#btnBack').onclick=goHome;$('#btnBack2').onclick=goHome;
+
+/* ---------- 3D-Steuerknöpfe ---------- */
+document.querySelector('.vctl').addEventListener('click',e=>{const z=e.target.dataset.z;if(!z)return;
+  if(z==='in')view.zoom=clamp(view.zoom*1.25,.4,4);else if(z==='out')view.zoom=clamp(view.zoom/1.25,.4,4);else{view.reset()}view.draw()});
+
+/* ---------- Zahlenfeld ---------- */
+function setActive(f){if(f.disabled)return;document.querySelectorAll('.fld.act').forEach(x=>x.classList.remove('act'));
+  f.classList.add('act');cur.act=f;$('#kp').classList.add('on');document.body.classList.add('kp-open');
+  setTimeout(()=>f.scrollIntoView({block:'center',behavior:'smooth'}),60)}
+function closeKeypad(){$('#kp').classList.remove('on');document.body.classList.remove('kp-open');
+  document.querySelectorAll('.fld.act').forEach(x=>x.classList.remove('act'));if(cur)cur.act=null}
+function focusNext(){const fs=[...document.querySelectorAll('#tForm .fld:not(:disabled)')],i=fs.indexOf(cur.act);
+  if(i>=0&&i<fs.length-1)setActive(fs[i+1]);else closeKeypad()}
+function kpKey(k){
+  if(k==='close'){closeKeypad();return}
+  const f=cur&&cur.act;if(!f)return;
+  if(k==='next'){focusNext();return}
+  let v=f.dataset.v||'';
+  if(k==='del')v=v.slice(0,-1);
+  else if(k==='±')v=v.startsWith('-')?v.slice(1):'-'+v;
+  else if(/^\d$/.test(k)){const dg=v.replace('-','');if(dg.length>=3)return;if(dg==='0')v=v.replace('0','');v+=k}
+  f.dataset.v=v;f.textContent=v.replace('-','−');
+}
+$('#kp').addEventListener('click',e=>{const b=e.target.closest('button');if(b)kpKey(b.dataset.k)});
+document.addEventListener('keydown',e=>{     // Tastatur am PC
+  if(!cur||!cur.act||!$('#scrTask').classList.contains('on'))return;
+  if(/^\d$/.test(e.key))kpKey(e.key);else if(e.key==='-')kpKey('±');else if(e.key==='Backspace')kpKey('del');
+  else if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();kpKey('next')}else if(e.key==='Escape')closeKeypad();else return;
+  e.preventDefault();
+});
+
+renderHome();
+</script>
+</body>
+</html>
