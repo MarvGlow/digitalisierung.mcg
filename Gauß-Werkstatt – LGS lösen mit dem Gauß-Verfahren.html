@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gauß-Werkstatt – LGS lösen mit dem Gauß-Verfahren</title>
+<style>
+:root{
+  --bg:#f3f5fa; --card:#ffffff; --ink:#1c2233; --muted:#5d6679; --line:#dde2ee;
+  --pri:#2f5bd3; --pri-d:#2246a6; --pri-l:#e8eeff;
+  --ok:#1b8f58; --ok-l:#e2f5eb; --bad:#cf3f3f; --bad-l:#fdeaea; --warn:#b97c00; --warn-l:#fff3d2;
+  --gold:#e3a008;
+  --math:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif;
+  --rowh:2.6rem;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:16px}
+button{font:inherit;cursor:pointer}
+input,select{font:inherit}
+h1,h2,h3,h4{line-height:1.25;margin:.2em 0 .5em}
+h2{font-size:1.45rem}
+h3{font-size:1.15rem}
+p{margin:.4em 0 .8em}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+
+/* ---------- Kopfzeile ---------- */
+header{position:sticky;top:0;z-index:20;background:#18213a;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.hbar{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:1.15rem;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.logo .stair{display:inline-grid;grid-template-columns:repeat(3,7px);gap:2px}
+.logo .stair i{width:7px;height:7px;background:#7ea0ff;border-radius:1px}
+.logo .stair i.o{background:transparent}
+nav{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+nav button{background:transparent;border:0;color:#c7d2f0;padding:7px 11px;border-radius:9px;font-weight:600;font-size:.93rem}
+nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+nav button.on{background:#fff;color:#18213a}
+.hright{display:flex;align-items:center;gap:10px}
+.vt{display:inline-flex;background:rgba(255,255,255,.12);border-radius:10px;padding:3px}
+.vt button{border:0;background:transparent;color:#dfe6fb;padding:5px 11px;border-radius:8px;font-weight:700;font-size:.88rem}
+.vt button.on{background:#7ea0ff;color:#0e1630}
+.pts{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:10px;padding:6px 11px;font-weight:700;font-size:.92rem}
+.pts .star{color:var(--gold)}
+
+main{max-width:1180px;margin:0 auto;padding:22px 16px 60px}
+section.page{display:none}
+section.page.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:0 0 18px;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+.card.sub{background:#fafbfe}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.gtrans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:start}
+.gtrans>div{overflow-x:auto}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:860px){.grid2,.grid3,.gtrans{grid-template-columns:1fr}}
+@media (max-width:700px){header{position:static}nav{flex-wrap:nowrap;overflow-x:auto;order:3;flex-basis:100%}nav button{white-space:nowrap}.hright{margin-left:auto}input.cell{width:3em}.sysbox{padding:8px}}
+
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px;font-weight:600;font-size:.93rem;transition:.12s}
+.btn:hover{border-color:#b9c3dc;background:#f7f9fd}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{background:var(--pri-d)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.sel{background:var(--pri-l);border-color:var(--pri);color:var(--pri-d)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+
+.msg{border-radius:10px;padding:9px 13px;margin:10px 0;font-size:.95rem}
+.msg.ok{background:var(--ok-l);color:#11603b;border:1px solid #b9e4cd}
+.msg.bad{background:var(--bad-l);color:#8f2525;border:1px solid #f3c2c2}
+.msg.info{background:var(--pri-l);color:#1f3c8a;border:1px solid #cbd8fb}
+.msg.warn{background:var(--warn-l);color:#7a5200;border:1px solid #f1dc9c}
+
+.hero{background:linear-gradient(135deg,#22305a,#2f5bd3);color:#fff;border:0}
+.hero h2{font-size:1.7rem}
+.hero p{color:#dbe4ff;max-width:760px}
+
+/* ---------- Gleichungssysteme ---------- */
+.sys{display:inline-flex;align-items:flex-start;gap:6px;font-family:var(--math);font-size:1.22rem;padding:6px 4px}
+.slab div,.snotes div{height:var(--rowh);line-height:var(--rowh);white-space:nowrap}
+.slab div{font-family:system-ui,sans-serif;font-weight:700;font-size:.9rem;color:var(--muted);text-align:right;padding-right:4px;min-width:2.2em;border-radius:6px}
+.slab div.hl{color:var(--pri);background:var(--pri-l)}
+.snotes div{font-family:system-ui,sans-serif;font-size:.9rem;color:var(--pri-d);font-weight:700;padding-left:10px}
+.sys table{border-collapse:collapse}
+.sys tr{height:var(--rowh)}
+.sys tr.hl td{background:var(--pri-l)}
+.sys td{padding:0 5px;text-align:right;white-space:nowrap;transition:background .3s}
+.lgs td.sg{padding:0 3px;text-align:center;min-width:1.1em;color:#333}
+.lgs td.tm{min-width:2.3em}
+.lgs td.eq{padding:0 8px}
+.lgs td.z-todo{background:var(--warn-l)!important;border-radius:5px}
+.mat{position:relative;padding:0 9px}
+.mat::before,.mat::after{content:"";position:absolute;top:2px;bottom:2px;width:9px;border:2px solid #333}
+.mat::before{left:0;border-right:0;border-radius:9px 0 0 9px}
+.mat::after{right:0;border-left:0;border-radius:0 9px 9px 0}
+.mat td{min-width:2.4em;text-align:center}
+.mat.hd::before,.mat.hd::after{top:calc(1.5rem + 2px)}
+.sys tr.vh{height:1.5rem}
+.sys tr.vh td{font-size:.8rem;color:var(--muted);vertical-align:bottom;padding-bottom:2px}
+.slab div.sp,.snotes div.sp{height:1.5rem}
+.mat td.rhs{border-left:2px solid #666;padding-left:10px}
+.mat td.z-ok{color:var(--ok);font-weight:700;background:var(--ok-l)}
+.mat td.z-todo{background:var(--warn-l)}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;font-size:.78em;line-height:1.05;text-align:center}
+.fr span:first-child{border-bottom:1px solid currentColor;padding:0 2px}
+.v{font-style:italic}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:4px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.legend .lg-ok::before{background:var(--ok-l);border:1px solid #9fd6b8}
+.legend .lg-todo::before{background:var(--warn-l);border:1px solid #ecd28a}
+
+/* Eingabezeilen */
+.rin{display:inline-flex;align-items:center;gap:5px;font-family:var(--math);font-size:1.15rem;flex-wrap:nowrap;margin:3px 0}
+.rin .var{font-style:italic;min-width:.8em}
+.rin .op{padding:0 2px}
+.rin .br{font-size:2rem;line-height:1;color:#444;font-family:var(--math)}
+.rin .vbar{width:2px;align-self:stretch;background:#666;margin:0 4px}
+.rlab{display:inline-block;width:2.4em;font-weight:700;color:var(--muted);font-family:system-ui,sans-serif;font-size:.9rem}
+input.cell{width:3.7em;padding:5px 6px;border:1.5px solid #c9d0e2;border-radius:8px;text-align:center;font-family:var(--math);font-size:1.05rem;background:#fff}
+input.cell:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-l)}
+input.cell.ok{border-color:var(--ok);background:var(--ok-l)}
+input.cell.bad{border-color:var(--bad);background:var(--bad-l)}
+input.cell.sm{width:3.2em}
+input.wide{width:6.5em}
+select{padding:5px 8px;border:1.5px solid #c9d0e2;border-radius:8px;background:#fff;font-weight:700}
+
+/* Arbeitsbereich */
+.ws{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px}
+@media (max-width:900px){.ws{grid-template-columns:1fr}}
+.ws-main{min-width:0}
+.sysbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;overflow-x:auto}
+.optabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 8px}
+.optabs button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;font-weight:600;font-size:.9rem}
+.optabs button.on{border-color:var(--pri);background:var(--pri-l);color:var(--pri-d)}
+.opf{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:#f7f9fe;border:1px dashed #c8d3f0;border-radius:12px;padding:10px 12px}
+.opf b.rl{font-family:var(--math);font-size:1.1rem}
+.pend{background:#f7f9fe;border:1.5px solid #c8d3f0;border-radius:12px;padding:12px 14px;margin-top:12px}
+.pend-h{font-weight:700;margin-bottom:6px}
+.helprow{font-family:var(--math);font-size:.95rem;color:var(--muted);margin:4px 0 2px;display:flex;gap:14px;flex-wrap:wrap}
+.side{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;align-self:start}
+.side h4{margin:0 0 6px;font-size:.95rem}
+.hist{list-style:none;padding:0;margin:0 0 10px;font-size:.9rem;max-height:220px;overflow:auto}
+.hist li{padding:3px 0;border-bottom:1px dashed var(--line)}
+.hist li b{color:var(--pri-d)}
+.solp{margin-top:12px}
+.solvals{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-family:var(--math);font-size:1.15rem;align-items:center}
+.result{font-family:var(--math);font-size:1.25rem;font-weight:700}
+
+/* Level-Karten */
+.lvl{border:1.5px solid var(--line);border-radius:14px;padding:14px;background:#fff;text-align:left;position:relative;transition:.15s;display:flex;flex-direction:column;gap:4px;min-height:150px}
+.lvl:hover:not(:disabled){border-color:var(--pri);transform:translateY(-2px);box-shadow:0 6px 16px rgba(47,91,211,.12)}
+.lvl .num{font-size:.8rem;font-weight:800;color:var(--pri);letter-spacing:.5px}
+.lvl .nm{font-weight:800;font-size:1.05rem}
+.lvl .ds{font-size:.88rem;color:var(--muted);flex:1}
+.lvl .stars{font-size:1.15rem;letter-spacing:2px;color:#d6dbe7}
+.lvl .stars .f{color:var(--gold)}
+.lvl:disabled{background:#f2f4f8;cursor:not-allowed}
+.lvl:disabled .nm::after{content:" 🔒"}
+.prog{height:8px;background:#e6eaf3;border-radius:99px;overflow:hidden;margin:6px 0 12px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#4f7cf0,#2f5bd3);border-radius:99px;transition:width .4s}
+
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.bdg{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;background:#fff}
+.bdg .ic{font-size:1.8rem}
+.bdg.off{opacity:.38;filter:grayscale(1)}
+.bdg .t{font-weight:700;font-size:.92rem}
+.bdg .d{font-size:.8rem;color:var(--muted)}
+
+/* Vektoren */
+.vec{display:inline-flex;flex-direction:column;vertical-align:middle;padding:0 7px;position:relative;font-family:var(--math);line-height:1.15;text-align:center;margin:0 2px}
+.vec::before,.vec::after{content:"";position:absolute;top:0;bottom:0;width:5px;border:1.5px solid #333}
+.vec::before{left:0;border-right:0;border-radius:6px 0 0 6px}
+.vec::after{right:0;border-left:0;border-radius:0 6px 6px 0}
+.mline{font-family:var(--math);font-size:1.15rem;margin:8px 0;line-height:3.6}
+.steps{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.steps span{padding:5px 12px;border-radius:999px;background:#e9edf5;color:var(--muted);font-weight:700;font-size:.85rem}
+.steps span.on{background:var(--pri);color:#fff}
+.steps span.done{background:var(--ok-l);color:var(--ok)}
+
+.rule{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.rule:last-child{border-bottom:0}
+.rule .ri{flex:0 0 38px;height:38px;border-radius:10px;background:var(--pri-l);color:var(--pri-d);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem}
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:860px){.cases{grid-template-columns:1fr}}
+.case{border-radius:12px;padding:12px;border:1px solid var(--line);background:#fff}
+.case h4{margin:0 0 4px}
+.tryt{border-collapse:collapse;margin-top:8px;font-size:.95rem}
+.tryt td,.tryt th{padding:5px 10px;border-bottom:1px solid var(--line);text-align:left}
+.tick{color:var(--ok);font-weight:800}.cross{color:var(--bad);font-weight:800}
+.choice{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.choice .btn{text-align:left}
+.toast-wrap{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:60}
+.toast{background:#18213a;color:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,.2);font-weight:600;animation:tin .3s ease;max-width:320px}
+.toast.gold{background:linear-gradient(135deg,#f6c445,#e3a008);color:#2a1e00}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.modal{position:fixed;inset:0;background:rgba(10,15,30,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.modal .card{max-width:760px;width:100%;max-height:85vh;overflow:auto}
+footer{max-width:1180px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:.85rem}
+footer button{background:none;border:0;color:var(--pri);text-decoration:underline;padding:0;font-size:.85rem}
+.pill{display:inline-block;background:var(--pri-l);color:var(--pri-d);border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:700}
+.kpi{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 4px}
+.kpi div{background:#f5f7fc;border-radius:10px;padding:6px 12px;font-weight:700}
+.kpi small{display:block;font-weight:500;color:var(--muted);font-size:.78rem}
+.appcard{cursor:pointer;text-align:left}
+.appcard .ic{font-size:1.8rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="logo"><span class="stair"><i></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i class="o"></i><i></i></span>Gauß-Werkstatt</div>
+    <nav id="nav">
+      <button data-p="motiv" class="on">1 · Warum?</button>
+      <button data-p="erkl">2 · Erklärung</button>
+      <button data-p="train">3 · Training</button>
+      <button data-p="frei">4 · Freies Üben</button>
+      <button data-p="anw">5 · Anwendungen</button>
+    </nav>
+    <div class="hright">
+      <div class="vt" title="Darstellung wechseln"><button data-v="lgs">LGS</button><button data-v="matrix">Matrix</button></div>
+      <button class="pts" id="ptsBtn" title="Punkte & Abzeichen"><span class="star">★</span> <span id="pts">0</span> · 🏅 <span id="bcount">0</span></button>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- =================== 1 MOTIVATION =================== -->
+<section class="page on" id="p-motiv">
+  <div class="card hero">
+    <h2>Drei Gleichungen, drei Unbekannte – und jetzt?</h2>
+    <p>Mit zwei Gleichungen kommst du per Einsetzen oder Gleichsetzen noch gut zurecht. Bei drei Gleichungen mit drei Variablen wird Probieren schnell mühsam. Versuch es selbst, bevor du das Verfahren kennenlernst.</p>
+  </div>
+  <div class="grid2">
+    <div class="card" id="motiv1"></div>
+    <div class="card" id="motiv2"></div>
+  </div>
+  <div class="card" id="motivEnd" style="display:none">
+    <h3>Fazit</h3>
+    <p>Probieren ist Glückssache. Wir brauchen ein Verfahren, das <b>immer</b> funktioniert, egal wie krumm die Zahlen sind: das <b>Gauß-Verfahren</b>. Es formt das LGS so lange um, bis man die Lösung von unten nach oben ablesen kann.</p>
+    <button class="btn pri" data-goto="erkl">Zur Erklärung →</button>
+  </div>
+</section>
+
+<!-- =================== 2 ERKLÄRUNG =================== -->
+<section class="page" id="p-erkl">
+  <div class="card">
+    <h2>1. Zwei Schreibweisen – ein System</h2>
+    <p>Ein lineares Gleichungssystem (LGS) kann man ausführlich mit Variablen schreiben oder kompakt als <b>erweiterte Koeffizientenmatrix</b>. In der Matrix stehen nur die Zahlen vor den Variablen (die <i>Koeffizienten</i>). Der senkrechte Strich ersetzt das Gleichheitszeichen.</p>
+    <div class="grid2">
+      <div><div class="pill">LGS</div><div id="ex-lgs"></div></div>
+      <div><div class="pill">Matrix</div><div id="ex-mat"></div></div>
+    </div>
+    <div class="msg info"><b>Übersetzungsregeln:</b> ① Variablen immer in derselben Reihenfolge (x, y, z) sortieren. ② Fehlt eine Variable, steht in der Matrix eine <b>0</b>. ③ Steht nur <i>x</i> da, ist der Koeffizient <b>1</b>, bei −<i>x</i> ist er <b>−1</b>. ④ Zahlen ohne Variable kommen nach rechts hinter den Strich.</div>
+    <p class="small muted">Tipp: Oben rechts kannst du jederzeit zwischen <b>LGS</b> und <b>Matrix</b> umschalten. Alle Aufgaben werden dann in der gewählten Darstellung angezeigt.</p>
+  </div>
+
+  <div class="card">
+    <h2>2. Drei erlaubte Umformungen</h2>
+    <p>Diese Umformungen verändern die <b>Lösungsmenge nicht</b> (Äquivalenzumformungen). Sie gelten immer für die <b>ganze</b> Gleichung, also auch für die rechte Seite!</p>
+    <div class="rule"><div class="ri">↕</div><div><b>Gleichungen vertauschen.</b> Die Reihenfolge der Gleichungen ist egal. Schreibweise: <i>I ↔ II</i>. Nützlich, wenn oben links eine 0 steht.</div></div>
+    <div class="rule"><div class="ri">·k</div><div><b>Eine Gleichung mit einer Zahl k ≠ 0 multiplizieren.</b> Schreibweise: <i>2·II</i>. Mit 0 multiplizieren ist verboten, denn dann ginge die Information der Gleichung verloren.</div></div>
+    <div class="rule"><div class="ri">+</div><div><b>Ein Vielfaches einer Gleichung zu einer anderen addieren.</b> Schreibweise: <i>II − 2·I</i> (zu Gleichung II wird das (−2)-Fache von Gleichung I addiert). Oft werden ② und ③ kombiniert, z. B. <i>3·II − 2·I</i>. So vermeidet man Brüche.</div></div>
+  </div>
+
+  <div class="card">
+    <h2>3. Ziel: die Nullertreppe (Stufenform)</h2>
+    <div class="grid2">
+      <div>
+        <p>Man formt so lange um, bis unterhalb der „Treppe“ nur noch Nullen stehen. Gearbeitet wird <b>Spalte für Spalte von links nach rechts</b>:</p>
+        <ol>
+          <li>Mit Zeile I erzeugt man Nullen in der <i>x</i>-Spalte von II und III.</li>
+          <li>Danach erzeugt man mit Zeile II (nicht mehr mit I!) eine Null in der <i>y</i>-Spalte von III.</li>
+        </ol>
+        <p>Dann steht unten eine Gleichung mit nur noch einer Variablen. Man rechnet <b>rückwärts</b>: zuerst <i>z</i> aus III, dann <i>y</i> aus II, dann <i>x</i> aus I.</p>
+      </div>
+      <div><div id="ex-stair"></div>
+        <div class="legend"><span class="lg-ok">0 erreicht</span><span class="lg-todo">hier muss noch eine 0 hin</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4. Drei mögliche Fälle</h2>
+    <div class="cases">
+      <div class="case"><h4>✅ Genau eine Lösung</h4><p class="small">Die Treppe ist vollständig. Unten steht z. B. 10<i>z</i> = 30. Ergebnis: L = {(1 | 2 | 3)}.</p></div>
+      <div class="case"><h4>⛔ Keine Lösung</h4><p class="small">Eine Zeile wird zu <b>0 = 5</b> (links nur Nullen, rechts nicht). Das ist ein Widerspruch. Ergebnis: L = { }.</p></div>
+      <div class="case"><h4>♾️ Unendlich viele Lösungen</h4><p class="small">Eine Zeile wird zu <b>0 = 0</b>. Sie ist immer wahr, liefert aber keine Information. Eine Variable ist frei wählbar.</p></div>
+    </div>
+  </div>
+
+  <div class="card" id="demo"></div>
+  <div class="card" id="trans"></div>
+  <div class="card"><button class="btn pri" data-goto="train">Weiter zum Training →</button></div>
+</section>
+
+<!-- =================== 3 TRAINING =================== -->
+<section class="page" id="p-train"><div id="trainBox"></div></section>
+
+<!-- =================== 4 FREI =================== -->
+<section class="page" id="p-frei"><div id="freeBox"></div></section>
+
+<!-- =================== 5 ANWENDUNG =================== -->
+<section class="page" id="p-anw"><div id="appBox"></div></section>
+</main>
+
+<footer>
+  Fortschritt und Punkte werden nur lokal in diesem Browser gespeichert. ·
+  <button id="unlockAll">Lehrkraft: alle Level freischalten</button> ·
+  <button id="resetAll">Fortschritt zurücksetzen</button>
+</footer>
+
+<div class="modal" id="badgeModal"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Deine Abzeichen</h2><button class="btn" id="closeModal">Schließen</button></div><div id="badgeList"></div></div></div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   1) EXAKTE BRUCHRECHNUNG – vermeidet Rundungsfehler (0,1 + 0,2 ≠ 0,3)
+   ===================================================================== */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t;}return a||1;}
+class Q{
+  constructor(n,d=1){ if(d<0){n=-n;d=-d;} const g=gcd(n,d); this.n=n/g; this.d=d/g; if(this.n===0){this.n=0;this.d=1;} }
+  add(o){return new Q(this.n*o.d+o.n*this.d,this.d*o.d);}
+  sub(o){return new Q(this.n*o.d-o.n*this.d,this.d*o.d);}
+  mul(o){return new Q(this.n*o.n,this.d*o.d);}
+  div(o){return new Q(this.n*o.d,this.d*o.n);}
+  neg(){return new Q(-this.n,this.d);}
+  abs(){return new Q(Math.abs(this.n),this.d);}
+  isZero(){return this.n===0;}
+  isInt(){return this.d===1;}
+  eq(o){return this.n===o.n&&this.d===o.d;}
+  toNum(){return this.n/this.d;}
+}
+const q=(n,d=1)=>new Q(n,d);
+const ONE=q(1);
+
+/* Darstellung: ganze Zahl, endlicher Dezimalbruch (Komma) oder Bruch */
+function fmtParts(x){
+  const a=Math.abs(x.n), d=x.d; let s, frac=false;
+  if(d===1) s=String(a);
+  else{
+    let k=0,p=1; while(k<4 && p%d!==0){k++;p*=10;}
+    if(p%d===0){ const str=String(a*(p/d)).padStart(k+1,'0'); s=str.slice(0,-k)+','+str.slice(-k); }
+    else {s=a+'/'+d; frac=true;}
+  }
+  return {neg:x.n<0,s,frac,a,d};
+}
+function fmt(x){const p=fmtParts(x);return (p.neg?'−':'')+p.s;}
+function fmtH(x){const p=fmtParts(x); const body=p.frac?`<span class="fr"><span>${p.a}</span><span>${p.d}</span></span>`:p.s; return (p.neg?'−':'')+body;}
+function fmtEuro(x){return x.toNum().toFixed(2).replace('.',',')+' €';}
+
+/* Eingabe lesen: "3", "-2", "1,5", "−0.25", "3/4". Leer = 0 (wenn erlaubt) */
+function parseQ(raw,blankZero=true){
+  let s=String(raw??'').replace(/\s+/g,'').replace(/[−–]/g,'-').replace(',','.');
+  if(s==='') return blankZero?q(0):null;
+  let m;
+  if(/^[+-]?\d+$/.test(s)) return q(parseInt(s,10));
+  if((m=s.match(/^([+-]?)(\d*)\.(\d+)$/))){ const num=parseInt((m[2]||'0')+m[3],10); return q((m[1]==='-'?-1:1)*num,10**m[3].length); }
+  if((m=s.match(/^([+-]?\d+)\/([+-]?\d+)$/))){ const d=parseInt(m[2],10); if(d===0) return null; return q(parseInt(m[1],10),d); }
+  return null;
+}
+
+/* =====================================================================
+   2) HILFSFUNKTIONEN
+   ===================================================================== */
+const ROM=['I','II','III','IV'];
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const nz=(a,b)=>{let v;do{v=rint(a,b);}while(v===0);return v;};
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const shuffle=arr=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=rint(0,i);[a[i],a[j]]=[a[j],a[i]];}return a;};
+const det3=A=>A[0][0]*(A[1][1]*A[2][2]-A[1][2]*A[2][1])-A[0][1]*(A[1][0]*A[2][2]-A[1][2]*A[2][0])+A[0][2]*(A[1][0]*A[2][1]-A[1][1]*A[2][0]);
+const cross=(u,v)=>[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+const isNull=v=>v.every(x=>x===0);
+const toQ=rows=>rows.map(r=>r.map(v=>v instanceof Q?v:q(v)));
+const cloneRows=rows=>rows.map(r=>r.slice());
+
+/* =====================================================================
+   3) LGS-LOGIK: Umformungen, Stufenform, Lösungsanalyse
+   ===================================================================== */
+function applyOp(rows,op){
+  const R=cloneRows(rows);
+  if(op.type==='swap'){ [R[op.i],R[op.j]]=[R[op.j],R[op.i]]; }
+  else if(op.type==='mult'){ R[op.t]=R[op.t].map(x=>x.mul(op.k)); }
+  else { R[op.t]=rows[op.t].map((x,j)=>x.mul(op.a).add(rows[op.s][j].mul(op.b))); }
+  return R;
+}
+function coefPrefix(x){ if(x.eq(ONE)) return ''; if(x.eq(ONE.neg())) return '−'; return (x.isInt()?fmt(x):'('+fmt(x)+')')+'·'; }
+function opNote(op){
+  if(op.type==='swap') return `${ROM[op.i]} ↔ ${ROM[op.j]}`;
+  if(op.type==='mult') return coefPrefix(op.k)+ROM[op.t];
+  const bb=op.b.abs();
+  return coefPrefix(op.a)+ROM[op.t]+(op.b.n<0?' − ':' + ')+(bb.eq(ONE)?'':(bb.isInt()?fmt(bb):'('+fmt(bb)+')')+'·')+ROM[op.s];
+}
+/* Stufenform: führende Einträge rücken nach rechts, Nullzeilen stehen unten */
+function isEchelon(rows,n){
+  let prev=-1, zero=false;
+  for(const r of rows){
+    let lead=n; for(let j=0;j<n;j++) if(!r[j].isZero()){lead=j;break;}
+    if(lead===n){zero=true;continue;}
+    if(zero||lead<=prev) return false;
+    prev=lead;
+  }
+  return true;
+}
+const hasContradiction=(rows,n)=>rows.some(r=>r.slice(0,n).every(x=>x.isZero())&&!r[n].isZero());
+/* Vollständige Analyse (reduzierte Stufenform) zur Kontrolle */
+function analyze(rows,n){
+  const M=cloneRows(rows), m=M.length; let r=0; const piv=[];
+  for(let c=0;c<n&&r<m;c++){
+    let p=-1; for(let i=r;i<m;i++) if(!M[i][c].isZero()){p=i;break;}
+    if(p<0) continue;
+    [M[r],M[p]]=[M[p],M[r]];
+    const pv=M[r][c]; M[r]=M[r].map(x=>x.div(pv));
+    for(let i=0;i<m;i++) if(i!==r&&!M[i][c].isZero()){const f=M[i][c]; M[i]=M[i].map((x,j)=>x.sub(f.mul(M[r][j])));}
+    piv.push(c); r++;
+  }
+  for(let i=r;i<m;i++) if(!M[i][n].isZero()) return {type:'none'};
+  if(r===n){ const sol=[]; for(let i=0;i<n;i++) sol[piv[i]]=M[i][n]; return {type:'unique',sol}; }
+  return {type:'infinite'};
+}
+/* Tipp: nächste sinnvolle Umformung */
+function suggest(rows,vars){
+  const n=vars.length, m=rows.length; let r=0;
+  for(let c=0;c<n&&r<m;c++){
+    if(rows[r][c].isZero()){
+      let k=-1; for(let i=r+1;i<m;i++) if(!rows[i][c].isZero()){k=i;break;}
+      if(k<0) continue;
+      return {op:{type:'swap',i:r,j:k},text:`In Zeile ${ROM[r]} steht an der Stelle von <i>${vars[c]}</i> eine 0. Dann kann sie keine Nullen erzeugen. Tausche Zeile ${ROM[r]} mit Zeile ${ROM[k]}.`};
+    }
+    for(let i=r+1;i<m;i++){
+      if(!rows[i][c].isZero()){
+        const p=rows[r][c], e=rows[i][c], f=e.div(p); let a,b;
+        if(f.isInt()){a=ONE;b=f.neg();}
+        else if(p.isInt()&&e.isInt()){const g=gcd(p.n,e.n); a=q(p.n/g); b=q(-e.n/g); if(a.n<0){a=a.neg();b=b.neg();}}
+        else {a=ONE;b=f.neg();}
+        const op={type:'comb',t:i,a,s:r,b};
+        return {op,text:`Erzeuge in Zeile ${ROM[i]} an der Stelle von <i>${vars[c]}</i> eine 0, und zwar mit Zeile ${ROM[r]}: <b>${opNote(op)}</b>.`};
+      }
+    }
+    r++;
+  }
+  return null;
+}
+
+/* =====================================================================
+   4) AUFGABEN-GENERATOREN (Lösung wird zuerst gewählt → „schöne“ Zahlen)
+   ===================================================================== */
+function rhsRows(A,x){ return A.map(r=>[...r.map(v=>q(v)), r.reduce((s,v,j)=>s.add(q(v).mul(x[j])),q(0))]); }
+const bOk=(rows,lim=40)=>rows.every(r=>Math.abs(r[r.length-1].toNum())<=lim);
+function genTri(){
+  for(let t=0;t<500;t++){
+    const A=[[pick([1,1,2,-1,3]),rint(-4,4),rint(-4,4)],[0,pick([1,-1,2,3,-2]),rint(-4,4)],[0,0,nz(-5,5)]];
+    const x=[0,1,2].map(()=>q(rint(-5,5)));
+    const rows=rhsRows(A,x); if(bOk(rows)) return rows;
+  }
+}
+function genL2(){
+  for(let t=0;t<500;t++){
+    const U=genTri(); const k=q(pick([-3,-2,-1,1,2,3]));
+    U[2]=U[2].map((v,j)=>v.add(k.mul(U[1][j])));
+    if(bOk(U)) return U;
+  }
+}
+function genUnique({swap=false,dec=false}={}){
+  for(let t=0;t<2000;t++){
+    const A=[0,1,2].map(()=>[0,1,2].map(()=>rint(-4,4)));
+    if(swap){A[0][0]=0; if(A[1][0]===0&&A[2][0]===0) A[rint(1,2)][0]=nz(-3,3);}
+    else A[0][0]=pick([1,1,2,-1,3,-2]);
+    const zeros=A.flat().filter(v=>v===0).length;
+    if(zeros>(swap?3:2)) continue;
+    if(det3(A)===0) continue;
+    if(!swap && A[1][1]*A[0][0]-A[1][0]*A[0][1]===0) continue; // sonst wäre ein Tausch nötig
+    let x;
+    if(dec){ x=[0,1,2].map(()=>q(rint(-10,10),2)); if(x.every(v=>v.isInt())) x[rint(0,2)]=q(2*rint(-4,4)+1,2); }
+    else x=[0,1,2].map(()=>q(rint(-5,5)));
+    const rows=rhsRows(A,x);
+    if(!bOk(rows)) continue;
+    return rows;
+  }
+}
+function genSpecial(kind){
+  for(let t=0;t<2000;t++){
+    const r1=[pick([1,1,2,-1,3]),rint(-4,4),rint(-4,4)], r2=[rint(-4,4),rint(-4,4),rint(-4,4)];
+    if(isNull(cross(r1,r2))) continue;
+    if(r2[1]*r1[0]-r2[0]*r1[1]===0) continue;
+    const a=pick([-2,-1,1,2]), b=pick([-2,-1,1,2]);
+    const r3=r1.map((v,j)=>a*v+b*r2[j]);
+    if(r3.filter(v=>v===0).length>1) continue;
+    const x=[0,1,2].map(()=>rint(-4,4));
+    const dot=r=>r.reduce((s,v,j)=>s+v*x[j],0);
+    const b1=dot(r1), b2=dot(r2), b3=a*b1+b*b2+(kind==='none'?nz(-6,6):0);
+    const rows=toQ([[...r1,b1],[...r2,b2],[...r3,b3]]);
+    if(!bOk(rows)) continue;
+    return rows;
+  }
+}
+
+/* =====================================================================
+   5) SPIELSTAND, PUNKTE, ABZEICHEN
+   ===================================================================== */
+const KEY='gaussWerkstatt_v1';
+const S={view:'lgs',points:0,stars:{},badges:{},unlocked:1,bestStreak:0,apps:{},special:{}};
+try{const d=JSON.parse(localStorage.getItem(KEY)||'null'); if(d) Object.assign(S,d);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const BADGES=[
+  {id:'first',ic:'👣',t:'Erster Schritt',d:'Erste Umformung richtig berechnet'},
+  {id:'treppe',ic:'🪜',t:'Treppenbauer:in',d:'Zum ersten Mal die Stufenform erreicht'},
+  {id:'flawless',ic:'💎',t:'Fehlerfrei',d:'Ein LGS ohne Fehler und ohne Hilfe gelöst'},
+  {id:'swap',ic:'🔄',t:'Tauschprofi',d:'Level 4 „Tauschen nötig“ geschafft'},
+  {id:'special',ic:'🕵️',t:'Sonderfall-Detektiv:in',d:'„Keine Lösung“ und „unendlich viele“ erkannt'},
+  {id:'trans',ic:'🔁',t:'Übersetzer:in',d:'3 Übersetzungen LGS ⇄ Matrix richtig'},
+  {id:'streak5',ic:'🔥',t:'Serie 5',d:'5 freie Aufgaben in Folge mit höchstens 1 Fehler'},
+  {id:'apps',ic:'🌍',t:'Anwender:in',d:'Alle 4 Anwendungstypen gelöst'},
+  {id:'master',ic:'👑',t:'Gauß-Meister:in',d:'Alle 5 Level mit 3 Sternen'},
+];
+function toast(html,cls=''){const w=$('#toasts');while(w.children.length>=3)w.firstChild.remove();const t=document.createElement('div');t.className='toast '+cls;t.innerHTML=html;w.appendChild(t);setTimeout(()=>t.remove(),3200);}
+function addPoints(p){ if(!p) return; S.points=Math.max(0,S.points+p); save(); updateHeader(); toast((p>0?'+':'')+p+' ★'); }
+function award(id){ if(S.badges[id]) return; S.badges[id]=Date.now(); save(); updateHeader(); const b=BADGES.find(b=>b.id===id); toast(`${b.ic} Neues Abzeichen: <b>${b.t}</b>`,'gold'); }
+function updateHeader(){ $('#pts').textContent=S.points; $('#bcount').textContent=Object.keys(S.badges).length+'/'+BADGES.length; }
+
+/* Darstellungswechsel: jede Komponente meldet sich mit einem Schlüssel an */
+const viewFns={};
+function onView(key,fn){viewFns[key]=fn;}
+function setView(v){ S.view=v; save(); document.querySelectorAll('.vt button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); Object.values(viewFns).forEach(f=>f()); }
+
+/* =====================================================================
+   6) DARSTELLUNG VON LGS / MATRIX / EINGABEZEILEN
+   ===================================================================== */
+function termH(absQ,v){ return (absQ.eq(ONE)?'':fmtH(absQ))+`<span class="v">${v}</span>`; }
+function systemHTML(rows,vars,{notes=[],hl=-1,view=S.view,stair=true}={}){
+  const n=vars.length;
+  const labels=rows.map((_,i)=>`<div class="${i===hl?'hl':''}">${ROM[i]}</div>`).join('');
+  const nts=rows.map((_,i)=>`<div>${notes[i]?esc(notes[i]):''}</div>`).join('');
+  let mid;
+  if(view==='matrix'){
+    mid='<div class="mat hd"><table><thead><tr class="vh">'+vars.map(v=>`<td><span class="v">${v}</span></td>`).join('')+'<td class="rhs0"></td></tr></thead>'+rows.map((r,i)=>`<tr class="${i===hl?'hl':''}">`+r.map((v,j)=>{
+      let c=j===n?'rhs':''; if(stair&&j<n&&j<i) c+=v.isZero()?' z-ok':' z-todo';
+      return `<td class="${c}">${fmtH(v)}</td>`;}).join('')+'</tr>').join('')+'</table></div>';
+  } else {
+    mid='<div class="lgs"><table>'+rows.map((r,i)=>{
+      const sg=[],tm=[],cl=[]; let first=true;
+      for(let j=0;j<n;j++){ const v=r[j];
+        if(v.isZero()){sg.push('');tm.push('');}
+        else{ sg.push(v.n<0?'−':(first?'':'+')); tm.push(termH(v.abs(),vars[j])); first=false; }
+        cl.push(stair&&j<i&&!v.isZero()?'z-todo':'');
+      }
+      if(first) tm[0]='0';
+      let h=`<tr class="${i===hl?'hl':''}">`;
+      for(let j=0;j<n;j++) h+=`<td class="sg">${sg[j]}</td><td class="tm ${cl[j]}">${tm[j]}</td>`;
+      return h+`<td class="eq">=</td><td>${fmtH(r[n])}</td></tr>`;
+    }).join('')+'</table></div>';
+  }
+  const sp=view==='matrix'?'<div class="sp"></div>':'';
+  return `<div class="sys"><div class="slab">${sp}${labels}</div>${mid}<div class="snotes">${sp}${nts}</div></div>`;
+}
+/* Eingabezeile in der gewählten Darstellung; data-cell="zeile-spalte" */
+function rowInputHTML(vars,vals,marks,ri=0,view=S.view){
+  const n=vars.length;
+  const cell=j=>`<input class="cell ${marks?(marks[j]?'ok':'bad'):''}" data-cell="${ri}-${j}" value="${esc(vals[j]??'')}" autocomplete="off" spellcheck="false">`;
+  let h;
+  if(view==='lgs'){ h='<span class="rin">'; for(let j=0;j<n;j++){ h+=cell(j)+`<span class="var">${vars[j]}</span>`; if(j<n-1) h+='<span class="op">+</span>'; } h+='<span class="op">=</span>'+cell(n)+'</span>'; }
+  else { h='<span class="rin"><span class="br">(</span>'; for(let j=0;j<n;j++) h+=cell(j); h+='<span class="vbar"></span>'+cell(n)+'<span class="br">)</span></span>'; }
+  return h;
+}
+function vecH(v){return `<span class="vec">${v.map(x=>`<span>${x instanceof Q?fmtH(x):(x<0?'−'+(-x):x)}</span>`).join('')}</span>`;}
+function readCells(root,draft){ root.querySelectorAll('input[data-cell]').forEach(inp=>{const [r,j]=inp.dataset.cell.split('-').map(Number); (draft[r]=draft[r]||[])[j]=inp.value;}); }
+function enterSubmit(root){ root.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.tagName==='INPUT'){ const b=root.querySelector('[data-primary]'); if(b){e.preventDefault();b.click();} } }); }
+
+/* =====================================================================
+   7) ARBEITSBEREICH – Herzstück: Umformen (Schüler:in rechnet selbst), prüfen, lösen
+   ===================================================================== */
+class Workspace{
+  constructor(el,{rows,vars,onDone}){
+    Object.assign(this,{el,rows:toQ(rows),vars,onDone});
+    this.n=vars.length; this.m=this.rows.length;
+    this.hist=[]; this.notes=[]; this.hl=-1;
+    this.opType='comb'; this.f={ct:1,ca:'1',cb:'',cs:0,mt:0,mk:'',si:0,sj:1};
+    this.pending=null; this.draft=[[]]; this.marks=null; this.rowWrong=0;
+    this.errors=0; this.hints=0; this.opsDone=0; this.solType=null; this.solDraft=[]; this.solMarks=null; this.done=false;
+    this.phase=this.ready()?'sol':'ops';
+    this.msg=this.phase==='sol'?{c:'info',h:'Das LGS hat bereits Stufenform. Bestimme die Lösungsmenge durch <b>Rückwärtseinsetzen</b> (von unten nach oben).'}:{c:'info',h:'Wähle eine Umformung. Ziel: Nullen unterhalb der Treppe (gelb markiert).'};
+    el.addEventListener('click',e=>this.click(e));
+    el.addEventListener('input',e=>this.input(e));
+    el.addEventListener('change',e=>{ if(e.target.dataset.f&&e.target.tagName==='SELECT'){ this.f[e.target.dataset.f]=Number(e.target.value); this.render(); } });
+    enterSubmit(el);
+    this.render();
+  }
+  ready(){ return isEchelon(this.rows,this.n)||hasContradiction(this.rows,this.n); }
+  input(e){
+    const t=e.target;
+    if(t.dataset.cell){ const [r,j]=t.dataset.cell.split('-').map(Number); (this.draft[r]=this.draft[r]||[])[j]=t.value; t.classList.remove('ok','bad'); }
+    else if(t.dataset.sol!==undefined){ this.solDraft[+t.dataset.sol]=t.value; t.classList.remove('ok','bad'); }
+    else if(t.dataset.f && t.tagName==='INPUT'){ this.f[t.dataset.f]=t.value; }
+  }
+  render(){
+    const legend=`<div class="legend"><span class="lg-ok">0 erreicht</span><span class="lg-todo">hier soll eine 0 hin</span></div>`;
+    let main=`<div class="sysbox">${systemHTML(this.rows,this.vars,{notes:this.notes,hl:this.hl})}${this.done?'':legend}</div>`;
+    if(this.msg) main+=`<div class="msg ${this.msg.c}">${this.msg.h}</div>`;
+    if(!this.done) main+=this.phase==='ops'?this.opsHTML():this.solHTML();
+    else main+=this.doneHTML();
+    const side=`<aside class="side"><h4>Umformungsprotokoll</h4>
+      <ul class="hist">${this.hist.length?this.hist.map((h,i)=>`<li>${i+1}. <b>${esc(h.note)}</b></li>`).join(''):'<li class="muted">noch keine Umformung</li>'}</ul>
+      <div class="btns">${this.done?'':`<button class="btn" data-act="undo" ${this.hist.length?'':'disabled'}>↶ Rückgängig</button><button class="btn" data-act="tip">💡 Tipp (−2 ★)</button>`}</div>
+      <div class="kpi"><div>${this.errors}<small>Fehler</small></div><div>${this.hints}<small>Hilfen</small></div></div></aside>`;
+    this.el.innerHTML=`<div class="ws"><div class="ws-main">${main}</div>${side}</div>`;
+    const first=this.el.querySelector('.pend input.cell, .solvals input');
+    if(first&&this.focusNext){first.focus();this.focusNext=false;}
+  }
+  opsHTML(){
+    if(this.pending) return this.pendHTML();
+    const f=this.f, opt=sel=>ROM.slice(0,this.m).map((r,i)=>`<option value="${i}" ${i===sel?'selected':''}>${r}</option>`).join('');
+    const tabs=[['comb','➕ Vielfaches addieren'],['mult','✖️ Multiplizieren'],['swap','↕ Tauschen']]
+      .map(([k,l])=>`<button data-act="optype" data-v="${k}" class="${this.opType===k?'on':''}">${l}</button>`).join('');
+    let form;
+    if(this.opType==='comb') form=`<span>neue Zeile <select data-f="ct">${opt(f.ct)}</select> =</span>
+        <input class="cell sm" data-f="ca" value="${esc(f.ca)}"> <span>·</span> <b class="rl">${ROM[f.ct]}</b> <span>+</span>
+        <input class="cell sm" data-f="cb" value="${esc(f.cb)}" placeholder="z.B. −2"> <span>·</span> <select data-f="cs">${opt(f.cs)}</select>
+        <button class="btn pri" data-act="go" data-primary>Weiter</button>`;
+    else if(this.opType==='mult') form=`<span>Zeile</span> <select data-f="mt">${opt(f.mt)}</select> <span>mit</span> <input class="cell sm" data-f="mk" value="${esc(f.mk)}"> <span>multiplizieren</span> <button class="btn pri" data-act="go" data-primary>Weiter</button>`;
+    else form=`<span>Zeile</span> <select data-f="si">${opt(f.si)}</select> <span>↔ Zeile</span> <select data-f="sj">${opt(f.sj)}</select> <button class="btn pri" data-act="go" data-primary>Tauschen</button>`;
+    const ex=this.opType==='comb'?'<div class="small muted" style="margin-top:6px">Beispiel: „neue Zeile II = 1 · II + (−2) · I“ bedeutet <b>II − 2·I</b>. Der erste Faktor darf nicht 0 sein.</div>':'';
+    return `<div class="optabs">${tabs}</div><div class="opf">${form}</div>${ex}`;
+  }
+  pendHTML(){
+    const op=this.pending, t=op.t;
+    let help='';
+    if(this.rowWrong>=1){
+      const row=this.rows[t], src=op.type==='comb'?this.rows[op.s]:null;
+      const p=x=>x.n<0?'('+fmt(x)+')':fmt(x);
+      help='<div class="helprow">'+row.map((v,j)=>{ const lab=j<this.n?this.vars[j]:'rechts';
+        const ex=op.type==='comb'?`${p(op.a)}·${p(v)} + ${p(op.b)}·${p(src[j])}`:`${p(op.k)}·${p(v)}`; return `<span>${lab}: ${ex}</span>`;}).join('')+'</div>';
+    }
+    return `<div class="pend"><div class="pend-h">Berechne die neue Zeile ${ROM[t]} = <span style="color:var(--pri-d)">${esc(opNote(op))}</span></div>
+      <span class="rlab">${ROM[t]}</span>${rowInputHTML(this.vars,this.draft[0]||[],this.marks)}
+      ${help?'<div class="small muted" style="margin-top:6px">Rechenhilfe:</div>'+help:''}
+      <div class="small muted" style="margin-top:4px">Leeres Feld = 0 · Dezimalzahlen mit Komma · Brüche als 3/4</div>
+      <div class="btns"><button class="btn pri" data-act="check" data-primary>Prüfen</button><button class="btn" data-act="auto">Programm rechnen lassen (0 ★)</button><button class="btn ghost" data-act="cancel">Abbrechen</button></div></div>`;
+  }
+  solHTML(){
+    const types=[['unique','Genau eine Lösung'],['none','Keine Lösung'],['infinite','Unendlich viele Lösungen']];
+    let h=`<div class="pend solp"><div class="pend-h">Welche Lösungsmenge hat das LGS?</div><div class="btns">`+
+      types.map(([k,l])=>`<button class="btn ${this.solType===k?'sel':''}" data-act="soltype" data-v="${k}">${l}</button>`).join('')+'</div>';
+    if(this.solType==='unique'){
+      h+='<div class="small muted" style="margin-top:10px">Rückwärts einsetzen: Beginne mit der untersten Zeile.</div><div class="solvals">';
+      for(let j=this.n-1;j>=0;j--) h+=`<label><span class="v">${this.vars[j]}</span> = <input class="cell ${this.solMarks?(this.solMarks[j]?'ok':'bad'):''}" data-sol="${j}" value="${esc(this.solDraft[j]??'')}" autocomplete="off"></label>`;
+      h+='</div>';
+    }
+    h+=`<div class="btns"><button class="btn pri" data-act="solcheck" data-primary ${this.solType?'':'disabled'}>Prüfen</button><button class="btn ghost" data-act="backops">weiter umformen</button></div></div>`;
+    return h;
+  }
+  doneHTML(){
+    const a=analyze(this.rows,this.n); let r;
+    if(a.type==='unique') r='L = {('+a.sol.map(fmtH).join(' | ')+')}';
+    else if(a.type==='none') r='L = { } &nbsp;<span class="small muted">(leere Menge)</span>';
+    else r='unendlich viele Lösungen <span class="small muted">(eine Variable frei wählbar)</span>';
+    return `<div class="msg ok"><div class="result">${r}</div></div>`;
+  }
+  // ---------- Ereignisse ----------
+  click(e){
+    const b=e.target.closest('[data-act]'); if(!b||!this.el.contains(b)) return;
+    const a=b.dataset.act;
+    if(a==='optype'){this.opType=b.dataset.v;this.render();}
+    else if(a==='go') this.startOp();
+    else if(a==='check') this.checkRow();
+    else if(a==='auto'){ this.hints++; this.applyPending(false,true); }
+    else if(a==='cancel'){ this.pending=null; this.marks=null; this.msg=null; this.render(); }
+    else if(a==='undo') this.undo();
+    else if(a==='tip') this.tip();
+    else if(a==='soltype'){ this.solType=b.dataset.v; this.render(); }
+    else if(a==='solcheck') this.checkSol();
+    else if(a==='backops'){ this.phase='ops'; this.msg={c:'info',h:'Du kannst weiter umformen, z. B. eine Zeile vereinfachen.'}; this.render(); }
+  }
+  startOp(){
+    const f=this.f; let op;
+    this.el.querySelectorAll('[data-f]').forEach(x=>{ this.f[x.dataset.f]=x.tagName==='SELECT'?Number(x.value):x.value; });
+    if(this.opType==='swap'){
+      if(f.si===f.sj) return this.say('bad','Wähle zwei verschiedene Zeilen.');
+      op={type:'swap',i:f.si,j:f.sj};
+      this.push(op,applyOp(this.rows,op)); this.msg={c:'ok',h:`Zeilen ${ROM[op.i]} und ${ROM[op.j]} getauscht.`}; this.afterOp(); return;
+    }
+    if(this.opType==='mult'){
+      const k=parseQ(f.mk,false);
+      if(!k) return this.say('bad','Gib einen Faktor ein, z. B. 2 oder −1 oder 1/2.');
+      if(k.isZero()) return this.say('bad','Mit 0 multiplizieren ist <b>keine</b> erlaubte Umformung: Die Gleichung würde zu 0 = 0, und ihre Information wäre verloren.');
+      if(k.eq(ONE)) return this.say('warn','Mit 1 multiplizieren ändert nichts.');
+      op={type:'mult',t:f.mt,k};
+    } else {
+      const a=parseQ(f.ca,false), bq=parseQ(f.cb,false);
+      if(!a||!bq) return this.say('bad','Bitte beide Faktoren eingeben (z. B. 1 und −2).');
+      if(f.ct===f.cs) return this.say('bad','Zu einer Zeile musst du eine <b>andere</b> Zeile addieren.');
+      if(a.isZero()) return this.say('bad','Der Faktor vor der Zeile, die ersetzt wird, darf nicht 0 sein. Sonst geht diese Gleichung verloren.');
+      if(bq.isZero()) return this.say('warn','Mit dem Faktor 0 addierst du nichts. Wähle einen anderen Faktor.');
+      op={type:'comb',t:f.ct,a,s:f.cs,b:bq};
+    }
+    this.pending=op; this.draft=[[]]; this.marks=null; this.rowWrong=0; this.msg=null; this.focusNext=true; this.render();
+  }
+  checkRow(){
+    readCells(this.el,this.draft);
+    const vals=(this.draft[0]||[]); const inp=[]; for(let j=0;j<=this.n;j++){ const v=parseQ(vals[j]); if(!v) return this.say('bad',`Ungültige Eingabe „${esc(vals[j])}“. Erlaubt: ganze Zahlen, Dezimalzahlen (1,5) oder Brüche (3/4).`); inp.push(v); }
+    const op=this.pending, exp=applyOp(this.rows,op)[op.t];
+    const marks=exp.map((e,j)=>inp[j].eq(e));
+    if(marks.every(Boolean)){ this.applyPending(this.rowWrong===0,false); return; }
+    this.errors++; this.rowWrong++; this.marks=marks;
+    const coefOk=marks.slice(0,this.n).every(Boolean); let h;
+    if(coefOk){
+      const old=this.rows[op.t][this.n], fac=op.type==='comb'?op.a.mul(old):op.k.mul(old);
+      h=(inp[this.n].eq(old)||inp[this.n].eq(fac))?'Links stimmt alles, aber die <b>rechte Seite</b> wurde nicht (vollständig) mit umgeformt. Jede Umformung gilt für die ganze Gleichung!':'Links stimmt alles. Prüfe die Rechnung auf der <b>rechten Seite</b>.';
+    } else if(exp.some((e,j)=>!marks[j]&&!e.isZero()&&inp[j].eq(e.neg()))){
+      h='<b>Vorzeichenfehler!</b> Bei mindestens einem rot markierten Eintrag stimmt der Betrag, aber nicht das Vorzeichen. Denk an „−(−3) = +3“.';
+    } else h='Die rot markierten Einträge stimmen noch nicht. Rechne Spalte für Spalte (die Rechenhilfe zeigt dir, was zu rechnen ist).';
+    this.say('bad',h);
+  }
+  applyPending(firstTry,auto){
+    const op=this.pending;
+    this.push(op,applyOp(this.rows,op));
+    if(!auto){ addPoints(firstTry?10:4); award('first'); this.msg={c:'ok',h:'✔ Richtig gerechnet!'}; }
+    else this.msg={c:'info',h:'Das Programm hat die Zeile berechnet. Vergleiche mit deiner Rechnung!'};
+    this.afterOp();
+  }
+  push(op,newRows){
+    this.hist.push({rows:this.rows,note:opNote(op),notes:this.notes,hl:this.hl});
+    this.rows=newRows; this.opsDone++;
+    this.notes=[]; if(op.type==='swap'){this.notes[op.i]=opNote(op);this.hl=op.i;} else {this.notes[op.t]=opNote(op);this.hl=op.t;}
+    this.pending=null; this.marks=null; this.draft=[[]];
+  }
+  afterOp(){
+    if(this.ready()){
+      this.phase='sol'; award('treppe');
+      const c=hasContradiction(this.rows,this.n);
+      this.msg={c:'ok',h:c?'Eine Zeile hat links nur noch Nullen. Was bedeutet das für die Lösungsmenge?':'🎉 <b>Stufenform erreicht!</b> Jetzt rückwärts einsetzen.'};
+    }
+    this.render();
+  }
+  undo(){ const h=this.hist.pop(); if(!h) return; this.rows=h.rows; this.notes=h.notes; this.hl=h.hl; this.pending=null; this.phase=this.ready()?'sol':'ops'; this.solType=null; this.solMarks=null; this.msg={c:'info',h:'Letzte Umformung rückgängig gemacht.'}; this.render(); }
+  tip(){
+    this.hints++; S.points=Math.max(0,S.points-2); save(); updateHeader();
+    if(this.phase==='ops'){
+      const s=suggest(this.rows,this.vars);
+      if(!s){this.say('info','Die Stufenform ist schon erreicht.');return;}
+      const op=s.op;
+      if(op.type==='swap'){this.opType='swap';this.f.si=op.i;this.f.sj=op.j;}
+      else {this.opType='comb';this.f.ct=op.t;this.f.ca=fmt(op.a).replace('−','-');this.f.cb=fmt(op.b).replace('−','-');this.f.cs=op.s;}
+      this.pending=null; this.say('warn','💡 '+s.text+' <span class="small">(Ich habe das Formular schon ausgefüllt.)</span>');
+    } else {
+      const a=analyze(this.rows,this.n);
+      if(a.type==='none') this.say('warn','💡 Suche eine Zeile, in der links nur Nullen stehen. Was steht rechts?');
+      else if(a.type==='infinite') this.say('warn','💡 Eine Zeile lautet 0 = 0. Wie viele „echte“ Gleichungen bleiben für drei Variablen übrig?');
+      else this.say('warn',`💡 Die unterste Zeile mit Inhalt enthält nur noch <i>${this.vars[this.n-1]}</i>. Löse nach <i>${this.vars[this.n-1]}</i> auf, setze das Ergebnis in die Zeile darüber ein und so weiter.`);
+    }
+  }
+  checkSol(){
+    const a=analyze(this.rows,this.n);
+    if(this.solType!==a.type){
+      this.errors++;
+      const M={
+        'unique>none':'Schau genau hin: Gibt es eine Zeile „0 = Zahl ≠ 0“? Das ist ein Widerspruch.',
+        'unique>infinite':'Eine Zeile lautet „0 = 0“. Sie liefert keine Information, also fehlt eine Gleichung, um alle Variablen festzulegen.',
+        'none>unique':'Es gibt keinen Widerspruch der Form „0 = 5“. Jede Variable lässt sich bestimmen.',
+        'infinite>unique':'Die Treppe ist vollständig. Jede Variable lässt sich eindeutig berechnen.',
+        'none>infinite':'„0 = 0“ ist immer wahr, kein Widerspruch! Das bedeutet: unendlich viele Lösungen.',
+        'infinite>none':'„0 = Zahl ≠ 0“ ist <b>nie</b> wahr. Das ist ein Widerspruch, also keine Lösung.'};
+      return this.say('bad',M[this.solType+'>'+a.type]||'Das stimmt noch nicht.');
+    }
+    if(a.type==='unique'){
+      const vals=[]; for(let j=0;j<this.n;j++){ const v=parseQ(this.solDraft[j],false); if(!v) return this.say('bad',`Gib einen Wert für ${this.vars[j]} ein.`); vals.push(v); }
+      const marks=a.sol.map((s,j)=>s.eq(vals[j]));
+      if(!marks.every(Boolean)){ this.errors++; this.solMarks=marks;
+        const lastWrong=marks.lastIndexOf(false);
+        return this.say('bad',`Die rot markierten Werte stimmen nicht. ${lastWrong===this.n-1?'Beginne mit der untersten Zeile.':'Setze die bereits richtigen Werte genau ein und achte auf Vorzeichen.'}`); }
+    }
+    if(a.type!=='unique'){ S.special[a.type]=1; save(); if(S.special.none&&S.special.infinite) award('special'); }
+    this.done=true; this.phase='done'; this.hl=-1;
+    addPoints(this.errors===0?20:12);
+    if(this.errors===0&&this.hints===0&&this.opsDone>0) award('flawless');
+    this.msg={c:'ok',h:'🎉 <b>Richtig gelöst!</b>'};
+    this.render();
+    if(this.onDone) this.onDone({errors:this.errors,hints:this.hints,result:a});
+  }
+  say(c,h){this.msg={c,h};this.render();}
+}
+
+/* =====================================================================
+   8) MOTIVATION
+   ===================================================================== */
+(function motivation(){
+  // Preisrätsel (Lösung: Brezel 0,90 €, Saft 1,50 €, Apfel 0,60 €)
+  const A=[[2,1,3],[1,2,1],[3,1,2]], b=[q(51,10),q(45,10),q(54,10)];
+  const el1=$('#motiv1'); let tries1=0, solved1=false, d1=['','',''];
+  function r1(){
+    let rows='';
+    const v=d1.map(s=>parseQ(s,false));
+    if(v.every(Boolean)){ A.forEach((r,i)=>{ const lhs=r.reduce((s,c,j)=>s.add(q(c).mul(v[j])),q(0)); const ok=lhs.eq(b[i]); rows+=`<tr><td>${ROM[i]}</td><td>${fmtEuro(lhs)}</td><td>${fmtEuro(b[i])}</td><td class="${ok?'tick':'cross'}">${ok?'✔':'✘'}</td></tr>`; }); }
+    el1.innerHTML=`<h3>🥨 Das Kiosk-Rätsel</h3>
+      <p>Am Schulkiosk kaufen drei Freunde ein:</p>
+      <ul class="small"><li>Ali: 2 Brezeln, 1 Saft, 3 Äpfel für <b>5,10 €</b></li><li>Ben: 1 Brezel, 2 Säfte, 1 Apfel für <b>4,50 €</b></li><li>Cem: 3 Brezeln, 1 Saft, 2 Äpfel für <b>5,40 €</b></li></ul>
+      <p>Was kostet jedes Produkt? Probiere Preise aus!</p>
+      <div class="solvals"><label>🥨 <input class="cell wide" data-m="0" value="${esc(d1[0])}" placeholder="€"></label><label>🧃 <input class="cell wide" data-m="1" value="${esc(d1[1])}" placeholder="€"></label><label>🍎 <input class="cell wide" data-m="2" value="${esc(d1[2])}" placeholder="€"></label></div>
+      <div class="btns"><button class="btn pri" data-a="try" data-primary>Ausprobieren</button><span class="small muted">Versuche: ${tries1}</span>${tries1>=3&&!solved1?'<button class="btn" data-a="reveal">Lösung zeigen</button>':''}</div>
+      ${rows?`<table class="tryt"><tr><th>Person</th><th>dein Preis</th><th>tatsächlich</th><th></th></tr>${rows}</table>`:''}
+      ${solved1?'<div class="msg ok">Gefunden: Brezel 0,90 €, Saft 1,50 €, Apfel 0,60 €. Ganz schön viel Probierarbeit, oder?</div>':''}`;
+  }
+  el1.addEventListener('input',e=>{if(e.target.dataset.m!==undefined) d1[+e.target.dataset.m]=e.target.value;});
+  el1.addEventListener('click',e=>{const a=e.target.dataset.a; if(!a) return;
+    if(a==='try'){ if(!d1.every(s=>parseQ(s,false))){toast('Bitte drei Preise eingeben.');return;} tries1++; const v=d1.map(s=>parseQ(s,false)); solved1=solved1||A.every((r,i)=>r.reduce((s,c,j)=>s.add(q(c).mul(v[j])),q(0)).eq(b[i])); }
+    if(a==='reveal'){ d1=['0,90','1,50','0,60']; solved1=true; }
+    r1(); if(solved1||tries1>=3) $('#motivEnd').style.display='block'; });
+  enterSubmit(el1); r1();
+
+  // Punktprobe: E: x = (1|2|0) + r(2|0|1) + s(1|1|−1), P(4|1|3) liegt in E (r=2, s=−1)
+  const Ap=[1,2,0],u=[2,0,1],v=[1,1,-1],P=[4,1,3];
+  const el2=$('#motiv2'); let guess=null, tries2=0, d2=['',''], found2=false;
+  function r2(){
+    let res='';
+    const rr=parseQ(d2[0],false), ss=parseQ(d2[1],false);
+    if(rr&&ss&&tries2){ const X=[0,1,2].map(i=>q(Ap[i]).add(rr.mul(q(u[i]))).add(ss.mul(q(v[i])))); const ok=X.every((x,i)=>x.eq(q(P[i])));
+      res=`<div class="mline">Punkt für r = ${fmt(rr)}, s = ${fmt(ss)}: ${vecH(X)} &nbsp; ${ok?'<span class="tick">= P ✔</span>':'<span class="cross">≠ P ✘</span>'}</div>`; }
+    el2.innerHTML=`<h3>📐 Liegt der Punkt auf der Ebene?</h3>
+      <div class="mline">E: x⃗ = ${vecH(Ap)} + r · ${vecH(u)} + s · ${vecH(v)} &nbsp;&nbsp; P(4 | 1 | 3)</div>
+      <p><b>Dein Bauchgefühl:</b></p>
+      <div class="btns"><button class="btn ${guess==='ja'?'sel':''}" data-a="g" data-v="ja">P liegt in E</button><button class="btn ${guess==='nein'?'sel':''}" data-a="g" data-v="nein">P liegt nicht in E</button></div>
+      ${guess?`<p style="margin-top:12px">Prüfe es: Findest du Zahlen r und s, sodass genau P herauskommt?</p>
+      <div class="solvals"><label>r = <input class="cell" data-m="0" value="${esc(d2[0])}"></label><label>s = <input class="cell" data-m="1" value="${esc(d2[1])}"></label><button class="btn pri" data-a="try" data-primary>Einsetzen</button><span class="small muted">Versuche: ${tries2}</span></div>${res}
+      ${tries2>=3&&!found2?'<button class="btn" data-a="reveal">Auflösung</button>':''}
+      ${found2?`<div class="msg ok">Mit r = 2 und s = −1 ergibt sich P, also liegt P in E${guess==='ja'?', wie du vermutet hast':''}. Systematisch heißt das: Man muss das LGS <i>2r + s = 3, s = −1, r − s = 3</i> lösen.</div>`:''}`:''}`;
+  }
+  el2.addEventListener('input',e=>{if(e.target.dataset.m!==undefined) d2[+e.target.dataset.m]=e.target.value;});
+  el2.addEventListener('click',e=>{const a=e.target.dataset.a; if(!a) return;
+    if(a==='g') guess=e.target.dataset.v;
+    if(a==='try'){ const rr=parseQ(d2[0],false), ss=parseQ(d2[1],false); if(!rr||!ss){toast('Bitte r und s eingeben.');return;} tries2++; if(rr.eq(q(2))&&ss.eq(q(-1))) found2=true; }
+    if(a==='reveal'){ d2=['2','-1']; tries2++; found2=true; }
+    r2(); if(found2||tries2>=3) $('#motivEnd').style.display='block'; });
+  enterSubmit(el2); r2();
+})();
+
+/* =====================================================================
+   9) ERKLÄRUNG: Beispiele, Schritt-für-Schritt-Demo, Übersetzungstrainer
+   ===================================================================== */
+const EX=toQ([[2,-1,3,9],[1,0,-2,-3],[-1,4,1,8]]);
+$('#ex-lgs').innerHTML=systemHTML(EX,['x','y','z'],{view:'lgs',stair:false});
+$('#ex-mat').innerHTML=systemHTML(EX,['x','y','z'],{view:'matrix',stair:false});
+(function stairPic(){
+  const r=[['a','b','c','d'],['0','e','f','g'],['0','0','h','i']];
+  $('#ex-stair').innerHTML=`<div class="sys"><div class="mat"><table>${r.map((row,i)=>'<tr>'+row.map((v,j)=>`<td class="${j===3?'rhs':''} ${j<i?'z-ok':''}">${v==='0'?'0':'<span class="v">'+v+'</span>'}</td>`).join('')+'</tr>').join('')}</table></div></div>
+    <div class="small muted">a, e, h ≠ 0 stehen auf der „Treppe“.</div>`;
+})();
+
+const Demo={
+  base:toQ([[1,2,-1,2],[2,3,1,11],[-1,1,2,7]]),
+  ops:[null,{type:'comb',t:1,a:ONE,s:0,b:q(-2)},{type:'comb',t:2,a:ONE,s:0,b:ONE},{type:'comb',t:2,a:ONE,s:1,b:q(3)},'solve'],
+  texts:[
+    'Ausgangssystem. Ziel: Unter der Treppe (gelb) sollen Nullen entstehen. Wir beginnen mit der <i>x</i>-Spalte und arbeiten mit Zeile I.',
+    'In Zeile II steht vorne eine 2. Da 2 = 2·1, rechnen wir <b>II − 2·I</b>. Spaltenweise: 2 − 2·1 = 0, 3 − 2·2 = −1, 1 − 2·(−1) = 3 und rechts 11 − 2·2 = 7.',
+    'In Zeile III steht vorne −1. Da −1 + 1 = 0, rechnen wir <b>III + I</b>. Ergebnis: 0, 3, 1 und rechts 9.',
+    'Die <i>x</i>-Spalte ist fertig. Jetzt arbeiten wir <b>nur noch mit Zeile II</b> (sonst würde die 0 in der <i>x</i>-Spalte wieder zerstört). 3 + 3·(−1) = 0, also <b>III + 3·II</b>.',
+    '<b>Stufenform erreicht!</b> Rückwärts einsetzen:<br>III: 10<i>z</i> = 30 ⇒ <i>z</i> = 3<br>II: −<i>y</i> + 3·3 = 7 ⇒ <i>y</i> = 2<br>I: <i>x</i> + 2·2 − 3 = 2 ⇒ <i>x</i> = 1<br><b>L = {(1 | 2 | 3)}</b>'
+  ],
+  i:0,
+  state(i){ let rows=this.base, note=null; for(let k=1;k<=Math.min(i,3);k++){ note=this.ops[k]; rows=applyOp(rows,note); } return {rows,note:i>=1&&i<=3?this.ops[i]:null}; },
+  render(){
+    const {rows,note}=this.state(this.i); const notes=[]; if(note) notes[note.t]=opNote(note);
+    $('#demo').innerHTML=`<h2>5. Beispiel Schritt für Schritt</h2>
+      <div class="steps">${this.texts.map((_,k)=>`<span class="${k===this.i?'on':k<this.i?'done':''}">Schritt ${k}</span>`).join('')}</div>
+      <div class="grid2"><div class="sysbox">${systemHTML(rows,['x','y','z'],{notes,hl:note?note.t:-1})}</div><div class="msg info" style="margin:0">${this.texts[this.i]}</div></div>
+      <div class="btns"><button class="btn" data-d="-1" ${this.i===0?'disabled':''}>← zurück</button><button class="btn pri" data-d="1" ${this.i===this.texts.length-1?'disabled':''}>weiter →</button><span class="small muted">Schalte oben auf „Matrix“ bzw. „LGS“ und vergleiche!</span></div>`;
+  }
+};
+$('#demo').addEventListener('click',e=>{const d=e.target.dataset.d; if(d){Demo.i=Math.max(0,Math.min(Demo.texts.length-1,Demo.i+Number(d)));Demo.render();}});
+onView('demo',()=>Demo.render()); Demo.render();
+
+/* Übersetzungstrainer: unsortiertes LGS → Matrix oder Matrix → LGS */
+const Trans={
+  dir:'l2m', count:0,
+  vars:['x','y','z'],
+  gen(){
+    for(;;){
+      const A=[0,1,2].map(()=>[0,1,2].map(()=>Math.random()<.22?0:nz(-6,6)));
+      if(A.some(r=>r.every(v=>v===0))) continue;
+      const z=A.flat().filter(v=>v===0).length; if(z<1||z>3) continue;
+      this.rows=toQ(A.map(r=>[...r,rint(-9,12)]));
+      this.moved=Math.random()<.5?rint(0,2):-1; // eine Gleichung mit Term auf der rechten Seite
+      if(this.moved>=0&&this.rows[this.moved].slice(0,3).filter(v=>!v.isZero()).length<2) this.moved=-1;
+      break;
+    }
+    this.draft=[[],[],[]]; this.marks=null; this.msg=null;
+  },
+  messyLine(r,i){
+    let terms=r.slice(0,3).map((c,j)=>({c,v:this.vars[j]})).filter(t=>!t.c.isZero());
+    let right=null;
+    if(i===this.moved){ const k=rint(0,terms.length-1); right=terms[k]; terms=terms.filter((_,j)=>j!==k); }
+    terms=shuffle(terms);
+    const T=(t,first)=>{ const neg=t.c.n<0, a=t.c.abs(); return (neg?(first?'−':' − '):(first?'':' + '))+(a.eq(ONE)?'':fmt(a))+`<span class="v">${t.v}</span>`; };
+    let L=terms.map((t,k)=>T(t,k===0)).join('');
+    let R=fmt(r[3]);
+    if(right){ const c=right.c.neg(); R+=(c.n<0?' − ':' + ')+(c.abs().eq(ONE)?'':fmt(c.abs()))+`<span class="v">${right.v}</span>`; }
+    return `<div style="height:var(--rowh);line-height:var(--rowh)"><b class="small muted" style="display:inline-block;width:2.2em">${ROM[i]}</b>${L} = ${R}</div>`;
+  },
+  render(){
+    const el=$('#trans');
+    const given=this.dir==='l2m'?`<div class="sys" style="display:block">${this.rows.map((r,i)=>this.messyLine(r,i)).join('')}</div>`:`<div class="sysbox" style="display:inline-block">${systemHTML(this.rows,this.vars,{view:'matrix',stair:false})}</div>`;
+    const view=this.dir==='l2m'?'matrix':'lgs';
+    const inputs=[0,1,2].map(i=>`<div><span class="rlab">${ROM[i]}</span>${rowInputHTML(this.vars,this.draft[i],this.marks?this.marks[i]:null,i,view)}</div>`).join('');
+    el.innerHTML=`<h2>6. Übersetzen üben</h2>
+      <div class="btns" style="margin-top:0"><button class="btn ${this.dir==='l2m'?'sel':''}" data-t="l2m">LGS → Matrix</button><button class="btn ${this.dir==='m2l'?'sel':''}" data-t="m2l">Matrix → LGS</button><span class="pill">richtig: ${this.count}</span></div>
+      <div class="gtrans" style="margin-top:12px"><div><p class="small muted">Gegeben:</p>${given}</div><div><p class="small muted">Deine Übersetzung (leeres Feld = 0):</p>${inputs}</div></div>
+      ${this.msg?`<div class="msg ${this.msg.c}">${this.msg.h}</div>`:''}
+      <div class="btns"><button class="btn pri" data-t="check" data-primary>Prüfen</button><button class="btn" data-t="new">Neue Aufgabe</button></div>`;
+  }
+};
+$('#trans').addEventListener('input',e=>{const t=e.target; if(t.dataset.cell){const [r,j]=t.dataset.cell.split('-').map(Number); Trans.draft[r][j]=t.value; t.classList.remove('ok','bad');}});
+$('#trans').addEventListener('click',e=>{const a=e.target.dataset.t; if(!a) return;
+  if(a==='l2m'||a==='m2l'){Trans.dir=a;Trans.gen();}
+  else if(a==='new') Trans.gen();
+  else if(a==='check'){
+    let bad=false, invalid=false, sign=false, moveErr=false;
+    Trans.marks=Trans.rows.map((r,i)=>r.map((e,j)=>{const v=parseQ(Trans.draft[i][j]); if(!v){invalid=true;return false;} const ok=v.eq(e); if(!ok){bad=true; if(v.eq(e.neg())){sign=true; if(i===Trans.moved) moveErr=true;}} return ok;}));
+    if(invalid) Trans.msg={c:'bad',h:'Mindestens eine Eingabe ist keine Zahl.'};
+    else if(!bad){ Trans.count++; addPoints(5); if(Trans.count>=3) award('trans'); Trans.msg={c:'ok',h:'✔ Perfekt übersetzt! Klicke auf „Neue Aufgabe“.'}; }
+    else Trans.msg={c:'bad',h:moveErr?'Achtung: In einer Gleichung steht ein Term mit Variable auf der <b>rechten</b> Seite. Bring ihn nach links, dabei dreht sich das Vorzeichen!':sign?'Vorzeichenfehler bei den rot markierten Feldern.':'Rot markierte Felder prüfen. Denk an die Reihenfolge x, y, z, an fehlende Variablen (0) und an Koeffizient 1 bzw. −1.'};
+  }
+  Trans.render();});
+enterSubmit($('#trans'));
+onView('trans',()=>Trans.render()); Trans.gen(); Trans.render();
+
+/* =====================================================================
+   10) TRAINING (Level 1–5)
+   ===================================================================== */
+const LEVELS=[
+  {name:'Rückwärts einsetzen',desc:'Die Stufenform ist schon fertig. Bestimme die Lösung von unten nach oben.',gen:()=>genTri()},
+  {name:'Der letzte Schritt',desc:'Es fehlt nur noch eine 0 zur Stufenform.',gen:()=>genL2()},
+  {name:'Die volle Treppe',desc:'Erzeuge alle drei Nullen selbst und löse das LGS.',gen:()=>genUnique()},
+  {name:'Tauschen nötig',desc:'Oben links steht eine 0. Was nun?',gen:()=>genUnique({swap:true})},
+  {name:'Sonderfälle',desc:'Keine Lösung oder unendlich viele? Finde es heraus.',gen:k=>genSpecial(k)},
+];
+const TASKS=3;
+const starsFor=pen=>pen<=1?3:pen<=4?2:1;
+const Train={
+  lv:null,
+  menu(){
+    this.lv=null;
+    const tot=LEVELS.reduce((s,_,i)=>s+(S.stars[i]||0),0);
+    $('#trainBox').innerHTML=`<div class="card"><h2>Training: Stufe für Stufe zum Profi</h2>
+      <p class="muted">Jedes Level hat ${TASKS} Aufgaben. Je weniger Fehler und Hilfen, desto mehr Sterne. Mit mindestens einem Stern schaltest du das nächste Level frei.</p>
+      <div class="prog"><i style="width:${tot/15*100}%"></i></div><div class="small muted">${tot} / 15 Sterne</div></div>
+      <div class="grid3">${LEVELS.map((L,i)=>`<button class="lvl" data-l="${i}" ${i+1>S.unlocked?'disabled':''}><span class="num">LEVEL ${i+1}</span><span class="nm">${L.name}</span><span class="ds">${L.desc}</span><span class="stars">${[1,2,3].map(k=>`<span class="${(S.stars[i]||0)>=k?'f':''}">★</span>`).join('')}</span></button>`).join('')}</div>`;
+  },
+  start(i){
+    const kinds=shuffle(['none','infinite',pick(['none','infinite'])]);
+    this.lv={i,idx:0,pen:0,kinds,wsEl:document.createElement('div')};
+    this.next();
+  },
+  next(){
+    const L=this.lv; const rows=LEVELS[L.i].gen(L.kinds[L.idx]);
+    L.done=false;
+    L.ws=new Workspace(L.wsEl,{rows,vars:['x','y','z'],onDone:r=>{L.pen+=r.errors+r.hints; L.done=true; this.render();}});
+    this.render();
+  },
+  render(){
+    const L=this.lv; if(!L) return this.menu();
+    const last=L.idx===TASKS-1;
+    let foot='';
+    if(L.done){
+      if(!last) foot=`<button class="btn pri" data-tr="next">Nächste Aufgabe →</button>`;
+      else{
+        const st=starsFor(L.pen); const before=S.stars[L.i]||0;
+        if(!L.saved){ S.stars[L.i]=Math.max(before,st); S.unlocked=Math.max(S.unlocked,L.i+2); if(L.i===3) award('swap'); if(LEVELS.every((_,k)=>S.stars[k]===3)) award('master'); save(); L.saved=true; addPoints(st*10); }
+        foot=`<div class="msg ok"><b>Level geschafft!</b> ${'★'.repeat(st)}${'☆'.repeat(3-st)} &nbsp;(${L.pen} Fehler/Hilfen insgesamt)</div>
+          <button class="btn pri" data-tr="menu">Zur Levelübersicht</button> ${L.i<4?`<button class="btn" data-tr="lvl" data-l="${L.i+1}">Level ${L.i+2} starten →</button>`:''}`;
+      }
+    }
+    $('#trainBox').innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div><span class="pill">Level ${L.i+1}</span> <b>${LEVELS[L.i].name}</b> · Aufgabe ${L.idx+1} / ${TASKS}</div>
+      <button class="btn ghost" data-tr="menu">← Übersicht</button></div>
+      <div class="prog"><i style="width:${((L.idx+(L.done?1:0))/TASKS)*100}%"></i></div>
+      <p class="small muted">${LEVELS[L.i].desc}</p><div id="trainWs"></div><div class="btns">${foot}</div></div>`;
+    $('#trainWs').appendChild(L.wsEl);
+  }
+};
+$('#trainBox').addEventListener('click',e=>{
+  const lb=e.target.closest('.lvl'); if(lb&&!lb.disabled){Train.start(+lb.dataset.l);return;}
+  const b=e.target.closest('[data-tr]'); if(!b) return;
+  if(b.dataset.tr==='menu') Train.menu();
+  if(b.dataset.tr==='next'){Train.lv.idx++;Train.next();}
+  if(b.dataset.tr==='lvl') Train.start(+b.dataset.l);
+});
+onView('train',()=>{ if(Train.lv) Train.lv.ws.render(); });
+Train.menu();
+
+/* =====================================================================
+   11) FREIES ÜBEN (gemischt, auch Dezimallösungen)
+   ===================================================================== */
+const Free={
+  streak:0,solved:0,wsEl:document.createElement('div'),
+  gen(){ const r=Math.random();
+    if(r<.3) return genUnique(); if(r<.6) return genUnique({dec:true});
+    if(r<.78) return genUnique({swap:true,dec:Math.random()<.5}); return genSpecial(pick(['none','infinite'])); },
+  next(){ this.done=false; this.ws=new Workspace(this.wsEl,{rows:this.gen(),vars:['x','y','z'],onDone:r=>{
+      this.solved++; this.done=true;
+      if(r.errors+r.hints<=1){ this.streak++; if(this.streak>=5) award('streak5'); } else this.streak=0;
+      S.bestStreak=Math.max(S.bestStreak,this.streak); save(); this.render(); }}); this.render(); },
+  render(){
+    $('#freeBox').innerHTML=`<div class="card"><h2>Freies Üben</h2>
+      <p class="muted">Gemischte Zufallsaufgaben: Alle Schritte in einem Rutsch. Lösungen können ganze Zahlen oder einfache Dezimalzahlen (z. B. 1,5) sein. Auch Sonderfälle kommen vor!</p>
+      <div class="kpi"><div>${this.solved}<small>gelöst</small></div><div>🔥 ${this.streak}<small>Serie (≤ 1 Fehler)</small></div><div>${S.bestStreak}<small>beste Serie</small></div></div>
+      <div id="freeWs" style="margin-top:12px"></div>
+      <div class="btns"><button class="btn ${this.done?'pri':''}" data-fr="next">${this.done?'Nächste Aufgabe →':'Neue Aufgabe (überspringen)'}</button></div></div>`;
+    $('#freeWs').appendChild(this.wsEl);
+  }
+};
+$('#freeBox').addEventListener('click',e=>{ if(e.target.closest('[data-fr]')){ if(!Free.done) Free.streak=0; Free.next(); } });
+onView('free',()=>Free.ws&&Free.ws.render());
+Free.next();
+
+/* =====================================================================
+   12) ANWENDUNGEN
+   ===================================================================== */
+function vecSub(a,b){return a.map((x,i)=>x-b[i]);}
+function rv(lo=-3,hi=3){return [rint(lo,hi),rint(lo,hi),rint(lo,hi)];}
+function nzv(lo=-3,hi=3){let v;do{v=rv(lo,hi);}while(isNull(v));return v;}
+const APPS={
+  preis:{ic:'🛒',name:'Einkaufsrätsel',desc:'Drei Einkäufe, drei unbekannte Preise.',
+    gen(){
+      const th=pick([{it:['Heft','Stift','Ordner'],pl:['Hefte','Stifte','Ordner'],shop:'im Schreibwarenladen'},
+                     {it:['Brötchen','Croissant','Kakao'],pl:['Brötchen','Croissants','Kakaos'],shop:'beim Bäcker'},
+                     {it:['Apfel','Banane','Mango'],pl:['Äpfel','Bananen','Mangos'],shop:'auf dem Markt'}]);
+      const names=shuffle(['Lena','Tom','Aylin','Jonas','Mia','Emre']).slice(0,3);
+      let Aq,price;
+      do{ Aq=[0,1,2].map(()=>[rint(1,5),rint(1,5),rint(1,5)]); }while(det3(Aq)===0);
+      price=[0,1,2].map(()=>q(rint(5,35),10));
+      const rows=rhsRows(Aq,price);
+      const word=(k,i)=>k+' '+(k===1?th.it[i]:th.pl[i]);
+      const lines=rows.map((r,i)=>`<li>${names[i]} kauft ${word(Aq[i][0],0)}, ${word(Aq[i][1],1)} und ${word(Aq[i][2],2)} und bezahlt <b>${fmtEuro(r[3])}</b>.</li>`).join('');
+      const basket=[rint(1,4),rint(0,3),rint(1,3)];
+      const total=basket.reduce((s,k,j)=>s.add(q(k).mul(price[j])),q(0));
+      return {vars:['x','y','z'], rows,
+        html:`<p>Drei Personen kaufen ${th.shop} ein:</p><ul>${lines}</ul><p>Bestimme die Einzelpreise. Setze <i>x</i> = Preis für ein(e) ${th.it[0]}, <i>y</i> = ${th.it[1]}, <i>z</i> = ${th.it[2]} (in €).</p>`,
+        ansatz:`Für jede Person: Anzahl · Preis addieren = bezahlter Betrag. Bei ${names[0]}: ${Aq[0][0]}<i>x</i> + ${Aq[0][1]}<i>y</i> + ${Aq[0][2]}<i>z</i> = ${fmt(rows[0][3])}`,
+        interp:{kind:'preis',q:`Was kosten <b>${basket.map((k,i)=>k?word(k,i):'').filter(Boolean).join(', ')}</b> zusammen?`,total,price,th}};
+    }},
+  punkt:{ic:'📍',name:'Punktprobe',desc:'Liegt ein Punkt P in der Ebene E?',
+    gen(){
+      for(;;){
+        const A=rv(),u=nzv(),v=nzv(); if(isNull(cross(u,v))) continue;
+        const r=nz(-3,3), s=nz(-3,3); let P=[0,1,2].map(i=>A[i]+r*u[i]+s*v[i]);
+        const lies=Math.random()<.5; if(!lies){ P[rint(0,2)]+=nz(-2,2); }
+        const rows=toQ([0,1,2].map(i=>[u[i],v[i],P[i]-A[i]]));
+        const a=analyze(rows,2); if((a.type==='unique')!==lies) continue;
+        if(rows.every(rw=>rw[2].isZero())) continue;
+        return {vars:['r','s'],rows,
+          html:`<div class="mline">E: x⃗ = ${vecH(A)} + r · ${vecH(u)} + s · ${vecH(v)} &nbsp;&nbsp; P(${P.map(x=>x<0?'−'+(-x):x).join(' | ')})</div><p>Prüfe, ob P in der Ebene E liegt.</p>`,
+          ansatz:`Setze P für x⃗ ein und bringe den Stützvektor nach rechts: <span class="mline">r · ${vecH(u)} + s · ${vecH(v)} = ${vecH(P)} − ${vecH(A)}</span><br>Jede Zeile (Koordinate) ergibt eine Gleichung.`,
+          interp:{kind:'punkt',q:'Was bedeutet dein Ergebnis?',choices:[['in','P liegt in E'],['out','P liegt nicht in E']],correct:a.type==='unique'?'in':'out'}};
+      }
+    }},
+  ge:{ic:'📌',name:'Gerade ∩ Ebene',desc:'Schnittpunkt einer Geraden mit einer Ebene.',
+    gen(){
+      for(;;){
+        const A=rv(),u=nzv(),v=nzv(); if(isNull(cross(u,v))) continue;
+        const kind=Math.random()<.6?'S':pick(['par','in']);
+        let w,B;
+        if(kind==='S'){ w=nzv(); if(det3([u,v,w])===0) continue; const r=rint(-2,2),s=rint(-2,2),t=rint(-2,2); B=[0,1,2].map(i=>A[i]+r*u[i]+s*v[i]-t*w[i]); }
+        else{ const a=nz(-2,2),b=rint(-2,2); w=u.map((x,i)=>a*x+b*v[i]); if(isNull(w)) continue; const p=rint(-2,2),qq=rint(-2,2); B=[0,1,2].map(i=>A[i]+p*u[i]+qq*v[i]);
+          if(kind==='par'){ const z=nzv(-2,2); if(det3([u,v,z])===0) continue; B=B.map((x,i)=>x+z[i]); } }
+        if(B.some(x=>Math.abs(x)>12)) continue;
+        const rows=toQ([0,1,2].map(i=>[u[i],v[i],-w[i],B[i]-A[i]]));
+        const a=analyze(rows,3);
+        const map={unique:'S',none:'par',infinite:'in'}; if(map[a.type]!==kind) continue;
+        let Spt=null; if(a.type==='unique') Spt=[0,1,2].map(i=>q(A[i]).add(a.sol[0].mul(q(u[i]))).add(a.sol[1].mul(q(v[i]))));
+        return {vars:['r','s','t'],rows,
+          html:`<div class="mline">E: x⃗ = ${vecH(A)} + r · ${vecH(u)} + s · ${vecH(v)}<br>g: x⃗ = ${vecH(B)} + t · ${vecH(w)}</div><p>Untersuche die Lage von g und E und bestimme ggf. den Schnittpunkt.</p>`,
+          ansatz:`Gleichsetzen und sortieren (Variablen links, Zahlen rechts): <span class="mline">r · ${vecH(u)} + s · ${vecH(v)} − t · ${vecH(w)} = ${vecH(B)} − ${vecH(A)}</span><br>Achtung: Der Term mit t wechselt beim Rüberbringen das Vorzeichen.`,
+          interp:{kind:'ge',q:'Was bedeutet dein Ergebnis für die Lage von g und E?',choices:[['S','g schneidet E in genau einem Punkt S'],['par','g ist echt parallel zu E (kein gemeinsamer Punkt)'],['in','g liegt in E']],correct:kind,S:Spt,coordHint:'Setze t in g ein (oder r und s in E).'}};
+      }
+    }},
+  gg:{ic:'✖️',name:'Gerade ∩ Gerade',desc:'Schneiden sich zwei Geraden – oder sind sie windschief?',
+    gen(){
+      for(;;){
+        const P=rv(),u=nzv(),v=nzv(); if(isNull(cross(u,v))) continue;
+        const kind=Math.random()<.6?'S':'ws'; const r=rint(-2,2),s=rint(-2,2);
+        let Qp=[0,1,2].map(i=>P[i]+r*u[i]-s*v[i]);
+        if(kind==='ws'){ const z=nzv(-2,2); if(det3([u,v,z])===0) continue; Qp=Qp.map((x,i)=>x+z[i]); }
+        if(Qp.some(x=>Math.abs(x)>12)) continue;
+        const rows=toQ([0,1,2].map(i=>[u[i],-v[i],Qp[i]-P[i]]));
+        if(rows.every(rw=>rw[2].isZero())) continue;
+        const a=analyze(rows,2); if((a.type==='unique')!==(kind==='S')) continue;
+        let Spt=null; if(a.type==='unique') Spt=[0,1,2].map(i=>q(P[i]).add(a.sol[0].mul(q(u[i]))));
+        return {vars:['r','s'],rows,
+          html:`<div class="mline">g: x⃗ = ${vecH(P)} + r · ${vecH(u)} &nbsp;&nbsp; h: x⃗ = ${vecH(Qp)} + s · ${vecH(v)}</div><p>Die Richtungsvektoren sind nicht parallel. Schneiden sich g und h? Bestimme ggf. den Schnittpunkt.</p>`,
+          ansatz:`Gleichsetzen und sortieren: <span class="mline">r · ${vecH(u)} − s · ${vecH(v)} = ${vecH(Qp)} − ${vecH(P)}</span>`,
+          interp:{kind:'gg',q:'Was bedeutet dein Ergebnis?',choices:[['S','g und h schneiden sich in einem Punkt S'],['ws','g und h sind windschief']],correct:kind,S:Spt,coordHint:'Setze r in g ein (oder s in h).'}};
+      }
+    }},
+};
+class AppTask{
+  constructor(type){ this.type=type; this.wsEl=document.createElement('div'); this.newTask(); }
+  newTask(){ this.t=APPS[this.type].gen(); this.step=1; this.draft=[[],[],[]]; this.marks=null; this.msg=null; this.tries=0; this.showAns=false;
+    this.ws=null; this.wsEl.innerHTML=''; this.choice=null; this.cdraft=[]; this.cmsg=null; this.cmarks=null; this.done=false; this.helped=false; this.render(); }
+  render(){
+    const T=this.t, A=APPS[this.type], vars=T.vars;
+    const st=['1 · Aufstellen','2 · Lösen','3 · Deuten'].map((s,i)=>`<span class="${this.step===i+1?'on':this.step>i+1?'done':''}">${s}</span>`).join('');
+    let body='';
+    if(this.step===1){
+      body=`<div class="card sub"><h3>1 · LGS aufstellen</h3><p class="small muted">Übertrage die Aufgabe in ein LGS mit den Variablen ${vars.map(v=>'<i>'+v+'</i>').join(', ')}. Variablen nach links, Zahlen nach rechts. Die Reihenfolge der Gleichungen ist egal.</p>
+        ${[0,1,2].map(i=>`<div><span class="rlab">${ROM[i]}</span>${rowInputHTML(vars,this.draft[i],this.marks?this.marks[i]:null,i)}</div>`).join('')}
+        ${this.showAns?`<div class="msg warn">${T.ansatz}</div>`:''}
+        ${this.msg?`<div class="msg ${this.msg.c}">${this.msg.h}</div>`:''}
+        <div class="btns"><button class="btn pri" data-ap="setup" data-primary>Prüfen</button><button class="btn" data-ap="ansatz">💡 Ansatz zeigen (−2 ★)</button>${this.tries>=2?'<button class="btn" data-ap="fill">LGS einsetzen lassen</button>':''}</div></div>`;
+    }
+    if(this.step>=2) body+=`<div class="card sub"><h3>2 · Mit Gauß lösen</h3><div id="appWs"></div></div>`;
+    if(this.step===3) body+=this.interpHTML();
+    $('#appBox').innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">${A.ic} ${A.name}</h2><div><button class="btn ghost" data-ap="menu">← Übersicht</button><button class="btn" data-ap="new">Neue Aufgabe</button></div></div>
+      <div class="steps" style="margin-top:10px">${st}</div>${T.html}</div>${body}`;
+    if(this.step>=2) $('#appWs').appendChild(this.wsEl);
+  }
+  interpHTML(){
+    const I=this.t.interp;
+    let h=`<div class="card sub"><h3>3 · Ergebnis deuten</h3><p>${I.q}</p>`;
+    if(I.choices) h+='<div class="choice">'+I.choices.map(([k,l])=>`<button class="btn ${this.choice===k?'sel':''}" data-ap="ch" data-v="${k}" ${this.done?'disabled':''}>${l}</button>`).join('')+'</div>';
+    const needS=(I.kind==='ge'||I.kind==='gg')&&this.choice==='S'&&I.correct==='S'&&this.choiceOk;
+    if(needS) h+=`<p class="small muted">Richtig! Berechne jetzt den Schnittpunkt. ${I.coordHint}</p><div class="solvals">S( ${[0,1,2].map(i=>`<input class="cell ${this.cmarks?(this.cmarks[i]?'ok':'bad'):''}" data-c="${i}" value="${esc(this.cdraft[i]??'')}">`).join(' | ')} )</div>`;
+    if(I.kind==='preis') h+=`<div class="solvals"><input class="cell wide ${this.cmarks?(this.cmarks[0]?'ok':'bad'):''}" data-c="0" value="${esc(this.cdraft[0]??'')}"> €</div>`;
+    if(this.cmsg) h+=`<div class="msg ${this.cmsg.c}">${this.cmsg.h}</div>`;
+    if(!this.done) h+=`<div class="btns"><button class="btn pri" data-ap="interp" data-primary>Prüfen</button></div>`;
+    else h+=`<div class="btns"><button class="btn pri" data-ap="new">Nächste Aufgabe →</button></div>`;
+    return h+'</div>';
+  }
+  click(b){
+    const a=b.dataset.ap;
+    if(a==='menu') return App.menu();
+    if(a==='new') return this.newTask();
+    if(a==='ansatz'){ if(!this.showAns){S.points=Math.max(0,S.points-2);save();updateHeader();this.helped=true;} this.showAns=true; return this.render(); }
+    if(a==='fill'){ this.helped=true; return this.toSolve(this.t.rows,'Das LGS wurde eingesetzt. Vergleiche mit deinem Ansatz!'); }
+    if(a==='setup') return this.checkSetup();
+    if(a==='ch'){ this.choice=b.dataset.v; this.cmsg=null; this.choiceOk=false; return this.render(); }
+    if(a==='interp') return this.checkInterp();
+  }
+  checkSetup(){
+    const n=this.t.vars.length, exp=this.t.rows; const inp=[];
+    for(let i=0;i<3;i++){ const r=[]; for(let j=0;j<=n;j++){ const v=parseQ(this.draft[i][j]); if(!v){this.msg={c:'bad',h:'Mindestens eine Eingabe ist keine Zahl.'};return this.render();} r.push(v);} inp.push(r); }
+    // jede Eingabezeile muss zu genau einer erwarteten Zeile passen (auch mit −1 multipliziert)
+    const used=[false,false,false]; const rowOk=inp.map(r=>{ for(let k=0;k<3;k++){ if(used[k]) continue; const e=exp[k]; if(r.every((x,j)=>x.eq(e[j]))||r.every((x,j)=>x.eq(e[j].neg()))){used[k]=true;return true;} } return false; });
+    if(rowOk.every(Boolean)){ addPoints(this.tries===0?10:5); return this.toSolve(inp,'✔ LGS richtig aufgestellt!'); }
+    this.tries++; this.marks=inp.map((r,i)=>r.map(()=>rowOk[i]));
+    // Hinweis: welche Spalte ist am häufigsten falsch?
+    let hint='Die rot markierten Gleichungen stimmen noch nicht.';
+    const wrongCols=new Set(); inp.forEach((r,i)=>{ if(rowOk[i]) return; let best=null,bc=-1; exp.forEach(e=>{const c=r.filter((x,j)=>x.eq(e[j])).length; if(c>bc){bc=c;best=e;}}); r.forEach((x,j)=>{ if(!x.eq(best[j])) wrongCols.add(j); }); });
+    if(wrongCols.has(n)&&wrongCols.size===1) hint+=' Links passt alles, prüfe die rechte Seite (Zielpunkt minus Stützvektor bzw. Gesamtpreis).';
+    else if(wrongCols.size) hint+=' Prüfe besonders die Spalte(n): '+[...wrongCols].map(j=>j<n?this.t.vars[j]:'rechte Seite').join(', ')+'.';
+    if(this.tries>=2) hint+=' Du kannst dir den Ansatz zeigen oder das LGS einsetzen lassen.';
+    this.msg={c:'bad',h:hint}; this.render();
+  }
+  toSolve(rows,msg){
+    this.step=2; this.msg=null; this.render();
+    this.ws=new Workspace(this.wsEl,{rows,vars:this.t.vars,onDone:r=>{ this.res=r.result; this.step=3; this.render(); }});
+    this.ws.msg={c:'ok',h:msg+' Jetzt mit dem Gauß-Verfahren lösen.'}; this.ws.render();
+  }
+  checkInterp(){
+    const I=this.t.interp;
+    if(I.kind==='preis'){
+      const v=parseQ(this.cdraft[0],false); if(!v){this.cmsg={c:'bad',h:'Bitte einen Betrag eingeben.'};return this.render();}
+      if(v.eq(I.total)) return this.finish(`Richtig: ${fmtEuro(I.total)}. Die Einzelpreise: ${I.th.it.map((it,i)=>it+' '+fmtEuro(I.price[i])).join(', ')}.`);
+      this.cmarks=[false]; this.cmsg={c:'bad',h:'Nicht ganz. Multipliziere die Anzahlen mit deinen Preisen x, y, z und addiere.'}; return this.render();
+    }
+    if(!this.choice){this.cmsg={c:'bad',h:'Wähle eine Antwort.'};return this.render();}
+    if(!this.choiceOk){
+      if(this.choice!==I.correct){
+        const r=this.res.type; const why={unique:'Das LGS hat genau eine Lösung.',none:'Das LGS hat keine Lösung (Widerspruch).',infinite:'Das LGS hat unendlich viele Lösungen.'}[r];
+        this.cmsg={c:'bad',h:`Überlege nochmal: ${why} Was bedeutet das geometrisch?`}; return this.render();
+      }
+      this.choiceOk=true;
+      if(!((I.kind==='ge'||I.kind==='gg')&&I.correct==='S')){
+        const txt={punkt:{in:'Es gibt passende r und s, also liegt P in E.',out:'Es gibt keine passenden r und s (Widerspruch), also liegt P nicht in E.'},ge:{par:'Kein gemeinsamer Punkt: g ist echt parallel zu E.',in:'Unendlich viele gemeinsame Punkte: g liegt in E.'},gg:{ws:'Kein Schnittpunkt und nicht parallel: g und h sind windschief.'}}[I.kind][I.correct];
+        return this.finish(txt);
+      }
+      this.cmsg=null; return this.render();
+    }
+    const vals=[0,1,2].map(i=>parseQ(this.cdraft[i],false)); if(vals.some(v=>!v)){this.cmsg={c:'bad',h:'Gib alle drei Koordinaten ein.'};return this.render();}
+    this.cmarks=vals.map((v,i)=>v.eq(I.S[i]));
+    if(this.cmarks.every(Boolean)) return this.finish(`Richtig: S(${I.S.map(fmt).join(' | ')}).`);
+    this.cmsg={c:'bad',h:'Die rot markierten Koordinaten stimmen nicht. '+I.coordHint}; this.render();
+  }
+  finish(txt){ this.done=true; this.cmsg={c:'ok',h:'🎉 '+txt}; addPoints(this.helped?8:15); S.apps[this.type]=1; save(); if(Object.keys(APPS).every(k=>S.apps[k])) award('apps'); this.render(); }
+}
+const App={
+  cur:null,
+  menu(){ this.cur=null;
+    $('#appBox').innerHTML=`<div class="card"><h2>Anwendungen</h2><p class="muted">Erst das LGS aus der Aufgabe aufstellen, dann mit Gauß lösen, dann das Ergebnis deuten. Ebenen sind in Parameterform gegeben.</p></div>
+      <div class="grid2">${Object.entries(APPS).map(([k,a])=>`<button class="card appcard lvl" data-app="${k}"><span class="ic">${a.ic}</span><span class="nm">${a.name} ${S.apps[k]?'✅':''}</span><span class="ds">${a.desc}</span></button>`).join('')}</div>`; },
+  open(k){ this.cur=new AppTask(k); }
+};
+$('#appBox').addEventListener('click',e=>{ const c=e.target.closest('[data-app]'); if(c){App.open(c.dataset.app);return;} const b=e.target.closest('[data-ap]'); if(b&&App.cur&&!b.closest('#appWs')) App.cur.click(b); });
+$('#appBox').addEventListener('input',e=>{ const t=e.target, A=App.cur; if(!A||t.closest('#appWs')) return;
+  if(t.dataset.cell){ const [r,j]=t.dataset.cell.split('-').map(Number); A.draft[r][j]=t.value; t.classList.remove('ok','bad'); }
+  if(t.dataset.c!==undefined){ A.cdraft[+t.dataset.c]=t.value; t.classList.remove('ok','bad'); } });
+$('#appBox').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.tagName==='INPUT'&&!e.target.closest('#appWs')){ const b=$('#appBox').querySelector('.card.sub:last-of-type [data-primary]'); if(b){e.preventDefault();b.click();} } });
+onView('app',()=>{ if(App.cur){ App.cur.render(); if(App.cur.ws) App.cur.ws.render(); } });
+App.menu();
+
+/* =====================================================================
+   13) NAVIGATION & KOPFZEILE
+   ===================================================================== */
+function go(p){ document.querySelectorAll('section.page').forEach(s=>s.classList.toggle('on',s.id==='p-'+p)); document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p)); window.scrollTo({top:0,behavior:'smooth'}); }
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) go(b.dataset.p);});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-goto]'); if(g) go(g.dataset.goto);});
+document.querySelectorAll('.vt button').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.v)));
+$('#ptsBtn').addEventListener('click',()=>{ $('#badgeList').innerHTML=`<p class="muted">Punkte: <b>${S.points} ★</b></p><div class="badge-grid">${BADGES.map(b=>`<div class="bdg ${S.badges[b.id]?'':'off'}"><div class="ic">${b.ic}</div><div class="t">${b.t}</div><div class="d">${b.d}</div></div>`).join('')}</div>`; $('#badgeModal').classList.add('on'); });
+$('#closeModal').addEventListener('click',()=>$('#badgeModal').classList.remove('on'));
+$('#badgeModal').addEventListener('click',e=>{if(e.target.id==='badgeModal') e.currentTarget.classList.remove('on');});
+$('#unlockAll').addEventListener('click',()=>{S.unlocked=5;save();Train.menu();toast('Alle Level freigeschaltet.');});
+$('#resetAll').addEventListener('click',e=>{ const btn=e.currentTarget; if(!btn.dataset.sure){ btn.dataset.sure='1'; btn.textContent='Sicher? Zum Löschen nochmal klicken'; setTimeout(()=>{delete btn.dataset.sure;btn.textContent='Fortschritt zurücksetzen';},4000); return; } delete btn.dataset.sure; btn.textContent='Fortschritt zurücksetzen'; Object.assign(S,{points:0,stars:{},badges:{},unlocked:1,bestStreak:0,apps:{},special:{}}); save(); updateHeader(); Train.menu(); App.menu(); toast('Fortschritt gelöscht.'); });
+setView(S.view); updateHeader();
+</script>
+</body>
+</html>
