@@ -12,6 +12,7 @@
   --gold:#e3a008;
   --math:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif;
   --rowh:2.6rem;
+  --roman:"Times New Roman",Georgia,"Liberation Serif","DejaVu Serif",serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -80,9 +81,9 @@ section.page.on{display:block;animation:fade .25s ease}
 /* ---------- Gleichungssysteme ---------- */
 .sys{display:inline-flex;align-items:flex-start;gap:6px;font-family:var(--math);font-size:1.22rem;padding:6px 4px}
 .slab div,.snotes div{height:var(--rowh);line-height:var(--rowh);white-space:nowrap}
-.slab div{font-family:system-ui,sans-serif;font-weight:700;font-size:.9rem;color:var(--muted);text-align:right;padding-right:4px;min-width:2.2em;border-radius:6px}
+.slab div{font-family:var(--roman);font-weight:700;font-size:1.05rem;letter-spacing:.03em;color:var(--muted);text-align:right;padding-right:4px;min-width:2.2em;border-radius:6px}
 .slab div.hl{color:var(--pri);background:var(--pri-l)}
-.snotes div{font-family:system-ui,sans-serif;font-size:.9rem;color:var(--pri-d);font-weight:700;padding-left:10px}
+.snotes div{font-family:var(--roman);font-size:1.05rem;color:var(--pri-d);font-weight:700;padding-left:10px}
 .sys table{border-collapse:collapse}
 .sys tr{height:var(--rowh)}
 .sys tr.hl td{background:var(--pri-l)}
@@ -118,7 +119,7 @@ section.page.on{display:block;animation:fade .25s ease}
 .rin .op{padding:0 2px}
 .rin .br{font-size:2rem;line-height:1;color:#444;font-family:var(--math)}
 .rin .vbar{width:2px;align-self:stretch;background:#666;margin:0 4px}
-.rlab{display:inline-block;width:2.4em;font-weight:700;color:var(--muted);font-family:system-ui,sans-serif;font-size:.9rem}
+.rlab{display:inline-block;width:2.4em;font-weight:700;color:var(--muted);font-family:var(--roman);font-size:1.05rem}
 input.cell{width:3.7em;padding:5px 6px;border:1.5px solid #c9d0e2;border-radius:8px;text-align:center;font-family:var(--math);font-size:1.05rem;background:#fff}
 input.cell:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-l)}
 input.cell.ok{border-color:var(--ok);background:var(--ok-l)}
@@ -136,7 +137,7 @@ select{padding:5px 8px;border:1.5px solid #c9d0e2;border-radius:8px;background:#
 .optabs button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;font-weight:600;font-size:.9rem}
 .optabs button.on{border-color:var(--pri);background:var(--pri-l);color:var(--pri-d)}
 .opf{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:#f7f9fe;border:1px dashed #c8d3f0;border-radius:12px;padding:10px 12px}
-.opf b.rl{font-family:var(--math);font-size:1.1rem}
+.opf b.rl{font-family:var(--roman);font-size:1.15rem}
 .pend{background:#f7f9fe;border:1.5px solid #c8d3f0;border-radius:12px;padding:12px 14px;margin-top:12px}
 .pend-h{font-weight:700;margin-bottom:6px}
 .helprow{font-family:var(--math);font-size:.95rem;color:var(--muted);margin:4px 0 2px;display:flex;gap:14px;flex-wrap:wrap}
@@ -144,7 +145,13 @@ select{padding:5px 8px;border:1.5px solid #c9d0e2;border-radius:8px;background:#
 .side h4{margin:0 0 6px;font-size:.95rem}
 .hist{list-style:none;padding:0;margin:0 0 10px;font-size:.9rem;max-height:220px;overflow:auto}
 .hist li{padding:3px 0;border-bottom:1px dashed var(--line)}
-.hist li b{color:var(--pri-d)}
+.hist li b{color:var(--pri-d);font-family:var(--roman);font-size:1.05rem}
+.rom{font-family:var(--roman);font-weight:700;letter-spacing:.03em}
+.seg{display:inline-flex;border:1.5px solid #c9d0e2;border-radius:9px;overflow:hidden;background:#fff}
+.seg button{border:0;background:#fff;padding:4px 0;min-width:2.7em;font-family:var(--roman);font-weight:700;font-size:1.1rem;color:var(--ink)}
+.seg button+button{border-left:1px solid #dde2ee}
+.seg button:hover{background:var(--pri-l)}
+.seg button.on{background:var(--pri);color:#fff}
 .solp{margin-top:12px}
 .solvals{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-family:var(--math);font-size:1.15rem;align-items:center}
 .result{font-family:var(--math);font-size:1.25rem;font-weight:700}
@@ -308,9 +315,7 @@ footer button{background:none;border:0;color:var(--pri);text-decoration:underlin
 </main>
 
 <footer>
-  Fortschritt und Punkte werden nur lokal in diesem Browser gespeichert. ·
-  <button id="unlockAll">Lehrkraft: alle Level freischalten</button> ·
-  <button id="resetAll">Fortschritt zurücksetzen</button>
+  Punkte, Sterne und Abzeichen werden nur lokal in diesem Browser gespeichert.
 </footer>
 
 <div class="modal" id="badgeModal"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Deine Abzeichen</h2><button class="btn" id="closeModal">Schließen</button></div><div id="badgeList"></div></div></div>
@@ -505,7 +510,7 @@ function genSpecial(kind){
    5) SPIELSTAND, PUNKTE, ABZEICHEN
    ===================================================================== */
 const KEY='gaussWerkstatt_v1';
-const S={view:'lgs',points:0,stars:{},badges:{},unlocked:1,bestStreak:0,apps:{},special:{}};
+const S={view:'lgs',points:0,stars:{},badges:{},bestStreak:0,apps:{},special:{}};
 try{const d=JSON.parse(localStorage.getItem(KEY)||'null'); if(d) Object.assign(S,d);}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const BADGES=[
@@ -576,7 +581,11 @@ function enterSubmit(root){ root.addEventListener('keydown',e=>{ if(e.key==='Ent
    7) ARBEITSBEREICH – Herzstück: Umformen (Schüler:in rechnet selbst), prüfen, lösen
    ===================================================================== */
 class Workspace{
-  constructor(el,{rows,vars,onDone}){
+  constructor(host,{rows,vars,onDone}){
+    /* WICHTIG: Jede Aufgabe bekommt ein eigenes, neues Element. Früher hingen alle Aufgaben
+       einer Reihe am selben Element. Die Klick-Handler der alten (gelösten) Aufgabe blieben aktiv
+       und zeichneten deren Lösung über die neue Aufgabe. */
+    const el=document.createElement('div'); host.replaceChildren(el);
     Object.assign(this,{el,rows:toQ(rows),vars,onDone});
     this.n=vars.length; this.m=this.rows.length;
     this.hist=[]; this.notes=[]; this.hl=-1;
@@ -587,7 +596,6 @@ class Workspace{
     this.msg=this.phase==='sol'?{c:'info',h:'Das LGS hat bereits Stufenform. Bestimme die Lösungsmenge durch <b>Rückwärtseinsetzen</b> (von unten nach oben).'}:{c:'info',h:'Wähle eine Umformung. Ziel: Nullen unterhalb der Treppe (gelb markiert).'};
     el.addEventListener('click',e=>this.click(e));
     el.addEventListener('input',e=>this.input(e));
-    el.addEventListener('change',e=>{ if(e.target.dataset.f&&e.target.tagName==='SELECT'){ this.f[e.target.dataset.f]=Number(e.target.value); this.render(); } });
     enterSubmit(el);
     this.render();
   }
@@ -614,16 +622,16 @@ class Workspace{
   }
   opsHTML(){
     if(this.pending) return this.pendHTML();
-    const f=this.f, opt=sel=>ROM.slice(0,this.m).map((r,i)=>`<option value="${i}" ${i===sel?'selected':''}>${r}</option>`).join('');
+    const f=this.f, opt=(field,sel)=>`<span class="seg">${ROM.slice(0,this.m).map((r,i)=>`<button data-act="pick" data-f="${field}" data-v="${i}" class="${i===sel?'on':''}" title="Zeile ${r}">${r}</button>`).join('')}</span>`;
     const tabs=[['comb','➕ Vielfaches addieren'],['mult','✖️ Multiplizieren'],['swap','↕ Tauschen']]
       .map(([k,l])=>`<button data-act="optype" data-v="${k}" class="${this.opType===k?'on':''}">${l}</button>`).join('');
     let form;
-    if(this.opType==='comb') form=`<span>neue Zeile <select data-f="ct">${opt(f.ct)}</select> =</span>
+    if(this.opType==='comb') form=`<span>neue Zeile</span> ${opt('ct',f.ct)} <span>=</span>
         <input class="cell sm" data-f="ca" value="${esc(f.ca)}"> <span>·</span> <b class="rl">${ROM[f.ct]}</b> <span>+</span>
-        <input class="cell sm" data-f="cb" value="${esc(f.cb)}" placeholder="z.B. −2"> <span>·</span> <select data-f="cs">${opt(f.cs)}</select>
+        <input class="cell sm" data-f="cb" value="${esc(f.cb)}" placeholder="z.B. −2"> <span>·</span> ${opt('cs',f.cs)}
         <button class="btn pri" data-act="go" data-primary>Weiter</button>`;
-    else if(this.opType==='mult') form=`<span>Zeile</span> <select data-f="mt">${opt(f.mt)}</select> <span>mit</span> <input class="cell sm" data-f="mk" value="${esc(f.mk)}"> <span>multiplizieren</span> <button class="btn pri" data-act="go" data-primary>Weiter</button>`;
-    else form=`<span>Zeile</span> <select data-f="si">${opt(f.si)}</select> <span>↔ Zeile</span> <select data-f="sj">${opt(f.sj)}</select> <button class="btn pri" data-act="go" data-primary>Tauschen</button>`;
+    else if(this.opType==='mult') form=`<span>Zeile</span> ${opt('mt',f.mt)} <span>mit</span> <input class="cell sm" data-f="mk" value="${esc(f.mk)}"> <span>multiplizieren</span> <button class="btn pri" data-act="go" data-primary>Weiter</button>`;
+    else form=`<span>Zeile</span> ${opt('si',f.si)} <span>↔ Zeile</span> ${opt('sj',f.sj)} <button class="btn pri" data-act="go" data-primary>Tauschen</button>`;
     const ex=this.opType==='comb'?'<div class="small muted" style="margin-top:6px">Beispiel: „neue Zeile II = 1 · II + (−2) · I“ bedeutet <b>II − 2·I</b>. Der erste Faktor darf nicht 0 sein.</div>':'';
     return `<div class="optabs">${tabs}</div><div class="opf">${form}</div>${ex}`;
   }
@@ -636,8 +644,8 @@ class Workspace{
       help='<div class="helprow">'+row.map((v,j)=>{ const lab=j<this.n?this.vars[j]:'rechts';
         const ex=op.type==='comb'?`${p(op.a)}·${p(v)} + ${p(op.b)}·${p(src[j])}`:`${p(op.k)}·${p(v)}`; return `<span>${lab}: ${ex}</span>`;}).join('')+'</div>';
     }
-    return `<div class="pend"><div class="pend-h">Berechne die neue Zeile ${ROM[t]} = <span style="color:var(--pri-d)">${esc(opNote(op))}</span></div>
-      <span class="rlab">${ROM[t]}</span>${rowInputHTML(this.vars,this.draft[0]||[],this.marks)}
+    return `<div class="pend"><div class="pend-h">Berechne die neue Zeile <span class="rom">${ROM[t]}</span> = <span class="rom"  style="color:var(--pri-d)">${esc(opNote(op))}</span></div>
+      <span class="rlab rom">${ROM[t]}</span>${rowInputHTML(this.vars,this.draft[0]||[],this.marks)}
       ${help?'<div class="small muted" style="margin-top:6px">Rechenhilfe:</div>'+help:''}
       <div class="small muted" style="margin-top:4px">Leeres Feld = 0 · Dezimalzahlen mit Komma · Brüche als 3/4</div>
       <div class="btns"><button class="btn pri" data-act="check" data-primary>Prüfen</button><button class="btn" data-act="auto">Programm rechnen lassen (0 ★)</button><button class="btn ghost" data-act="cancel">Abbrechen</button></div></div>`;
@@ -666,6 +674,7 @@ class Workspace{
     const b=e.target.closest('[data-act]'); if(!b||!this.el.contains(b)) return;
     const a=b.dataset.act;
     if(a==='optype'){this.opType=b.dataset.v;this.render();}
+    else if(a==='pick'){ this.f[b.dataset.f]=Number(b.dataset.v); this.render(); }
     else if(a==='go') this.startOp();
     else if(a==='check') this.checkRow();
     else if(a==='auto'){ this.hints++; this.applyPending(false,true); }
@@ -678,7 +687,7 @@ class Workspace{
   }
   startOp(){
     const f=this.f; let op;
-    this.el.querySelectorAll('[data-f]').forEach(x=>{ this.f[x.dataset.f]=x.tagName==='SELECT'?Number(x.value):x.value; });
+    this.el.querySelectorAll('input[data-f]').forEach(x=>{ this.f[x.dataset.f]=x.value; });
     if(this.opType==='swap'){
       if(f.si===f.sj) return this.say('bad','Wähle zwei verschiedene Zeilen.');
       op={type:'swap',i:f.si,j:f.sj};
@@ -898,7 +907,7 @@ const Trans={
     let L=terms.map((t,k)=>T(t,k===0)).join('');
     let R=fmt(r[3]);
     if(right){ const c=right.c.neg(); R+=(c.n<0?' − ':' + ')+(c.abs().eq(ONE)?'':fmt(c.abs()))+`<span class="v">${right.v}</span>`; }
-    return `<div style="height:var(--rowh);line-height:var(--rowh)"><b class="small muted" style="display:inline-block;width:2.2em">${ROM[i]}</b>${L} = ${R}</div>`;
+    return `<div style="height:var(--rowh);line-height:var(--rowh)"><b class="rom muted" style="display:inline-block;width:2.2em">${ROM[i]}</b>${L} = ${R}</div>`;
   },
   render(){
     const el=$('#trans');
@@ -945,9 +954,9 @@ const Train={
     this.lv=null;
     const tot=LEVELS.reduce((s,_,i)=>s+(S.stars[i]||0),0);
     $('#trainBox').innerHTML=`<div class="card"><h2>Training: Stufe für Stufe zum Profi</h2>
-      <p class="muted">Jedes Level hat ${TASKS} Aufgaben. Je weniger Fehler und Hilfen, desto mehr Sterne. Mit mindestens einem Stern schaltest du das nächste Level frei.</p>
+      <p class="muted">Jedes Level hat ${TASKS} Aufgaben. Je weniger Fehler und Hilfen, desto mehr Sterne. Alle Level sind frei wählbar, empfohlen ist die Reihenfolge 1 → 5.</p>
       <div class="prog"><i style="width:${tot/15*100}%"></i></div><div class="small muted">${tot} / 15 Sterne</div></div>
-      <div class="grid3">${LEVELS.map((L,i)=>`<button class="lvl" data-l="${i}" ${i+1>S.unlocked?'disabled':''}><span class="num">LEVEL ${i+1}</span><span class="nm">${L.name}</span><span class="ds">${L.desc}</span><span class="stars">${[1,2,3].map(k=>`<span class="${(S.stars[i]||0)>=k?'f':''}">★</span>`).join('')}</span></button>`).join('')}</div>`;
+      <div class="grid3">${LEVELS.map((L,i)=>`<button class="lvl" data-l="${i}"><span class="num">LEVEL ${i+1}</span><span class="nm">${L.name}</span><span class="ds">${L.desc}</span><span class="stars">${[1,2,3].map(k=>`<span class="${(S.stars[i]||0)>=k?'f':''}">★</span>`).join('')}</span></button>`).join('')}</div>`;
   },
   start(i){
     const kinds=shuffle(['none','infinite',pick(['none','infinite'])]);
@@ -968,7 +977,7 @@ const Train={
       if(!last) foot=`<button class="btn pri" data-tr="next">Nächste Aufgabe →</button>`;
       else{
         const st=starsFor(L.pen); const before=S.stars[L.i]||0;
-        if(!L.saved){ S.stars[L.i]=Math.max(before,st); S.unlocked=Math.max(S.unlocked,L.i+2); if(L.i===3) award('swap'); if(LEVELS.every((_,k)=>S.stars[k]===3)) award('master'); save(); L.saved=true; addPoints(st*10); }
+        if(!L.saved){ S.stars[L.i]=Math.max(before,st); if(L.i===3) award('swap'); if(LEVELS.every((_,k)=>S.stars[k]===3)) award('master'); save(); L.saved=true; addPoints(st*10); }
         foot=`<div class="msg ok"><b>Level geschafft!</b> ${'★'.repeat(st)}${'☆'.repeat(3-st)} &nbsp;(${L.pen} Fehler/Hilfen insgesamt)</div>
           <button class="btn pri" data-tr="menu">Zur Levelübersicht</button> ${L.i<4?`<button class="btn" data-tr="lvl" data-l="${L.i+1}">Level ${L.i+2} starten →</button>`:''}`;
       }
@@ -1211,8 +1220,6 @@ document.querySelectorAll('.vt button').forEach(b=>b.addEventListener('click',()
 $('#ptsBtn').addEventListener('click',()=>{ $('#badgeList').innerHTML=`<p class="muted">Punkte: <b>${S.points} ★</b></p><div class="badge-grid">${BADGES.map(b=>`<div class="bdg ${S.badges[b.id]?'':'off'}"><div class="ic">${b.ic}</div><div class="t">${b.t}</div><div class="d">${b.d}</div></div>`).join('')}</div>`; $('#badgeModal').classList.add('on'); });
 $('#closeModal').addEventListener('click',()=>$('#badgeModal').classList.remove('on'));
 $('#badgeModal').addEventListener('click',e=>{if(e.target.id==='badgeModal') e.currentTarget.classList.remove('on');});
-$('#unlockAll').addEventListener('click',()=>{S.unlocked=5;save();Train.menu();toast('Alle Level freigeschaltet.');});
-$('#resetAll').addEventListener('click',e=>{ const btn=e.currentTarget; if(!btn.dataset.sure){ btn.dataset.sure='1'; btn.textContent='Sicher? Zum Löschen nochmal klicken'; setTimeout(()=>{delete btn.dataset.sure;btn.textContent='Fortschritt zurücksetzen';},4000); return; } delete btn.dataset.sure; btn.textContent='Fortschritt zurücksetzen'; Object.assign(S,{points:0,stars:{},badges:{},unlocked:1,bestStreak:0,apps:{},special:{}}); save(); updateHeader(); Train.menu(); App.menu(); toast('Fortschritt gelöscht.'); });
 setView(S.view); updateHeader();
 </script>
 </body>
