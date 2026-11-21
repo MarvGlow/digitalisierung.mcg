@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stochastikrechner Q1/Q2</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#fff; --ink:#1b2230; --mut:#6a7385; --line:#e2e5ea; --box:#cdd3dc;
+  --acc:#2452c4; --accbg:#e9effc; --ok:#17693d; --okbg:#e3f3ea; --bad:#a8231a; --badbg:#fbe9e7;
+  --warn:#7d5300; --warnbg:#fff3d6; --info:#2d4a85; --infobg:#eaf0fb; --lk:#7540ad; --lkbg:#f1e9fa;
+  --math:"Cambria Math","STIX Two Math","Latin Modern Math","Cambria","Times New Roman",serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{height:54px;display:flex;align-items:center;gap:18px;padding:0 18px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0;font-weight:650;white-space:nowrap}
+header h1 span{color:var(--mut);font-weight:500}
+.hint-top{font-size:12.5px;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hint-top code{background:#eef0f3;border-radius:4px;padding:0 4px;font-size:12px}
+.tg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut);white-space:nowrap;cursor:pointer;user-select:none}
+.tg input{accent-color:var(--acc)}
+.layout{display:grid;grid-template-columns:262px 1fr;min-height:calc(100vh - 54px)}
+nav{background:#fff;border-right:1px solid var(--line);position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;padding:10px 0 30px}
+nav .search{margin:0 12px 8px;width:calc(100% - 24px);padding:7px 10px;border:1px solid var(--box);border-radius:7px;font:inherit;font-size:14px}
+nav .grp{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:650;padding:12px 16px 4px}
+nav button{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:14px;color:var(--ink);padding:5px 16px 5px 22px;cursor:pointer;border-left:3px solid transparent}
+nav button:hover{background:#f3f5f8}
+nav button.on{background:var(--accbg);border-left-color:var(--acc);color:var(--acc);font-weight:600}
+.lk{display:inline-block;font-size:10.5px;font-weight:700;color:var(--lk);background:var(--lkbg);border-radius:4px;padding:0 5px;line-height:17px;letter-spacing:.03em;vertical-align:middle}
+main{padding:22px 26px 60px;min-width:0}
+.calc{background:var(--card);border:1px solid var(--line);border-radius:12px;max-width:1080px}
+.chead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.chead h2{font-size:18px;margin:0;font-weight:650}
+.cbtns{display:flex;gap:8px}
+.btn{border:1px solid var(--box);background:#fff;border-radius:7px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+.btn:hover{background:#f3f5f8}
+.inputs{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);background:#fbfcfd}
+.w{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.w .lbl,.t{font-family:var(--math);font-size:17px;white-space:nowrap}
+.w .sep{color:var(--mut)}
+.bx{width:62px;padding:5px 6px;border:1px solid var(--box);border-radius:6px;font:inherit;font-size:15px;text-align:center;background:#fff;color:var(--ink)}
+.bx:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(36,82,196,.15)}
+.bx::placeholder{color:#b9c0cb}
+.vin{display:inline-flex;flex-direction:column;gap:3px;padding:3px 6px;border-left:2px solid #8f99a8;border-right:2px solid #8f99a8;border-radius:11px}
+.wline,.wplane,.wlgs,.wmatcalc{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%}
+.whead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.wname{font-weight:600;font-size:14px;min-width:70px}
+.eqrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--box);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:#fff;font:inherit;font-size:12.5px;padding:4px 10px;cursor:pointer;color:var(--mut);border-right:1px solid var(--box)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accbg);color:var(--acc);font-weight:600}
+.dims{display:flex;align-items:center;gap:8px;font-size:14px;flex-wrap:wrap}
+.dims select{font:inherit;padding:3px 6px;border:1px solid var(--box);border-radius:6px;background:#fff}
+.mgrid{display:inline-grid;gap:3px;padding:3px 6px;border-left:2px solid #8f99a8;border-right:2px solid #8f99a8;border-radius:8px}
+.mgrid .bx{width:56px}
+.mats{display:flex;gap:26px;flex-wrap:wrap;align-items:center}
+.results{padding:16px 20px 20px}
+.row{display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:14px;align-items:center;padding:7px 0;border-bottom:1px dashed #eceef2}
+.row:last-child{border-bottom:0}
+.row .lb{color:var(--mut);font-size:13.5px}
+.row .vl{font-family:var(--math);font-size:18px;line-height:1.5;overflow-x:auto}
+.row.main .lb{color:var(--ink);font-weight:600}
+.row.main .vl{font-size:20px}
+.ap{color:var(--mut);font-size:.86em;white-space:nowrap;margin-left:.35em}
+.verdict{display:inline-block;margin:2px 0 8px;padding:6px 12px;border-radius:7px;font-weight:600;font-size:15px}
+.verdict.ok{background:var(--okbg);color:var(--ok)}
+.verdict.bad{background:var(--badbg);color:var(--bad)}
+.verdict.warn{background:var(--warnbg);color:var(--warn)}
+.verdict.info{background:var(--infobg);color:var(--info)}
+.note{font-size:13px;color:var(--mut);margin:6px 0}
+.results h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:14px 0 2px}
+.steps{margin-top:16px;border-top:1px solid var(--line);padding-top:8px}
+.stt{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:650;margin-bottom:2px}
+.steps .row .vl{font-size:16px}
+.nosteps .steps{display:none}
+.hint{color:var(--mut);font-size:14px}
+.err{color:var(--bad);background:var(--badbg);padding:8px 12px;border-radius:7px;font-size:14px;display:inline-block}
+/* Mathe-Satz */
+.cv{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;padding:.05em .38em;margin:.1em .12em;border-left:1.5px solid currentColor;border-right:1.5px solid currentColor;border-radius:.55em/1.3em;line-height:1.22}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.82em;margin:0 .08em;line-height:1.12}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 .12em}
+.fr>span:last-child{padding:0 .12em}
+.sr{font-family:system-ui,"Segoe UI",Arial,sans-serif;font-size:.95em;margin-right:-.06em}
+.rad{border-top:1px solid currentColor;padding:0 .08em;margin-left:0}
+.vn{position:relative;display:inline-block;padding-top:.28em;line-height:1}
+.vn::before{content:"";position:absolute;top:.12em;left:.02em;right:.05em;border-top:1px solid currentColor}
+.vn::after{content:"";position:absolute;top:-.03em;right:.03em;width:.24em;height:.24em;border:solid currentColor;border-width:1px 1px 0 0;transform:rotate(45deg)}
+table.mat{display:inline-table;vertical-align:middle;border-collapse:separate;border-spacing:.55em .12em;border-left:1.5px solid currentColor;border-right:1.5px solid currentColor;border-radius:.5em;margin:.15em .2em}
+table.mat td{text-align:center}
+table.mat td.ag{border-left:1px solid var(--mut);padding-left:.5em}
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr}
+  nav{position:static;height:auto;max-height:260px;border-right:0;border-bottom:1px solid var(--line)}
+  .hint-top{display:none}
+  main{padding:14px 10px 40px}
+  .row{grid-template-columns:1fr;gap:2px}
+}
+.figure{margin:12px 0 4px;overflow-x:auto}
+svg.chart{width:100%;max-width:760px;height:auto;display:block}
+.bar{fill:#b3c5ee}.bon{fill:var(--acc)}.gridl{stroke:#e8ebf0}.tk{font:11px system-ui,sans-serif;fill:#6a7385}
+.curve{fill:none;stroke:var(--acc);stroke-width:2}.shade{fill:rgba(36,82,196,.22)}.axis{stroke:#8f99a8;stroke-width:1.2}
+.boxr{fill:var(--accbg);stroke:var(--acc);stroke-width:1.5}.medl{stroke:var(--acc);stroke-width:3}
+svg.tree{width:100%;max-width:400px;flex:1 1 340px;height:auto}
+.tree .br{stroke:#8f99a8;stroke-width:1.3}.tree .bp{font:12.5px system-ui,sans-serif;fill:#2452c4}.tree .nd{font:600 15px system-ui,sans-serif;fill:#1b2230}.tree .lf{font:13px system-ui,sans-serif;fill:#1b2230}
+.ovs{text-decoration:overline}
+.trees{display:flex;flex-wrap:wrap;gap:24px}
+.ov{text-decoration:overline}
+table.vt{border-collapse:collapse;font-family:var(--math);font-size:17px;margin:4px 0}
+table.vt th,table.vt td{border:1px solid var(--line);padding:6px 16px;text-align:center}
+table.vt th{background:#f6f7f9;font-weight:600;font-size:16px}
+table.vfin td,table.vfin th{padding:3px 6px;text-align:center}table.vfin th{font-family:var(--math);font-size:17px;font-weight:400;min-width:40px}
+.nm{width:56px}
+.condgrid{display:grid;grid-template-columns:repeat(4,auto);gap:6px 18px;align-items:center}
+.condgrid label{display:flex;align-items:center;gap:6px;font-family:var(--math);font-size:16px;white-space:nowrap}
+textarea.ta{width:min(680px,100%);font:inherit;padding:7px 9px;border:1px solid var(--box);border-radius:7px;resize:vertical}
+input.tl{width:min(600px,100%);font:inherit;padding:6px 9px;border:1px solid var(--box);border-radius:7px}
+.ta:focus,.tl:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(36,82,196,.15)}
+.dgrid{display:inline-grid;gap:4px;align-items:center}
+.btab{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:8px;display:inline-block}
+table.bt{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}table.bt th{position:sticky;top:0;background:#f6f7f9}
+table.bt td,table.bt th{padding:4px 16px;text-align:right;border-bottom:1px solid #eef0f3}
+.wmodes{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%}
+.seg{flex-wrap:wrap}
+@media (max-width:820px){.condgrid{grid-template-columns:repeat(2,auto)}}
+svg.treebig{width:100%;height:auto}
+.treebig .br{stroke:#a3acb9;stroke-width:1.2}.treebig .brh{stroke:var(--acc);stroke-width:2}
+.treebig .bp{font:11.5px system-ui,sans-serif;fill:#2452c4}.treebig .nd{font:600 14px system-ui,sans-serif;fill:#1b2230}
+.treebig .lf{font:13px system-ui,sans-serif;fill:#1b2230}.treebig .lfh{font:600 13px system-ui,sans-serif;fill:var(--acc)}
+
+/* ---------- Dunkelmodus ---------- */
+body.dark{--bg:#14171c;--card:#1c2027;--ink:#e4e7ec;--mut:#9aa3b2;--line:#2e343e;--box:#3d4450;--acc:#7fa6ff;--accbg:#22304f;
+  --ok:#6fd49a;--okbg:#173326;--bad:#ff8a80;--badbg:#3a1d1b;--warn:#f3c56b;--warnbg:#3a2f14;--info:#a3bdff;--infobg:#1f2a44;--lk:#c9a2f5;--lkbg:#2f2342;color-scheme:dark}
+.dark header,.dark nav{background:var(--card)}
+.dark nav button:hover,.dark .btn:hover{background:#262b34}
+.dark .btn,.dark .bx,.dark .seg button,.dark .dims select,.dark textarea.ta,.dark input.tl,.dark nav .search{background:#151920;color:var(--ink)}
+.dark .seg button.on{background:var(--accbg);color:var(--acc)}
+.dark .inputs{background:#181c23}
+.dark .hint-top code{background:#262b34;color:var(--ink)}
+.dark .row{border-bottom-color:#2a2f38}
+.dark .bx::placeholder,.dark .ta::placeholder,.dark .tl::placeholder{color:#5c6574}
+.dark .vin,.dark .mgrid{border-color:#6b7586}
+.dark .bx:focus,.dark .ta:focus,.dark .tl:focus{box-shadow:0 0 0 3px rgba(127,166,255,.22)}
+.dark table.vt th,.dark table.bt th{background:#232831}
+.dark table.bt td,.dark table.bt th{border-bottom-color:#2a2f38}
+.dark .tk{fill:#9aa3b2}.dark .gridl{stroke:#2a2f38}.dark .bar{fill:#3a5592}.dark .bon{fill:var(--acc)}.dark .axis{stroke:#6b7586}
+.dark .shade{fill:rgba(127,166,255,.25)}
+.dark .tree .nd,.dark .tree .lf,.dark .treebig .nd,.dark .treebig .lf{fill:var(--ink)}
+.dark .tree .bp,.dark .treebig .bp{fill:var(--acc)}
+.dark .tree .br,.dark .treebig .br{stroke:#5d6676}
+
+/* ---------- Zurück-Link und Darstellungs-Umschalter ---------- */
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--acc);text-decoration:none;border:1px solid var(--box);border-radius:7px;padding:5px 10px;white-space:nowrap}
+.back:hover{background:var(--accbg)}
+.themeSeg{display:inline-flex;border:1px solid var(--box);border-radius:7px;overflow:hidden;flex-shrink:0}
+.themeSeg button{border:0;border-right:1px solid var(--box);background:transparent;color:var(--mut);font:inherit;font-size:12.5px;padding:4px 9px;cursor:pointer}
+.themeSeg button:last-child{border-right:0}
+.themeSeg button.on{background:var(--accbg);color:var(--acc);font-weight:600}
+@media (max-width:820px){header{gap:10px;padding:0 10px}.tg{font-size:12px}header h1 span{display:none}}
+</style>
+</head>
+<body class="dark">
+<header>
+  <a class="back" href="index.html" title="Zurück zur Übersicht">← Übersicht</a>
+  <h1>Stochastikrechner <span>· Q1/Q2</span></h1>
+  <div class="hint-top">Eingabe: <code>0,3</code> <code>1/6</code> <code>25%</code> <code>1-0,95</code> · Listen: Werte mit Leerzeichen oder <code>;</code> trennen · Stand: KLP NRW 2023</div>
+  <div class="themeSeg" id="themeSeg" title="Darstellung"><button type="button" data-t="dark">Dunkel</button><button type="button" data-t="light">Hell</button><button type="button" data-t="system">System</button></div>
+  <label class="tg"><input type="checkbox" id="tgSteps" checked> Zwischenergebnisse</label>
+  <label class="tg"><input type="checkbox" id="tgLK" checked> LK-Rechner</label>
+</header>
+<div class="layout">
+  <nav id="nav"><input class="search" id="search" placeholder="Rechner suchen …" autocomplete="off"></nav>
+  <main id="main"></main>
+</div>
+<script>
+'use strict';
+/* =====================================================================
+   1) EXAKTE ARITHMETIK: Brüche (BigInt) und Wurzelterme c·√r
+   ===================================================================== */
+class Incomplete extends Error{}
+class InErr extends Error{}      // Eingabe nicht lesbar
+class MErr extends Error{}       // mathematisch unzulässig (z. B. Nullvektor)
+const BI=BigInt;
+const babs=x=>x<0n?-x:x;
+function gcd(a,b){a=babs(a);b=babs(b);while(b){const t=a%b;a=b;b=t;}return a;}
+
+class Q{
+  constructor(n,d=1n){
+    if(d===0n) throw new MErr('Division durch 0');
+    if(d<0n){n=-n;d=-d;}
+    const g=gcd(n,d)||1n; this.n=n/g; this.d=d/g;
+  }
+  add(o){return new Q(this.n*o.d+o.n*this.d,this.d*o.d)}
+  sub(o){return new Q(this.n*o.d-o.n*this.d,this.d*o.d)}
+  mul(o){return new Q(this.n*o.n,this.d*o.d)}
+  div(o){if(o.n===0n) throw new MErr('Division durch 0'); return new Q(this.n*o.d,this.d*o.n)}
+  neg(){return new Q(-this.n,this.d)}
+  abs(){return new Q(babs(this.n),this.d)}
+  z(){return this.n===0n}
+  sg(){return this.n>0n?1:this.n<0n?-1:0}
+  eq(o){return this.n===o.n&&this.d===o.d}
+  int(){return this.d===1n}
+  num(){return Number(this.n)/Number(this.d)}
+}
+const q=x=>new Q(BI(x));
+const Q0=q(0),Q1=q(1),HALF=new Q(1n,2n);
+
+/* Parser: Zahlen (Komma oder Punkt), + - * / ^ und Klammern */
+function parseQ(raw){
+  let s=String(raw).replace(/[−–—]/g,'-').replace(/[×·]/g,'*').replace(/[÷:]/g,'/').replace(/\s+/g,'');
+  s=s.replace(/^[A-Za-z]'*\(/,'('); // „P(1“ → „(1“
+  const cnt=c=>s.split(c).length-1;
+  while(cnt('(')>cnt(')')&&s.startsWith('(')) s=s.slice(1);   // Reste von „(1|2|3)“
+  while(cnt(')')>cnt('(')&&s.endsWith(')')) s=s.slice(0,-1);
+  if(s==='') return null;
+  let i=0;
+  const fail=()=>{throw new InErr('Eingabe nicht lesbar: „'+raw+'“');};
+  const expr=()=>{let v=term();while(s[i]==='+'||s[i]==='-'){const op=s[i++];const t=term();v=op==='+'?v.add(t):v.sub(t);}return v;};
+  const term=()=>{let v=unary();while(s[i]==='*'||s[i]==='/'){const op=s[i++];const f=unary();v=op==='*'?v.mul(f):v.div(f);}return v;};
+  const unary=()=>{if(s[i]==='-'){i++;return unary().neg();}if(s[i]==='+'){i++;return unary();}return power();};
+  const power=()=>{let b=atom();while(s[i]==='%'){i++;b=b.div(q(100));}if(s[i]!=='^')return b;i++;const e=unary();if(!e.int()||babs(e.n)>64n)fail();
+    let k=e.n,base=b,r=Q1;if(k<0n){base=Q1.div(b);k=-k;}for(let j=0n;j<k;j++)r=r.mul(base);return r;};
+  const atom=()=>{
+    if(s[i]==='('){i++;const v=expr();if(s[i]!==')')fail();i++;return v;}
+    const m=/^(\d*)(?:[.,](\d*))?/.exec(s.slice(i)); const tok=m[0];
+    if(!/\d/.test(tok)) fail(); i+=tok.length;
+    const ip=m[1]||'0', fp=m[2]||'';
+    return new Q(BI(ip+fp),10n**BI(fp.length));
+  };
+  const v=expr(); if(i!==s.length) fail(); return v;
+}
+
+/* Wurzelterme: Wert = c·√r, r quadratfrei */
+function isqrt(n){if(n<2n)return n;let x=BI(Math.floor(Math.sqrt(Number(n))));while(x*x>n)x--;while((x+1n)*(x+1n)<=n)x++;return x;}
+function sqf(r){ // r = k²·m
+  let k=1n,m=1n,n=r;
+  for(let p=2n;p*p<=n&&p<200000n;p+=(p===2n?1n:2n)){let c=0n;while(n%p===0n){n/=p;c++;}if(c){k*=p**(c/2n);if(c%2n)m*=p;}}
+  const s=isqrt(n); if(s*s===n) k*=s; else m*=n;
+  return [k,m];
+}
+function S(c,r=1n){
+  if(r<0n) throw new MErr('Wurzel aus negativer Zahl');
+  if(r===0n||c.z()) return {c:Q0,r:1n};
+  const [k,m]=sqf(r); return {c:c.mul(new Q(k)),r:m};
+}
+const sq=x=>({c:x,r:1n});
+function sqrtQ(x){if(x.sg()<0) throw new MErr('Wurzel aus negativer Zahl'); return S(new Q(1n,x.d),x.n*x.d);}
+const smul=(a,b)=>S(a.c.mul(b.c),a.r*b.r);
+function sdiv(a,b){if(b.c.z()) throw new MErr('Division durch 0'); return S(a.c.div(b.c).div(new Q(b.r)),a.r*b.r);}
+const snum=a=>a.c.num()*Math.sqrt(Number(a.r));
+
+/* Vektoren (Arrays von Q) */
+const vadd=(a,b)=>a.map((x,i)=>x.add(b[i]));
+const vsub=(a,b)=>a.map((x,i)=>x.sub(b[i]));
+const vsc=(k,a)=>a.map(x=>k.mul(x));
+const vneg=a=>a.map(x=>x.neg());
+const dot=(a,b)=>a.reduce((s,x,i)=>s.add(x.mul(b[i])),Q0);
+const cross=(a,b)=>[a[1].mul(b[2]).sub(a[2].mul(b[1])),a[2].mul(b[0]).sub(a[0].mul(b[2])),a[0].mul(b[1]).sub(a[1].mul(b[0]))];
+const vz=a=>a.every(x=>x.z());
+const veq=(a,b)=>a.every((x,i)=>x.eq(b[i]));
+const len=a=>sqrtQ(dot(a,a));
+const det3=(a,b,c)=>dot(a,cross(b,c));
+function prim(a){ // auf teilerfremde ganze Zahlen kürzen, Orientierung bleibt
+  if(vz(a)) return a.slice();
+  let L=1n; a.forEach(x=>{L=L/gcd(L,x.d)*x.d;});
+  const w=a.map(x=>x.n*(L/x.d)); let g=0n; w.forEach(x=>g=gcd(g,x));
+  return w.map(x=>new Q(x/g));
+}
+function primS(a){const p=prim(a);const f=p.find(x=>!x.z());return f&&f.sg()<0?vneg(p):p;}
+function parK(a,b){ // b = k·a ? → k oder null
+  const i=a.findIndex(x=>!x.z()); if(i<0) return null;
+  const k=b[i].div(a[i]); return veq(b,vsc(k,a))?k:null;
+}
+
+/* LGS (Gauß-Jordan, exakt) */
+function solve(A,b){
+  const m=A.length,n=A[0].length;
+  const M=A.map((r,i)=>[...r,b[i]]); const piv=[]; let row=0;
+  for(let c=0;c<n&&row<m;c++){
+    let p=-1; for(let r=row;r<m;r++) if(!M[r][c].z()){p=r;break;}
+    if(p<0) continue;
+    [M[row],M[p]]=[M[p],M[row]];
+    const pv=M[row][c]; M[row]=M[row].map(x=>x.div(pv));
+    for(let r=0;r<m;r++) if(r!==row&&!M[r][c].z()){const f=M[r][c];M[r]=M[r].map((x,j)=>x.sub(f.mul(M[row][j])));}
+    piv.push(c); row++;
+  }
+  for(const r of M) if(r.slice(0,n).every(x=>x.z())&&!r[n].z()) return {t:'none',M,piv};
+  const free=[]; for(let c=0;c<n;c++) if(!piv.includes(c)) free.push(c);
+  const x=Array(n).fill(Q0); piv.forEach((c,i)=>x[c]=M[i][n]);
+  if(!free.length) return {t:'uni',x,M,piv,free};
+  const basis=free.map(f=>{const v=Array(n).fill(Q0);v[f]=Q1;piv.forEach((c,i)=>v[c]=M[i][f].neg());return v;});
+  return {t:'inf',x,basis,free,M,piv};
+}
+
+/* Geometrie-Objekte: Gerade {p,u}; Ebene {p,u,v,n,d,nr}, n·x = d */
+function mkPlane(p,u,v){
+  const nr=cross(u,v);
+  if(vz(nr)) throw new MErr('Die Spannvektoren sind parallel – sie spannen keine Ebene auf.');
+  const n=primS(nr); return {p,u,v,nr,n,d:dot(n,p)};
+}
+function planeND(n0,d0){
+  if(vz(n0)) throw new MErr('Der Normalenvektor darf nicht der Nullvektor sein.');
+  const n=primS(n0); const i=n0.findIndex(x=>!x.z()); const k=n[i].div(n0[i]); const d=d0.mul(k);
+  const p=[Q0,Q0,Q0]; p[i]=d.div(n[i]);
+  const [a,b,c]=n;
+  const cand=[[b,a.neg(),Q0],[c,Q0,a.neg()],[Q0,c,b.neg()]].filter(w=>!vz(w)).map(prim);
+  const u=cand[0], v=cand.find(w=>parK(u,w)===null);
+  return {p,u,v,nr:n0,n,d};
+}
+const onPlane=(P,E)=>dot(E.n,P).eq(E.d);
+function onLine(P,g){const w=vsub(P,g.p);if(vz(w))return Q0;return parK(g.u,w);}
+function lineLine(g,h){
+  if(parK(g.u,h.u)!==null) return onLine(h.p,g)!==null?{t:'ident'}:{t:'par'};
+  const A=[0,1,2].map(i=>[g.u[i],h.u[i].neg()]);
+  const sol=solve(A,vsub(h.p,g.p));
+  if(sol.t==='none') return {t:'wind'};
+  const [r,s]=sol.x; return {t:'schn',r,s,S:vadd(g.p,vsc(r,g.u))};
+}
+function linePlane(g,E){
+  const nu=dot(E.n,g.u), np=dot(E.n,g.p);
+  if(nu.z()) return {t:np.eq(E.d)?'in':'par',nu,np};
+  const r=E.d.sub(np).div(nu); return {t:'schn',r,S:vadd(g.p,vsc(r,g.u)),nu,np};
+}
+function planePlane(E,F){
+  const c=cross(E.n,F.n);
+  if(vz(c)) return {t:onPlane(F.p,E)?'ident':'par'};
+  const k=[2,1,0].find(i=>!c[i].z()); const [i,j]=[0,1,2].filter(t=>t!==k);
+  const a1=E.n[i],b1=E.n[j],a2=F.n[i],b2=F.n[j]; const D=a1.mul(b2).sub(b1.mul(a2));
+  const p=[Q0,Q0,Q0];
+  p[i]=E.d.mul(b2).sub(F.d.mul(b1)).div(D);
+  p[j]=a1.mul(F.d).sub(a2.mul(E.d)).div(D);
+  return {t:'schn',g:{p,u:prim(c)},raw:c,k};
+}
+function distPE(P,E){
+  const val=dot(E.n,P).sub(E.d);
+  return {val,d:sdiv(sq(val.abs()),len(E.n)),F:vsub(P,vsc(val.div(dot(E.n,E.n)),E.n))};
+}
+function distPL(P,g){
+  const t=dot(vsub(P,g.p),g.u).div(dot(g.u,g.u)); const F=vadd(g.p,vsc(t,g.u));
+  return {t,F,d:len(vsub(P,F))};
+}
+function distSkew(g,h){
+  const n=cross(g.u,h.u); const w=vsub(h.p,g.p);
+  const d=sdiv(sq(dot(w,n).abs()),len(n));
+  const W=vsub(g.p,h.p);
+  const sol=solve([[dot(g.u,g.u),dot(h.u,g.u).neg()],[dot(g.u,h.u),dot(h.u,h.u).neg()]],[dot(W,g.u).neg(),dot(W,h.u).neg()]);
+  const [r,s]=sol.x;
+  return {n,w,d,r,s,Fg:vadd(g.p,vsc(r,g.u)),Fh:vadd(h.p,vsc(s,h.u))};
+}
+const reflPE=(P,E)=>{const {F}=distPE(P,E);return vsub(vsc(q(2),F),P);};
+const cosS=(a,b,absv)=>{let d=dot(a,b);if(absv)d=d.abs();return sdiv(sq(d),smul(len(a),len(b)));};
+const clamp=x=>Math.max(-1,Math.min(1,x));
+const acosd=s=>Math.acos(clamp(snum(s)))*180/Math.PI;
+const asind=s=>Math.asin(clamp(snum(s)))*180/Math.PI;
+function matmul(A,B){return A.map(r=>B[0].map((_,j)=>r.reduce((s,x,k)=>s.add(x.mul(B[k][j])),Q0)));}
+
+/* =====================================================================
+   2) AUSGABE-FORMATIERUNG (HTML)
+   ===================================================================== */
+const MI='−';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const vn=s=>`<span class="vn">${s}</span>`;
+const XV=vn('x');
+const XS=['x<sub>1</sub>','x<sub>2</sub>','x<sub>3</sub>'];
+function fq(x){const neg=x.n<0n,n=babs(x.n);if(x.d===1n)return(neg?MI:'')+n;return(neg?MI:'')+`<span class="fr"><span>${n}</span><span>${x.d}</span></span>`;}
+const fqp=x=>(x.n<0n||x.d!==1n)?'('+fq(x)+')':fq(x);
+function dec(x,dg=4){if(!isFinite(x))return'–';const f=10**dg;let v=Math.round(x*f)/f;if(v===0)v=0;return v.toLocaleString('de-DE',{maximumFractionDigits:dg}).replace('-',MI);}
+const fqx=x=>x.int()?fq(x):fq(x)+` <span class="ap">≈ ${dec(x.num())}</span>`;
+function fs(a){
+  if(a.r===1n) return fq(a.c);
+  const neg=a.c.n<0n,m=a.c.abs(); const rt=`<span class="sr">√</span><span class="rad">${a.r}</span>`;
+  const nu=(m.n===1n?'':m.n)+rt;
+  return (neg?MI:'')+(m.d===1n?nu:`<span class="fr"><span>${nu}</span><span>${m.d}</span></span>`);
+}
+const fsx=a=>(a.r===1n&&a.c.int())?fs(a):fs(a)+` <span class="ap">≈ ${dec(snum(a))}</span>`;
+const fv=a=>`<span class="cv">${a.map(x=>`<span>${fq(x)}</span>`).join('')}</span>`;
+const fvd=a=>`<span class="cv">${a.map(x=>`<span>${dec(x.num())}</span>`).join('')}</span>`;
+const fvx=a=>a.every(x=>x.int())?fv(a):fv(a)+` <span class="ap">≈ ${fvd(a)}</span>`;
+function fvs(a){const ex=`<span class="cv">${a.map(x=>`<span>${fs(x)}</span>`).join('')}</span>`;
+  return a.every(x=>x.r===1n&&x.c.int())?ex:ex+` <span class="ap">≈ <span class="cv">${a.map(x=>`<span>${dec(snum(x))}</span>`).join('')}</span></span>`;}
+function fpt(nm,a){const ex=`${nm}(${a.map(fq).join(' | ')})`;
+  return a.every(x=>x.int())?ex:ex+` <span class="ap">≈ ${nm}(${a.map(x=>dec(x.num())).join(' | ')})</span>`;}
+function fdeg(x){const r=Math.round(x);return Math.abs(x-r)<1e-9?`= ${r}°`:`≈ ${dec(x,2)}°`;}
+const fline=(nm,L,par='r')=>`${nm}: ${XV} = ${fv(L.p)} + ${par} · ${fv(L.u)}`;
+const fplP=(nm,E)=>`${nm}: ${XV} = ${fv(E.p)} + r · ${fv(E.u)} + s · ${fv(E.v)}`;
+/* lineare Terme: c + k1·v1 + k2·v2 … mit sauberen Vorzeichen */
+function fLin(c,terms,sep=''){
+  let h=''; const push=(neg,body)=>{h+=h===''?(neg?MI:'')+body:(neg?' − ':' + ')+body;};
+  if(c&&!c.z()) push(c.sg()<0,fq(c.abs()));
+  terms.forEach(([k,v])=>{if(k.z())return;const a=k.abs();push(k.sg()<0,(a.n===1n&&a.d===1n?'':fq(a)+sep)+v);});
+  return h||'0';
+}
+const flhs=n=>fLin(null,n.map((c,i)=>[c,XS[i]]));
+const fkoord=(nm,E)=>`${nm}: ${flhs(E.n)} = ${fq(E.d)}`;
+const fnorm=(nm,E)=>`${nm}: [${XV} − ${fv(E.p)}] · ${fv(E.n)} = 0`;
+function fhnf(nm,E){const L=len(E.n);if(L.r===1n&&L.c.eq(Q1))return fkoord(nm,E)+' <span class="ap">(|n| = 1)</span>';const top=flhs(E.n)+(E.d.z()?'':(E.d.sg()>0?' − ':' + ')+fq(E.d.abs()));
+  return `${nm}: <span class="fr"><span>${top}</span><span>${fs(L)}</span></span> = 0`;}
+const sumSq=v=>v.map(x=>fqp(x)+'²').join(' + ')+' = '+fq(dot(v,v));
+const dotExpr=(a,b)=>a.map((x,i)=>fqp(x)+' · '+fqp(b[i])).join(' + ')+' = '+fq(dot(a,b));
+function fsum(list){ // Summe von Wurzeltermen, gleiche Radikanden zusammenfassen
+  const m=new Map(); list.forEach(s=>{const k=s.r.toString();m.set(k,(m.get(k)||Q0).add(s.c));});
+  const terms=[...m.entries()].filter(([,c])=>!c.z()).sort((a,b)=>BI(a[0])<BI(b[0])?-1:1).map(([k,c])=>({c,r:BI(k)}));
+  if(!terms.length) return '0';
+  let h=''; terms.forEach((t,i)=>{const neg=t.c.sg()<0;const body=fs({c:t.c.abs(),r:t.r});h+=i===0?(neg?MI:'')+body:(neg?' − ':' + ')+body;});
+  const tot=list.reduce((s,x)=>s+snum(x),0);
+  return (terms.length===1&&terms[0].r===1n&&terms[0].c.int())?h:h+` <span class="ap">≈ ${dec(tot)}</span>`;
+}
+const fmat=(M,f=fq,aug=-1)=>`<table class="mat">${M.map(r=>`<tr>${r.map((x,j)=>`<td${j===aug?' class="ag"':''}>${f(x)}</td>`).join('')}</tr>`).join('')}</table>`;
+const fmatx=M=>{const f=M.flat();if(f.every(x=>x.int()))return fmat(M);const d=fmat(M,x=>dec(x.num()));
+  return f.some(x=>x.d>100000n)?'≈ '+d+' <span class="ap">(exakte Brüche zu lang)</span>':fmat(M)+` <span class="ap">≈ ${d}</span>`;};
+
+class Out{
+  constructor(){this.a=[];this.s=[];}
+  v(t,k='ok'){this.a.push(`<div class="verdict ${k}">${t}</div>`);}
+  m(l,h){this.a.push(`<div class="row main"><div class="lb">${l}</div><div class="vl">${h}</div></div>`);}
+  r(l,h){this.a.push(`<div class="row"><div class="lb">${l}</div><div class="vl">${h}</div></div>`);}
+  st(l,h){this.s.push(`<div class="row"><div class="lb">${l}</div><div class="vl">${h}</div></div>`);}
+  n(t){this.a.push(`<div class="note">${t}</div>`);}
+  h(t){this.a.push(`<h3>${t}</h3>`);}
+  html(){return this.a.join('')+(this.s.length?`<div class="steps"><div class="stt">Zwischenergebnisse</div>${this.s.join('')}</div>`:'');}
+}
+
+/* =====================================================================
+   3) EINGABE-WIDGETS
+   ===================================================================== */
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+function mkBox(ph){const i=el('input','bx');i.type='text';i.autocomplete='off';i.spellcheck=false;if(ph)i.placeholder=ph;return i;}
+function splitParts(v){
+  let s=v.trim(); if(!/[|;\s]/.test(s)) return null;
+  s=s.replace(/^[A-Za-z][A-Za-z0-9']*\s*(?=\()/,'').replace(/^\(/,'').replace(/\)$/,'').replace(/\s*([+*/^])\s*/g,'$1');
+  const parts=s.split(/[|;\s]+/).filter(x=>x!==''); return parts.length>=2?parts:null;
+}
+/* "1|2|3" oder "1 2 3" in ein Feld → auf die Felder der Gruppe verteilen */
+function linkGroup(bs){
+  bs.forEach((b,idx)=>b.addEventListener('input',()=>{
+    const parts=splitParts(b.value); if(!parts) return;
+    for(let k=0;k<parts.length&&idx+k<bs.length;k++) bs[idx+k].value=parts[k];
+    const last=Math.min(idx+parts.length,bs.length)-1; bs[last].focus();
+    const L=bs[last].value.length; bs[last].setSelectionRange(L,L);
+  }));
+}
+function readTriple(bs,opt){const v=bs.map(b=>parseQ(b.value));
+  if(v.every(x=>x===null)){if(opt)return null;throw new Incomplete();}
+  if(v.some(x=>x===null)) throw new Incomplete(); return v;}
+function setTriple(bs,s){const p=(s==null||s==='')?[]:String(s).split('|');bs.forEach((b,i)=>b.value=p[i]??'');}
+
+function wPt(key,label=key,opt=false){
+  const bs=[mkBox(),mkBox(),mkBox()]; linkGroup(bs);
+  const e=el('span','w wpt'); e.append(el('span','lbl',label+'('),bs[0],el('span','sep','|'),bs[1],el('span','sep','|'),bs[2],el('span','lbl',')'));
+  return {key,el:e,get:()=>readTriple(bs,opt),set:s=>setTriple(bs,s)};
+}
+function bareVec(){const bs=[mkBox(),mkBox(),mkBox()];linkGroup(bs);const e=el('span','vin');bs.forEach(b=>e.append(b));
+  return {el:e,get:o=>readTriple(bs,o),set:s=>setTriple(bs,s)};}
+function wVec(key,label,opt=false){const v=bareVec();const e=el('span','w wvec');e.append(el('span','lbl',label+' ='),v.el);
+  return {key,el:e,get:()=>v.get(opt),set:v.set};}
+function wNum(key,label,opt=false,ph=''){const b=mkBox(ph);const e=el('span','w wnum');e.append(el('span','lbl',/[=≤≥<>:]$/.test(label)?label:label+' ='),b);
+  return {key,el:e,get(){const x=parseQ(b.value);if(x===null&&!opt)throw new Incomplete();return x;},set(s){b.value=s??'';}};}
+function seg(opts,cur,onSet){
+  const e=el('div','seg'); const btns={};
+  const set=v=>{cur=v;for(const k in btns)btns[k].classList.toggle('on',k===v);onSet(v);};
+  opts.forEach(([v,t])=>{const b=el('button','',t);b.type='button';b.onclick=()=>{set(v);e.dispatchEvent(new Event('change',{bubbles:true}));};btns[v]=b;e.append(b);});
+  set(cur); return {el:e,set,get:()=>cur};
+}
+function wSel(key,label,opts,def){const e=el('span','w wsel');if(label)e.append(el('span','wname',label));const s=seg(opts,def,()=>{});e.append(s.el);
+  return {key,el:e,get:s.get,set:v=>{if(v!=null)s.set(v);}};}
+function mkSelect(vals,def){const s=el('select');vals.forEach(v=>{const o=el('option','',String(v));o.value=v;s.append(o);});s.value=def;return s;}
+
+function wLine(key,name,par){
+  const e=el('div','w wline');
+  const p=bareVec(),u=bareVec(),A=wPt('A','P'),B=wPt('B','Q');
+  const p1=el('div','eqrow');p1.append(el('span','t',`${name}: ${XV} =`),p.el,el('span','t',`+ ${par} ·`),u.el);
+  const p2=el('div','eqrow');p2.append(el('span','t',`${name} durch`),A.el,el('span','t','und'),B.el);
+  const sg=seg([['pr','Stütz- + Richtungsvektor'],['pp','zwei Punkte']],'pr',m=>{p1.hidden=m!=='pr';p2.hidden=m!=='pp';});
+  const hd=el('div','whead');hd.append(el('span','wname',`Gerade ${name}`),sg.el);
+  e.append(hd,p1,p2);
+  const subs={p,u,A,B};
+  return {key,el:e,
+    get(){
+      if(sg.get()==='pr'){const P=p.get(),U=u.get();if(vz(U))throw new MErr(`Der Richtungsvektor von ${name} darf nicht der Nullvektor sein.`);return {p:P,u:U};}
+      const a=A.get(),b=B.get(),U=vsub(b,a);if(vz(U))throw new MErr(`Die beiden Punkte für ${name} sind identisch.`);return {p:a,u:U};
+    },
+    set(x){Object.values(subs).forEach(s=>s.set(null));if(x){sg.set(x.m);for(const k in x)if(subs[k])subs[k].set(x[k]);}}
+  };
+}
+function wPlane(key,name){
+  const e=el('div','w wplane');
+  const kb=[mkBox('0'),mkBox('0'),mkBox('0'),mkBox()]; linkGroup(kb);
+  const pk=el('div','eqrow');pk.append(el('span','t',name+':'),kb[0],el('span','t',XS[0]+' +'),kb[1],el('span','t',XS[1]+' +'),kb[2],el('span','t',XS[2]+' ='),kb[3]);
+  const pp=bareVec(),pu=bareVec(),pv=bareVec();
+  const pa=el('div','eqrow');pa.append(el('span','t',`${name}: ${XV} =`),pp.el,el('span','t','+ r ·'),pu.el,el('span','t','+ s ·'),pv.el);
+  const np=bareVec(),nn=bareVec();
+  const pn=el('div','eqrow');pn.append(el('span','t',`${name}: [ ${XV} −`),np.el,el('span','t','] ·'),nn.el,el('span','t','= 0'));
+  const A=wPt('A','A'),B=wPt('B','B'),C=wPt('C','C');
+  const p3=el('div','eqrow');p3.append(el('span','t',name+' durch'),A.el,B.el,C.el);
+  const panes={p:pa,k:pk,n:pn,'3':p3};
+  const sg=seg([['p','Parameterform'],['k','Koordinatenform'],['n','Normalenform'],['3','3 Punkte']],'p',m=>{for(const k in panes)panes[k].hidden=k!==m;});
+  const hd=el('div','whead');hd.append(el('span','wname',`Ebene ${name}`),sg.el);
+  e.append(hd,pa,pk,pn,p3);
+  const subs={k:{set:s=>setTriple(kb,s)},p:pp,u:pu,v:pv,np,nn,A,B,C};
+  return {key,el:e,
+    get(){
+      switch(sg.get()){
+        case 'k':{const vals=kb.map(b=>parseQ(b.value));if(vals.every(x=>x===null)||vals[3]===null)throw new Incomplete();
+          return planeND(vals.slice(0,3).map(x=>x??Q0),vals[3]);}
+        case 'p':return mkPlane(pp.get(),pu.get(),pv.get());
+        case 'n':{const P=np.get(),N=nn.get();const E=planeND(N,dot(N,P));E.p=P;return E;}
+        default:{const a=A.get(),b=B.get(),c=C.get();const u=vsub(b,a),v=vsub(c,a);
+          if(vz(cross(u,v)))throw new MErr(`Die drei Punkte liegen auf einer Geraden – sie legen keine Ebene fest.`);return mkPlane(a,u,v);}
+      }
+    },
+    set(x){Object.values(subs).forEach(s=>s.set(null));if(x){sg.set(x.m);for(const k in x)if(subs[k])subs[k].set(x[k]);}}
+  };
+}
+function wMatrix(name){
+  const e=el('span','w');const grid=el('span','mgrid');e.append(el('span','lbl',name+' ='),grid);
+  let boxes=[];
+  function dims(R,C){const old=boxes.map(r=>r.map(b=>b.value));grid.innerHTML='';grid.style.gridTemplateColumns=`repeat(${C},auto)`;boxes=[];
+    for(let i=0;i<R;i++){const row=[];for(let j=0;j<C;j++){const b=mkBox('0');b.value=old[i]?.[j]??'';grid.append(b);row.push(b);}linkGroup(row);boxes.push(row);}}
+  return {el:e,dims,
+    get(opt){const v=boxes.map(r=>r.map(b=>parseQ(b.value)));if(v.flat().every(x=>x===null)){if(opt)return null;throw new Incomplete();}return v.map(r=>r.map(x=>x??Q0));},
+    set(M){boxes.flat().forEach(b=>b.value='');if(M)M.forEach((row,i)=>row.split('|').forEach((x,j)=>{if(boxes[i]?.[j])boxes[i][j].value=x;}));}};
+}
+
+/* =====================================================================
+   4) STOCHASTIK-KERN
+   ===================================================================== */
+Q.prototype.num=function(){ // auch für sehr große Zähler/Nenner
+  const ln=this.n.toString().length, ld=this.d.toString().length; const sh=Math.max(0,Math.max(ln,ld)-300);
+  if(!sh) return Number(this.n)/Number(this.d); const f=10n**BI(sh); return Number(this.n/f)/Number(this.d/f);
+};
+Out.prototype.raw=function(h){this.a.push(`<div class="figure">${h}</div>`);};
+
+const LGc=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+function lgamma(x){if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-lgamma(1-x);x-=1;let a=LGc[0];const t=x+7.5;for(let i=1;i<9;i++)a+=LGc[i]/(x+i);return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a);}
+function bpmf(n,p,k){if(k<0||k>n)return 0;if(p<=0)return k===0?1:0;if(p>=1)return k===n?1:0;
+  return Math.exp(lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1)+k*Math.log(p)+(n-k)*Math.log1p(-p));}
+function bsum(n,p,a,b){a=Math.max(0,Math.ceil(a));b=Math.min(n,Math.floor(b));let s=0;for(let k=a;k<=b;k++)s+=bpmf(n,p,k);return Math.min(1,Math.max(0,s));}
+const FACT=[1n];
+function fact(n){for(let i=FACT.length;i<=n;i++)FACT.push(FACT[i-1]*BI(i));return FACT[n];}
+function bigBinom(n,k){n=BI(n);k=BI(k);if(k<0n||k>n)return 0n;if(k>n-k)k=n-k;let r=1n;for(let i=1n;i<=k;i++)r=r*(n-k+i)/i;return r;}
+const qpow=(x,e)=>new Q(x.n**BI(e),x.d**BI(e));
+function exactSum(n,p,a,b){ // exakte Binomialwahrscheinlichkeit, nur wenn kurz darstellbar
+  if(n>200)return null;a=Math.max(0,a);b=Math.min(n,b);let s=Q0;const qq=Q1.sub(p);
+  for(let k=a;k<=b;k++)s=s.add(new Q(bigBinom(n,k)).mul(qpow(p,k)).mul(qpow(qq,n-k)));
+  return s.d<=10n**12n?s:null;
+}
+const LN_SQRT2PI=0.9189385332046727;
+const phi=z=>Math.exp(-0.5*z*z-LN_SQRT2PI);
+function Phi(z){if(z<-8.5)return 0;if(z>8.5)return 1;let s=z,t=z;const z2=z*z;
+  for(let i=3;i<2000;i+=2){t*=z2/i;s+=t;if(Math.abs(t)<=1e-17*Math.abs(s))break;}
+  return Math.min(1,Math.max(0,0.5+s*phi(z)));}
+function invPhi(p){if(p<=0)return -Infinity;if(p>=1)return Infinity;
+  const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  const b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  const c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  const d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  let x;const pl=0.02425;
+  if(p<pl){const q=Math.sqrt(-2*Math.log(p));x=(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  else if(p<=1-pl){const q=p-0.5,r=q*q;x=(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+  else{const q=Math.sqrt(-2*Math.log(1-p));x=-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  for(let i=0;i<3;i++){x-=(Phi(x)-p)/phi(x);}return x;}
+
+/* Formatierung */
+function decP(x){if(x===0)return'0';if(x<1&&x>=0.99995)return '&gt; 0,9999';if(x>=0.00005||x===1)return dec(x,4);const e=Math.floor(Math.log10(x));return dec(x/10**e,2)+' · 10<sup>'+MI+(-e)+'</sup>';}
+const pct=x=>dec(x*100,2)+' %';
+const fP=x=>`${decP(x)} <span class="ap">(${x>0&&x<0.00005?'&lt; 0,01 %':pct(x)})</span>`;
+const fqP=x=>x.d<=10n**15n?(x.int()?fq(x):fq(x)+` <span class="ap">≈ ${decP(x.num())} (${pct(x.num())})</span>`):fP(x.num());
+const fqS=x=>x.d<=10n**6n?fqx(x):'≈ '+dec(x.num(),4);
+const fbin=(n,k)=>`<span class="cv"><span>${n}</span><span>${k}</span></span>`;
+function fBig(b){const s=b.toString();if(s.length<=24)return s.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return `≈ ${s[0]},${s.slice(1,4)} · 10<sup>${s.length-1}</sup> <span class="ap">(${s.length} Stellen)</span>`;}
+const ov=s=>`<span class="ov">${s}</span>`;
+function needInt(x,name,min=0,max=1e6){if(!x.int())throw new MErr(`${name} muss eine ganze Zahl sein.`);const v=Number(x.n);
+  if(v<min||v>max)throw new MErr(`${name} muss zwischen ${min} und ${dec(max,0)} liegen.`);return v;}
+function needP(x,name='p'){if(x.sg()<0||x.num()>1)throw new MErr(`${name} muss zwischen 0 und 1 liegen.`);return x;}
+function needOpen(x,name){if(x.sg()<=0||x.num()>=1)throw new MErr(`${name} muss echt zwischen 0 und 1 liegen.`);return x;}
+const fz=x=>dec(x,4);
+const CV=[['1','68,3 % (1σ)'],['1.64','90 % (1,64σ)'],['1.96','95 % (1,96σ)'],['2','95,4 % (2σ)'],['2.58','99 % (2,58σ)'],['3','99,7 % (3σ)']];
+const cLab=c=>CV.find(x=>x[0]===c)[1];
+
+/* Diagramme (SVG) */
+function niceStep(x){if(x<=0)return 1;const e=10**Math.floor(Math.log10(x));const f=x/e;return(f<=1?1:f<=2?2:f<=5?5:10)*e;}
+function histSVG(n,p,lo,hi){
+  const mu=n*p,sd=Math.sqrt(n*p*(1-p));let k0=0,k1=n;
+  if(n>60){k0=Math.max(0,Math.floor(mu-4.5*sd)-1);k1=Math.min(n,Math.ceil(mu+4.5*sd)+1);if(k1-k0<12){k0=Math.max(0,k0-6);k1=Math.min(n,k1+6);}}
+  const ks=[];for(let k=k0;k<=k1;k++)ks.push(k);const vals=ks.map(k=>bpmf(n,p,k));const mx=Math.max(...vals)||1;
+  const W=720,H=230,L=48,R=10,T=12,B=28,bw=(W-L-R)/ks.length;const Y=y=>T+(H-T-B)*(1-y/mx);
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="chart">`;const st=niceStep(mx/4);
+  for(let y=0;y<=mx*1.0001;y+=st)s+=`<line x1="${L}" x2="${W-R}" y1="${Y(y)}" y2="${Y(y)}" class="gridl"/><text x="${L-6}" y="${Y(y)+4}" class="tk" text-anchor="end">${dec(y,3)}</text>`;
+  ks.forEach((k,i)=>{const on=lo!=null&&k>=lo&&k<=hi;const y=Y(vals[i]);s+=`<rect x="${L+i*bw+bw*0.08}" y="${y}" width="${bw*0.84}" height="${H-B-y}" class="${on?'bon':'bar'}"><title>k = ${k}: ${dec(vals[i],4)}</title></rect>`;});
+  const ev=Math.max(1,Math.ceil(ks.length/24));ks.forEach((k,i)=>{if(k%ev===0)s+=`<text x="${L+(i+0.5)*bw}" y="${H-B+16}" class="tk" text-anchor="middle">${k}</text>`;});
+  s+=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" class="axis"/>`;
+  if(n>60)s+=`<text x="${W-R}" y="${T+4}" class="tk" text-anchor="end">Ausschnitt k = ${k0} … ${k1}</text>`;
+  return s+'</svg>';
+}
+function normSVG(mu,sd,a,b){
+  const W=720,H=220,L=14,R=14,T=10,B=28,x0=mu-4*sd,x1=mu+4*sd;const X=x=>L+(x-x0)/(x1-x0)*(W-L-R);
+  const ym=1/sd*Math.exp(-LN_SQRT2PI);const f=x=>phi((x-mu)/sd)/sd;const Y=y=>H-B-(y/ym)*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="chart">`;
+  const aa=Math.max(a,x0),bb=Math.min(b,x1);
+  if(aa<bb){let pts=`${X(aa)},${H-B} `;for(let i=0;i<=120;i++){const x=aa+(bb-aa)*i/120;pts+=`${X(x)},${Y(f(x))} `;}pts+=`${X(bb)},${H-B}`;s+=`<polygon points="${pts}" class="shade"/>`;}
+  let cp='';for(let i=0;i<=240;i++){const x=x0+(x1-x0)*i/240;cp+=`${X(x)},${Y(f(x))} `;}s+=`<polyline points="${cp}" class="curve"/>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" class="axis"/>`;
+  for(let k=-3;k<=3;k++){const x=mu+k*sd;s+=`<line x1="${X(x)}" x2="${X(x)}" y1="${H-B}" y2="${H-B+5}" class="axis"/><text x="${X(x)}" y="${H-B+18}" class="tk" text-anchor="middle">${k===0?'μ = ':''}${dec(x,2)}</text>`;}
+  return s+'</svg>';
+}
+function boxSVG(v){ // [min,q1,med,q3,max] als Zahlen
+  const W=720,H=96,L=30,R=30;const lo=v[0],hi=v[4],span=hi-lo||1;const X=x=>L+(x-lo)/span*(W-L-R);const y=38;
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="chart">`;
+  s+=`<line x1="${X(v[0])}" x2="${X(v[1])}" y1="${y}" y2="${y}" class="axis"/><line x1="${X(v[3])}" x2="${X(v[4])}" y1="${y}" y2="${y}" class="axis"/>`;
+  s+=`<rect x="${X(v[1])}" y="${y-18}" width="${Math.max(1,X(v[3])-X(v[1]))}" height="36" class="boxr"/>`;
+  [0,2,4].forEach(i=>s+=`<line x1="${X(v[i])}" x2="${X(v[i])}" y1="${y-(i===2?18:12)}" y2="${y+(i===2?18:12)}" class="${i===2?'medl':'axis'}"/>`);
+  const st=niceStep(span/8);for(let t=Math.ceil(lo/st)*st;t<=hi+1e-9;t+=st)s+=`<text x="${X(t)}" y="${H-10}" class="tk" text-anchor="middle">${dec(t,3)}</text><line x1="${X(t)}" x2="${X(t)}" y1="${H-30}" y2="${H-25}" class="axis"/>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${H-30}" y2="${H-30}" class="axis"/>`;
+  return s+'</svg>';
+}
+const fT=x=>x===null?'–':(x.int()?String(x.n):(x.d<=1000n?`${x.n}/${x.d}`:dec(x.num(),4)));
+function treeSVG(r,kids,lw){ // r: [[svgLabel,Q],…], kids: [[[svgLabel,Q|null],…],…]
+  const w1=lw*9+10;const W=330+2*w1,H=236,ry=118,y1=[60,176],ly=[[28,92],[144,208]];
+  const t=(x,y,s,c,an='start')=>`<text x="${x}" y="${y}" class="${c}" text-anchor="${an}">${s}</text>`;
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="tree">`;const x1=120,x2=x1+w1+6,x3=x2+100,x4=x3+w1+6;
+  r.forEach(([lab,p],i)=>{
+    s+=`<line x1="10" y1="${ry}" x2="${x1-6}" y2="${y1[i]}" class="br"/>`+t((10+x1)/2,(ry+y1[i])/2+(i?18:-7),fT(p),'bp','middle')+t(x1,y1[i]+5,lab,'nd');
+    kids[i].forEach(([l2,p2],j)=>{const pr=(p2===null)?null:p.mul(p2);
+      s+=`<line x1="${x2}" y1="${y1[i]}" x2="${x3-6}" y2="${ly[i][j]}" class="br"/>`+t((x2+x3)/2,(y1[i]+ly[i][j])/2+(j?17:-6),fT(p2),'bp','middle')+t(x3,ly[i][j]+5,l2,'nd')+t(x4,ly[i][j]+5,'→ '+fT(pr===null?Q0:pr),'lf');});
+  });
+  return s+'</svg>';
+}
+
+/* zusätzliche Widgets */
+function wModes(key,label,modes,def){
+  const e=el('div','w wmodes');const panes={},subs={};
+  const sg=seg(modes.map(m=>[m[0],m[1]]),def,m=>{for(const k in panes)panes[k].hidden=k!==m;});
+  const hd=el('div','whead');if(label)hd.append(el('span','wname',label));hd.append(sg.el);e.append(hd);
+  modes.forEach(([id,,ws])=>{const p=el('div','eqrow');ws.forEach(w=>p.append(w.el));panes[id]=p;subs[id]=ws;e.append(p);});sg.set(def);
+  return {key,el:e,
+    get(){const m=sg.get(),v={m};subs[m].forEach(w=>v[w.key]=w.get());return v;},
+    set(x){Object.values(subs).flat().forEach(w=>w.set&&w.set(null));if(x){sg.set(x.m);subs[x.m].forEach(w=>{if(x[w.key]!==undefined)w.set(x[w.key]);});}}};
+}
+function parseList(s){s=String(s).replace(/,\s+/g,' ').trim();if(!s)return[];return s.split(/[\s;|]+/).filter(Boolean).map(t=>parseQ(t));}
+function wData(key){
+  const e=el('div','w wmodes');const ta=el('textarea','ta');ta.rows=3;ta.placeholder='Urliste, z. B. 12 15 9 11 15 18 (Dezimalkomma erlaubt)';ta.spellcheck=false;
+  const iv=el('input','tl');iv.placeholder='Werte, z. B. 1 2 3 4 5';const ih=el('input','tl');ih.placeholder='Häufigkeiten, z. B. 3 7 9 5 1';
+  const pu=el('div','eqrow');pu.append(ta);const pf=el('div','eqrow');pf.style.flexDirection='column';pf.style.alignItems='flex-start';pf.append(iv,ih);
+  const sg=seg([['u','Urliste'],['f','Häufigkeitstabelle']],'u',m=>{pu.hidden=m!=='u';pf.hidden=m!=='f';});
+  const hd=el('div','whead');hd.append(el('span','wname','Daten'),sg.el);e.append(hd,pu,pf);
+  return {key,el:e,
+    get(){if(sg.get()==='u'){const l=parseList(ta.value);if(!l.length)throw new Incomplete();return {x:l,f:l.map(()=>Q1)};}
+      const x=parseList(iv.value),f=parseList(ih.value);if(!x.length||!f.length)throw new Incomplete();
+      if(x.length!==f.length)throw new InErr(`Anzahl der Werte (${x.length}) und der Häufigkeiten (${f.length}) stimmt nicht überein.`);return {x,f};},
+    set(x){ta.value='';iv.value='';ih.value='';if(x){sg.set(x.m);ta.value=x.u||'';iv.value=x.x||'';ih.value=x.f||'';}}};
+}
+function wDist(key){
+  const e=el('div','w wmodes');const sel=mkSelect([2,3,4,5,6,7,8,9,10,11,12],4);const dm=el('div','dims');dm.append('Anzahl der Werte',sel);
+  const grid=el('div','dgrid');e.append(dm,grid);let xs=[],ps=[];
+  function upd(){const n=+sel.value;const ox=xs.map(b=>b.value),op=ps.map(b=>b.value);grid.innerHTML='';grid.style.gridTemplateColumns=`auto repeat(${n},auto)`;
+    grid.append(el('span','t','x<sub>i</sub>'));xs=[];for(let i=0;i<n;i++){const b=mkBox();b.value=ox[i]??'';xs.push(b);grid.append(b);}
+    grid.append(el('span','t','P(X = x<sub>i</sub>)'));ps=[];for(let i=0;i<n;i++){const b=mkBox(i===n-1?'Rest':'');b.value=op[i]??'';ps.push(b);grid.append(b);}
+    linkGroup(xs);linkGroup(ps);}
+  sel.addEventListener('change',upd);upd();
+  return {key,el:e,
+    get(){const x=xs.map(b=>parseQ(b.value)),p=ps.map(b=>parseQ(b.value));if(x.some(v=>v===null))throw new Incomplete();
+      const miss=p.map((v,i)=>v===null?i:-1).filter(i=>i>=0);if(miss.length>1)throw new Incomplete();
+      let fill=-1;if(miss.length===1){fill=miss[0];p[fill]=Q1.sub(p.filter(v=>v!==null).reduce((s,v)=>s.add(v),Q0));}
+      return {x,p,fill};},
+    set(v){if(!v){xs.forEach(b=>b.value='');ps.forEach(b=>b.value='');return;}sel.value=v.n;upd();
+      const a=v.x.split('|'),b=v.p.split('|');xs.forEach((bx,i)=>bx.value=a[i]??'');ps.forEach((bx,i)=>bx.value=b[i]??'');}};
+}
+const CONDS=[['AB','A','B',0,[0,1]],['AnB','A','nB',1,[0,1]],['nAB','nA','B',2,[2,3]],['nAnB','nA','nB',3,[2,3]],
+             ['BA','B','A',0,[0,2]],['BnA','B','nA',2,[0,2]],['nBA','nB','A',1,[1,3]],['nBnA','nB','nA',3,[1,3]]];
+function wVierfeld(key){
+  const e=el('div','w wmodes');
+  const nA=el('input','bx nm'),nB=el('input','bx nm');nA.value='A';nB.value='B';nA.maxLength=nB.maxLength=6;nA.title='Name Ereignis 1';nB.title='Name Ereignis 2';
+  const cells=[...Array(9)].map(()=>mkBox());cells[8].placeholder='1';
+  const sg=seg([['p','Wahrscheinlichkeiten'],['h','absolute Häufigkeiten']],'p',m=>{cells[8].placeholder=m==='p'?'1':'gesamt';});
+  const hd=el('div','whead');hd.append(el('span','wname','Ereignisse'),nA,nB,sg.el);
+  const tbl=el('table','vfin');const L={};
+  const th=k=>{const t=el('th');L[k]=(L[k]||[]);L[k].push(t);return t;};
+  let tr=el('tr');tr.append(el('th'),th('B'),th('nB'),el('th','','Σ'));tbl.append(tr);
+  [['A',0],['nA',3],['S',6]].forEach(([k,o])=>{const r=el('tr');r.append(k==='S'?el('th','','Σ'):th(k));for(let j=0;j<3;j++){const td=el('td');td.append(cells[o+j]);r.append(td);}tbl.append(r);});
+  const cg=el('div','condgrid');const cb={},cl={};
+  CONDS.forEach(([k])=>{const lab=el('label');const sp=el('span');cl[k]=sp;cb[k]=mkBox();lab.append(sp,cb[k]);cg.append(lab);});
+  e.append(hd,tbl,el('div','wname','Bedingte Wahrscheinlichkeiten (optional)'),cg);
+  function relabel(){const a=esc(nA.value.trim()||'A'),b=esc(nB.value.trim()||'B');const nm={A:a,nA:ov(a),B:b,nB:ov(b)};
+    for(const k in L)L[k].forEach(t=>t.innerHTML=nm[k]);CONDS.forEach(([k,c,ev])=>cl[k].innerHTML=`P<sub>${nm[c]}</sub>(${nm[ev]}) =`);}
+  nA.addEventListener('input',relabel);nB.addEventListener('input',relabel);relabel();
+  return {key,el:e,
+    get(){const c=cells.map(b=>parseQ(b.value));const k={};CONDS.forEach(([q_])=>k[q_]=parseQ(cb[q_].value));
+      if(c.every(x=>x===null)&&Object.values(k).every(x=>x===null))throw new Incomplete();
+      return {m:sg.get(),A:nA.value.trim()||'A',B:nB.value.trim()||'B',c,k};},
+    set(x){cells.forEach(b=>b.value='');Object.values(cb).forEach(b=>b.value='');
+      if(x){sg.set(x.m);nA.value=x.A||'A';nB.value=x.B||'B';(x.cells||[]).forEach((s,i)=>cells[i].value=s);for(const k in(x.cond||{}))cb[k].value=x.cond[k];}relabel();}};
+}
+
+/* =====================================================================
+   5) RECHNER
+   ===================================================================== */
+const CALCS=[];
+const def=c=>CALCS.push(c);
+const G={stat:'Beschreibende Statistik',mehr:'Mehrstufige Zufallsexperimente',zg:'Zufallsgrößen',bin:'Binomialverteilung',beur:'Beurteilende Statistik',norm:'Normalverteilung'};
+const LKtag=' <span class="lk">LK</span>';
+
+/* ---------- Beschreibende Statistik ---------- */
+def({g:G.stat,id:'stichprobe',t:'Lage- und Streumaße einer Stichprobe',
+  inp:()=>[wData('D'),wSel('qm','Quartile',[['h','Median der Hälften'],['q','Quantil-Definition (n·p)']],'h')],
+  ex:{D:{m:'u',u:'12 15 9 11 15 18 10 14 13 15 8 16'},qm:'h'},
+  run({D,qm},o){
+    const map=new Map();D.x.forEach((x,i)=>{const k=x.n+'/'+x.d;const e=map.get(k);if(e)e.f=e.f.add(D.f[i]);else map.set(k,{x,f:D.f[i]});});
+    if([...map.values()].some(e=>e.f.sg()<0))throw new MErr('Häufigkeiten dürfen nicht negativ sein.');
+    const pr=[...map.values()].filter(e=>!e.f.z()).sort((a,b)=>a.x.sub(b.x).sg());if(!pr.length)throw new Incomplete();
+    const N=pr.reduce((s,e)=>s.add(e.f),Q0);const sx=pr.reduce((s,e)=>s.add(e.f.mul(e.x)),Q0);const mean=sx.div(N);
+    const ss=pr.reduce((s,e)=>{const d=e.x.sub(mean);return s.add(e.f.mul(d).mul(d));},Q0);const vr=ss.div(N);
+    const intW=pr.every(e=>e.f.int());const mn=pr[0].x,mx=pr[pr.length-1].x;
+    o.m('Arithmetisches Mittel x̄',fqx(mean));
+    let q1,q3,med;
+    if(intW){const n=Number(N.n);const cum=[];let c=0;pr.forEach(e=>{c+=Number(e.f.n);cum.push(c);});
+      const at=pos=>{for(let i=0;i<pr.length;i++)if(pos<=cum[i])return pr[i].x;return mx;};
+      const medR=(lo,hi)=>{const m=hi-lo+1;if(m<=0)return null;if(m%2)return at(lo+(m-1)/2);return at(lo+m/2-1).add(at(lo+m/2)).mul(HALF);};
+      med=medR(1,n);
+      if(qm==='h'){const h=Math.floor(n/2);q1=medR(1,h)??med;q3=medR(n-h+1,n)??med;}
+      else{const Qp=pp=>{const np=n*pp;return Number.isInteger(np)?at(np).add(at(np+1)).mul(HALF):at(Math.ceil(np));};q1=Qp(0.25);q3=Qp(0.75);}
+      o.m('Median',fqx(med));
+      o.r('Quartile',`Q<sub>1</sub> = ${fqx(q1)}, &nbsp; Q<sub>3</sub> = ${fqx(q3)}`);
+      o.r('Quartilsabstand Q<sub>3</sub> − Q<sub>1</sub>',fqx(q3.sub(q1)));}
+    else o.n('Häufigkeiten sind nicht ganzzahlig (relative Häufigkeiten) – Median und Quartile werden nicht bestimmt.');
+    o.r('Minimum / Maximum',`${fqx(mn)} &nbsp;/&nbsp; ${fqx(mx)}`);o.r('Spannweite',fqx(mx.sub(mn)));
+    const fm=pr.reduce((m,e)=>e.f.sub(m).sg()>0?e.f:m,Q0);const mods=pr.filter(e=>e.f.eq(fm)).map(e=>fq(e.x));
+    o.r('Modalwert',mods.length===pr.length&&pr.length>1?'keiner (alle Werte gleich häufig)':mods.join('; '));
+    o.m('Empirische Varianz s² <span class="ap">(Division durch n)</span>',fqx(vr));o.m('Standardabweichung s',fsx(sqrtQ(vr)));
+    if(intW&&N.num()>1){const v2=ss.div(N.sub(Q1));o.r('korrigierte Stichprobenvarianz (Division durch n − 1)',fqx(v2)+' ; &nbsp; s = '+fsx(sqrtQ(v2)));}
+    if(intW)o.raw(boxSVG([mn,q1,med,q3,mx].map(x=>x.num())));
+    o.st('Stichprobenumfang n',fq(N));o.st('Σ x<sub>i</sub>'+(D.f.every(f=>f.eq(Q1))?'':' · h<sub>i</sub>'),fq(sx));o.st('Σ (x<sub>i</sub> − x̄)²'+(D.f.every(f=>f.eq(Q1))?'':' · h<sub>i</sub>'),fqx(ss));
+    if(intW&&N.num()<=80)o.st('Geordnet',pr.map(e=>Array(Number(e.f.n)).fill(fq(e.x)).join('; ')).join('; '));}});
+
+/* ---------- Mehrstufige Zufallsexperimente ---------- */
+def({g:G.mehr,id:'vierfeldertafel',t:'Vierfeldertafel, bedingte Wahrscheinlichkeiten, Baumdiagramme',
+  inp:()=>[wVierfeld('V')],ex:{V:{m:'p',A:'K',B:'T',cells:['','','0,02'],cond:{AB:'0,95',nAB:'0,1'}}},
+  run({V},o){
+    const {m,c,k}=V;const a=esc(V.A),b=esc(V.B);const nm={A:a,nA:ov(a),B:b,nB:ov(b)};
+    const U=[[0],[1],[0,1],[2],[3],[2,3],[0,2],[1,3],[4]];const vec=ix=>{const r=[Q0,Q0,Q0,Q0,Q0];ix.forEach(i=>r[i]=Q1);return r;};
+    const eqs=[],rhs=[];
+    c.forEach((v,i)=>{if(v===null)return;if(v.sg()<0)throw new MErr('Negative Angaben sind nicht zulässig.');
+      if(m==='p'&&v.num()>1)throw new MErr('Wahrscheinlichkeiten dürfen nicht größer als 1 sein.');eqs.push(vec(U[i]));rhs.push(v);});
+    eqs.push([Q1,Q1,Q1,Q1,q(-1)]);rhs.push(Q0);
+    if(m==='p'){eqs.push(vec([4]));rhs.push(Q1);}
+    CONDS.forEach(([key,,,num,den])=>{const cv=k[key];if(cv===null)return;needP(cv,'Eine bedingte Wahrscheinlichkeit');
+      const r=[Q0,Q0,Q0,Q0,Q0];r[num]=r[num].add(Q1);den.forEach(i=>r[i]=r[i].sub(cv));eqs.push(r);rhs.push(Q0);});
+    const sol=solve(eqs,rhs);
+    if(sol.t==='none')throw new MErr('Die Angaben widersprechen sich.');
+    if(sol.t==='inf'){if([0,1,2,3].some(i=>sol.basis.every(v=>v[i].z())&&sol.x[i].sg()<0))throw new MErr('Die Angaben führen zu negativen Werten – sie sind widersprüchlich.');o.v('Die Angaben reichen noch nicht aus – es fehlt mindestens eine weitere, unabhängige Angabe.','warn');return;}
+    const x=sol.x;const T=x[4];
+    if(x.slice(0,4).some(v=>v.sg()<0))throw new MErr('Die Angaben führen zu negativen Werten – sie sind widersprüchlich.');
+    if(T.z())throw new MErr('Die Gesamtzahl ist 0.');
+    const P=v=>v.div(T);const cellsQ=[x[0],x[1],x[0].add(x[1]),x[2],x[3],x[2].add(x[3]),x[0].add(x[2]),x[1].add(x[3]),T];
+    const tab=(vals,f)=>`<table class="vt"><tr><th></th><th>${nm.B}</th><th>${nm.nB}</th><th>Σ</th></tr>`+
+      [[nm.A,0],[nm.nA,3],['Σ',6]].map(([h,o_])=>`<tr><th>${h}</th>${[0,1,2].map(j=>`<td>${f(vals[o_+j])}</td>`).join('')}</tr>`).join('')+'</table>';
+    if(m==='h'){o.h('Vierfeldertafel (absolute Häufigkeiten)');o.raw(tab(cellsQ,v=>fqS(v)));o.h('Vierfeldertafel (Wahrscheinlichkeiten)');}
+    else o.h('Vierfeldertafel');
+    o.raw(tab(cellsQ.map(P),v=>fqS(v)));
+    o.h('Bedingte Wahrscheinlichkeiten');
+    const condV={};
+    CONDS.forEach(([key,cd,ev,num,den])=>{const d=den.reduce((s,i)=>s.add(x[i]),Q0);condV[key]=d.z()?null:x[num].div(d);
+      o.r(`P<sub>${nm[cd]}</sub>(${nm[ev]})`,condV[key]===null?'nicht definiert (Bedingung hat Wahrscheinlichkeit 0)':fqS(condV[key]));});
+    const pAB=P(x[0]),pA=P(cellsQ[2]),pB=P(cellsQ[6]);const ind=pAB.eq(pA.mul(pB));
+    o.v(ind?`${a} und ${b} sind stochastisch unabhängig`:`${a} und ${b} sind stochastisch abhängig`,ind?'ok':'info');
+    o.st('Unabhängigkeitstest',`P(${a} ∩ ${b}) = ${fqS(pAB)} &nbsp; ${ind?'=':'≠'} &nbsp; P(${a}) · P(${b}) = ${fqS(pA.mul(pB))}`);
+    const sv=(s,neg)=>neg?`<tspan class="ovs">${s}</tspan>`:s;const lw=Math.max(V.A.length,V.B.length);
+    const t1=treeSVG([[sv(a),pA],[sv(a,1),P(cellsQ[5])]],[[[sv(b),condV.AB],[sv(b,1),condV.AnB]],[[sv(b),condV.nAB],[sv(b,1),condV.nAnB]]],lw);
+    const t2=treeSVG([[sv(b),pB],[sv(b,1),P(cellsQ[7])]],[[[sv(a),condV.BA],[sv(a,1),condV.BnA]],[[sv(a),condV.nBA],[sv(a,1),condV.nBnA]]],lw);
+    o.h('Baumdiagramme');o.raw(`<div class="trees">${t1}${t2}</div>`);}});
+
+def({g:G.mehr,id:'urnenmodelle',t:'Urnenmodelle und Kombinatorik',
+  inp:()=>[wModes('M','',[
+    ['urne','Urne: genau k Treffer',[wNum('N','Kugeln gesamt N'),wNum('K','davon Treffer K'),wNum('n','gezogen n'),wNum('k','Treffer k')]],
+    ['anz','Anzahlen (Kombinatorik)',[wNum('n','n'),wNum('k','k')]]],'urne')],
+  ex:{M:{m:'urne',N:'10',K:'4',n:'3',k:'2'}},
+  run({M},o){
+    if(M.m==='anz'){const n=needInt(M.n,'n',0,3000),k=needInt(M.k,'k',0,3000);
+      o.m('Binomialkoeffizient '+fbin(n,k),fBig(bigBinom(n,k)));o.r(`${n}! &nbsp;(Anordnungen von n Objekten)`,fBig(fact(n)));
+      o.h(`Ziehen von k = ${k} aus n = ${n}`);
+      o.r('geordnet, mit Zurücklegen: n<sup>k</sup>',fBig(BI(n)**BI(k)));
+      o.r('geordnet, ohne Zurücklegen: n! / (n − k)!',k>n?'0 (k > n)':fBig(fact(n)/fact(n-k)));
+      o.r('ungeordnet, ohne Zurücklegen: '+fbin('n','k'),fBig(bigBinom(n,k)));
+      o.r('ungeordnet, mit Zurücklegen: '+fbin('n + k − 1','k'),fBig(bigBinom(n+k-1,k)));return;}
+    const N=needInt(M.N,'N',1,5000),K=needInt(M.K,'K',0,N),n=needInt(M.n,'n',0,5000),k=needInt(M.k,'k',0,5000);
+    const p=new Q(BI(K),BI(N));const qq=Q1.sub(p);
+    const wR=new Q(bigBinom(n,k)).mul(qpow(p,k)).mul(qpow(qq,n-k));
+    o.m('mit Zurücklegen (Binomialverteilung)',fqP(wR));
+    if(n>N)o.r('ohne Zurücklegen','nicht möglich (n > N)');
+    else{const oR=new Q(bigBinom(K,k)*bigBinom(N-K,n-k),bigBinom(N,n));o.m('ohne Zurücklegen (hypergeometrisch)',fqP(oR));
+      o.st('ohne Zurücklegen',`${fbin(K,k)} · ${fbin(N-K,n-k)} / ${fbin(N,n)} = ${fBig(bigBinom(K,k))} · ${fBig(bigBinom(N-K,n-k))} / ${fBig(bigBinom(N,n))}`);}
+    o.h('mindestens ein Treffer');
+    o.r('mit Zurücklegen: 1 − (1 − p)<sup>n</sup>',fqP(Q1.sub(qpow(qq,n))));
+    if(n<=N)o.r('ohne Zurücklegen',fqP(Q1.sub(new Q(bigBinom(N-K,n),bigBinom(N,n)))));
+    o.st('mit Zurücklegen',`${fbin(n,k)} · ${fqp(p)}<sup>${k}</sup> · ${fqp(qq)}<sup>${n-k}</sup>`);}});
+
+/* ---------- Baumdiagramm (mehrstufig) ---------- */
+const fT2d=x=>{if(x.int())return String(x.n);let d=x.d;while(d%10n===0n)d/=10n;while(d%2n===0n)d/=2n;while(d%5n===0n)d/=5n;
+  if(d===1n&&x.d<=10000n)return dec(x.num(),4);return x.d<=1000n?`${x.n}/${x.d}`:dec(x.num(),4);};
+function wTree(key){
+  const e=el('div','w wmodes');let ready=false;const DEF=['R','B','G','S','W'];let names=[],vals=[];
+  const zr=seg([['o','ohne Zurücklegen'],['m','mit Zurücklegen']],'o',()=>{});
+  const sm=seg([['u','Urne (Anzahlen)'],['w','Wahrscheinlichkeiten je Stufe']],'u',m=>{if(ready){zr.el.hidden=m!=='u';upd();}});
+  const nc=mkSelect([2,3,4,5],2),ns=mkSelect([1,2,3,4,5],3);
+  const hd=el('div','whead');hd.append(el('span','wname','Modell'),sm.el,zr.el);
+  const dm=el('div','dims');dm.append('Anzahl Sorten',nc,'Stufen',ns);
+  const grid=el('div','dgrid');
+  function upd(){const n=+nc.value;const on=names.map(x=>x.value),ovv=vals.map(x=>x.value);grid.innerHTML='';grid.style.gridTemplateColumns=`auto repeat(${n},auto)`;
+    grid.append(el('span','t','Name'));names=[];for(let i=0;i<n;i++){const b=el('input','bx nm');b.maxLength=8;b.value=on[i]??DEF[i];names.push(b);grid.append(b);}
+    grid.append(el('span','t',sm.get()==='u'?'Anzahl':'P'));vals=[];for(let i=0;i<n;i++){const b=mkBox();b.value=ovv[i]??'';vals.push(b);grid.append(b);}linkGroup(vals);}
+  nc.addEventListener('change',upd);upd();ready=true;
+  e.append(hd,dm,grid);
+  return {key,el:e,
+    get(){const v=vals.map(b=>parseQ(b.value));if(v.some(x=>x===null))throw new Incomplete();
+      const nm=names.map((b,i)=>b.value.trim()||DEF[i]);if(new Set(nm).size!==nm.length)throw new InErr('Die Namen der Sorten müssen verschieden sein.');
+      return {m:sm.get(),zr:zr.get(),names:nm,v,st:+ns.value};},
+    set(x){if(!x){vals.forEach(b=>b.value='');return;}sm.set(x.m);zr.set(x.zr||'o');zr.el.hidden=x.m!=='u';nc.value=x.v.split('|').length;ns.value=x.st;upd();
+      const a=x.v.split('|'),b=(x.names||'').split('|');vals.forEach((bx,i)=>bx.value=a[i]??'');if(x.names)names.forEach((bx,i)=>bx.value=b[i]??DEF[i]);}};
+}
+function wEvent(key){
+  const e=el('span','w');const nm=el('input','bx nm');nm.placeholder='z. B. R';nm.maxLength=8;const rel=mkSelect(['=','≥','≤'],'=');const k=mkBox();
+  e.append(el('span','wname','Ereignis (optional): Anzahl von'),nm,rel,k);
+  return {key,el:e,get(){const n=nm.value.trim(),kk=parseQ(k.value);if(!n||kk===null)return null;return {n,rel:rel.value,k:kk};},
+    set(x){nm.value=x?.n||'';rel.value=x?.rel||'=';k.value=x?.k||'';}};
+}
+def({g:G.mehr,id:'baumdiagramm',t:'Baumdiagramm (mehrstufig)',
+  inp:()=>[wTree('T'),wEvent('E')],ex:{T:{m:'u',zr:'o',v:'4|6',names:'R|B',st:3},E:{n:'R',rel:'≥',k:'2'}},
+  run({T,E},o){const {m,zr,names,v,st}=T;const c=names.length;const fT2=m==='u'?fT:fT2d;
+    let base;
+    if(m==='u'){v.forEach(x=>{if(!x.int()||x.sg()<0)throw new MErr('Die Anzahlen müssen natürliche Zahlen sein.');});
+      const tot=v.reduce((s,x)=>s.add(x),Q0);if(tot.z())throw new MErr('Die Urne ist leer.');
+      if(zr==='o'&&tot.num()<st)throw new MErr(`Ohne Zurücklegen können höchstens ${fq(tot)} Kugeln gezogen werden.`);base=v;}
+    else{v.forEach(x=>needP(x,'Jede Wahrscheinlichkeit'));const s=v.reduce((a,x)=>a.add(x),Q0);if(!s.eq(Q1))throw new MErr(`Die Wahrscheinlichkeiten ergeben zusammen ${dec(s.num(),4)} statt 1.`);}
+    const branch=cnt=>{if(m==='w')return v;const t=cnt.reduce((s,x)=>s.add(x),Q0);return cnt.map(x=>t.z()?Q0:x.div(t));};
+    const leaves=[];
+    const build=(d,cnt,path,p)=>{const node={kids:[]};if(d===st){node.leaf=leaves.length;leaves.push({path,p});return node;}
+      const bp=branch(cnt);bp.forEach((q_,i)=>{if(q_.z())return;const nc_=m==='u'&&zr==='o'?cnt.map((x,j)=>j===i?x.sub(Q1):x):cnt;
+        node.kids.push({i,p:q_,node:build(d+1,nc_,[...path,i],p.mul(q_))});});return node;};
+    const root=build(0,base||v,[],Q1);
+    const ei=E?names.indexOf(E.n):-1;if(E&&ei<0)throw new InErr(`Die Sorte „${E.n}“ gibt es nicht (vorhanden: ${names.join(', ')}).`);
+    const cntOf=l=>l.path.filter(i=>i===ei).length;
+    const hit=l=>{if(!E)return false;const k=cntOf(l),K=E.k.num();return E.rel==='='?k===K:E.rel==='≥'?k>=K:k<=K;};
+    const sep=names.every(n=>n.length===1)?'':'-';const pname=l=>l.path.map(i=>names[i]).join(sep);
+    if(E){const hs=leaves.filter(hit);const pe=hs.reduce((s,l)=>s.add(l.p),Q0);
+      o.m(`P(Anzahl ${esc(E.n)} ${E.rel} ${fq(E.k)})`,fqP(pe));
+      o.st('Pfadregel (Summe der markierten Pfade)',hs.length?hs.map(l=>`P(${esc(pname(l))}) = ${fT2(l.p)}`).join('<br>')+`<br>Summe = ${fqS(pe)}`:'kein Pfad erfüllt das Ereignis');}
+    o.r('Anzahl Pfade',String(leaves.length));
+    const tot=leaves.reduce((s,l)=>s.add(l.p),Q0);o.st('Kontrolle: Summe aller Pfade',fq(tot));
+    if(leaves.length<=125){
+      const RH=30,lw=Math.max(...names.map(n=>n.length))*9+8,SX=130+lw,X0=12;let yi=0;
+      const lay=n=>{if(n.leaf!==undefined){n.y=14+RH*(yi++)+RH/2;n.h=hit(leaves[n.leaf]);return;}n.kids.forEach(k=>lay(k.node));n.y=(n.kids[0].node.y+n.kids[n.kids.length-1].node.y)/2;n.h=n.kids.some(k=>k.node.h);};
+      lay(root);const H=14+RH*leaves.length+10,xs=d=>X0+d*SX,W=xs(st)+lw+30+st*(sep?lw:10)+170;
+      let s=`<svg viewBox="0 0 ${W} ${H}" class="treebig" style="max-width:${W}px">`;
+      const draw=(n,d)=>{n.kids.forEach(k=>{const x1=xs(d)+(d?lw:0),x2=xs(d+1)-6,y1=n.y,y2=k.node.y;
+        s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${k.node.h?'brh':'br'}"/>`;
+        const t_=0.62,mx=x1+(x2-x1)*t_,my=y1+(y2-y1)*t_;s+=`<text x="${mx}" y="${y2>y1?my+14:my-5}" class="bp" text-anchor="middle">${fT2(k.p)}</text>`;
+        s+=`<text x="${xs(d+1)}" y="${y2+5}" class="nd">${esc(names[k.i])}</text>`;draw(k.node,d+1);});
+        if(n.leaf!==undefined){const l=leaves[n.leaf];s+=`<text x="${xs(st)+lw+10}" y="${n.y+5}" class="${n.h?'lfh':'lf'}">${esc(pname(l))}: ${fT2(l.p)}${n.h?' ✓':''}</text>`;}};
+      draw(root,0);s+='</svg>';o.h('Baumdiagramm');o.raw(s);}
+    else o.n(`Mit ${leaves.length} Pfaden ist das Baumdiagramm zu groß zur Darstellung – es werden nur die Verteilungen angezeigt.`);
+    o.h('Verteilung der Anzahlen');
+    const rows=names.map((nm,ci)=>{const dist=Array(st+1).fill(Q0);leaves.forEach(l=>{const k=l.path.filter(i=>i===ci).length;dist[k]=dist[k].add(l.p);});
+      return `<tr><th>${esc(nm)}</th>${dist.map(x=>`<td>${fqS(x)}</td>`).join('')}</tr>`;});
+    o.raw(`<table class="vt"><tr><th>Anzahl k</th>${[...Array(st+1).keys()].map(k=>`<th>${k}</th>`).join('')}</tr>${rows.join('')}</table>`);}});
+
+/* ---------- Zufallsgrößen ---------- */
+def({g:G.zg,id:'erwartungswert',t:'Erwartungswert, Varianz, Standardabweichung',
+  inp:()=>[wDist('V')],ex:{V:{n:4,x:'-2|0|3|10',p:'1/2|1/4|1/6|'}},
+  run({V},o){const {x,p,fill}=V;
+    if(p.some(v=>v.sg()<0))throw new MErr('Wahrscheinlichkeiten dürfen nicht negativ sein'+(fill>=0?' (die Summe der übrigen ist größer als 1).':'.'));
+    const sum=p.reduce((s,v)=>s.add(v),Q0);if(!sum.eq(Q1))throw new MErr(`Die Summe der Wahrscheinlichkeiten ist ${dec(sum.num(),4)} und nicht 1.`);
+    const E=x.reduce((s,v,i)=>s.add(v.mul(p[i])),Q0);const Var=x.reduce((s,v,i)=>{const d=v.sub(E);return s.add(d.mul(d).mul(p[i]));},Q0);
+    const E2=x.reduce((s,v,i)=>s.add(v.mul(v).mul(p[i])),Q0);
+    if(fill>=0)o.n(`Fehlende Wahrscheinlichkeit ergänzt: P(X = ${fq(x[fill])}) = ${fqS(p[fill])}`);
+    o.m('Erwartungswert E(X) = μ',fqx(E));o.m('Varianz V(X)',fqx(Var));o.m('Standardabweichung σ',fsx(sqrtQ(Var)));
+    if(E.z())o.n('E(X) = 0 → bei einer Gewinn-Zufallsgröße ist das Spiel fair.');
+    o.st('E(X) = Σ x<sub>i</sub> · P(X = x<sub>i</sub>)',x.map((v,i)=>fqp(v)+' · '+fqp(p[i])).join(' + ')+' = '+fq(E));
+    o.st('V(X) = Σ (x<sub>i</sub> − μ)² · P(X = x<sub>i</sub>)',x.map((v,i)=>'('+fq(v)+' − '+fqp(E)+')² · '+fqp(p[i])).join(' + ')+' = '+fq(Var));
+    o.st('Kontrolle: E(X²) − μ²',`${fq(E2)} − ${fqp(E)}² = ${fq(E2.sub(E.mul(E)))}`);}});
+
+/* ---------- Binomialverteilung ---------- */
+const binQuery=()=>wModes('Q','Gesucht',[['eq','P(X = k)',[wNum('k','k')]],['le','P(X ≤ k)',[wNum('k','k')]],['ge','P(X ≥ k)',[wNum('k','k')]],
+  ['lt','P(X < k)',[wNum('k','k')]],['gt','P(X > k)',[wNum('k','k')]],['iv','P(a ≤ X ≤ b)',[wNum('a','a'),wNum('b','b')]]],'eq');
+def({g:G.bin,id:'binomial-wahrscheinlichkeit',t:'Binomialverteilung: Wahrscheinlichkeiten',
+  inp:()=>[wNum('n','n'),wNum('p','p'),binQuery()],ex:{n:'20',p:'0,3',Q:{m:'le',k:'5'}},
+  run({n:nq,p,Q:Qy},o){const n=needInt(nq,'n',1,100000);needP(p);const pn=p.num();let lo,hi,lab,step='';
+    if(Qy.m==='iv'){lo=needInt(Qy.a,'a',-1e6,1e6);hi=needInt(Qy.b,'b',-1e6,1e6);lab=`P(${lo} ≤ X ≤ ${hi})`;
+      step=`P(X ≤ ${hi}) − P(X ≤ ${lo-1})`;}
+    else{const k=needInt(Qy.k,'k',-1e6,1e6);
+      ({eq:()=>{lo=hi=k;lab=`P(X = ${k})`;},le:()=>{lo=0;hi=k;lab=`P(X ≤ ${k})`;},ge:()=>{lo=k;hi=n;lab=`P(X ≥ ${k})`;step=`1 − P(X ≤ ${k-1})`;},
+        lt:()=>{lo=0;hi=k-1;lab=`P(X < ${k}) = P(X ≤ ${k-1})`;},gt:()=>{lo=k+1;hi=n;lab=`P(X > ${k}) = P(X ≥ ${k+1})`;step=`1 − P(X ≤ ${k})`;}})[Qy.m]();}
+    const val=lo>hi?0:bsum(n,pn,lo,hi);o.m(lab,fP(val));
+    const ex=lo>hi?null:exactSum(n,p,lo,hi);if(ex&&!ex.int()&&ex.d<10n**10n)o.r('exakter Wert',fq(ex));
+    if(Qy.m==='eq'&&lo>=0&&lo<=n)o.st('Formel',`${fbin(n,lo)} · ${fqp(p)}<sup>${lo}</sup> · ${fqp(Q1.sub(p))}<sup>${n-lo}</sup> = ${fBig(bigBinom(n,lo))} · ${fqp(p)}<sup>${lo}</sup> · ${fqp(Q1.sub(p))}<sup>${n-lo}</sup>`);
+    if(step)o.st('Rechenweg (kumuliert)',step+(Qy.m==='iv'?` = ${decP(bsum(n,pn,0,hi))} − ${decP(bsum(n,pn,0,lo-1))}`:` = 1 − ${decP(bsum(n,pn,0,Qy.m==='gt'?lo-1:lo-1))}`));
+    const mu=p.mul(q(n)),vr=mu.mul(Q1.sub(p));o.r('μ = n · p ; σ = √(n·p·(1 − p))',`${fqx(mu)} ; &nbsp; ${fsx(sqrtQ(vr))}`);
+    o.raw(histSVG(n,pn,lo,hi));}});
+
+def({g:G.bin,id:'binomial-tabelle',t:'Binomialverteilung: Kenngrößen, Histogramm, Tabelle',
+  inp:()=>[wNum('n','n'),wNum('p','p')],ex:{n:'12',p:'1/6'},
+  run({n:nq,p},o){const n=needInt(nq,'n',1,100000);needP(p);const pn=p.num();
+    const mu=p.mul(q(n)),vr=mu.mul(Q1.sub(p)),sd=sqrtQ(vr);
+    o.m('Erwartungswert μ = n · p',fqx(mu));o.m('Varianz σ² = n · p · (1 − p)',fqx(vr));o.m('Standardabweichung σ',fsx(sd));
+    if(pn>0&&pn<1){const m=p.mul(q(n+1));o.r('wahrscheinlichster Wert (Modalwert)',m.int()?`k = ${fq(m.sub(Q1))} und k = ${fq(m)}`:`k = ${Number(m.n/m.d)}`);}
+    o.r('Laplace-Bedingung σ > 3',snum(sd)>3?'erfüllt':'nicht erfüllt');
+    o.raw(histSVG(n,pn,null,null));
+    const pm=[];for(let k=0;k<=n;k++)pm.push(bpmf(n,pn,k));const F=[];let s=0;pm.forEach(v=>{s+=v;F.push(Math.min(1,s));});
+    const G_=Array(n+2).fill(0);for(let k=n;k>=0;k--)G_[k]=Math.min(1,G_[k+1]+pm[k]);
+    let rows='';let skip=0;for(let k=0;k<=n;k++){if(n>100&&pm[k]<5e-5){skip++;continue;}rows+=`<tr><td>${k}</td><td>${decP(pm[k])}</td><td>${decP(F[k])}</td><td>${decP(G_[k])}</td></tr>`;}
+    o.h('Verteilungstabelle');o.raw(`<div class="btab"><table class="bt"><tr><th>k</th><th>P(X = k)</th><th>P(X ≤ k)</th><th>P(X ≥ k)</th></tr>${rows}</table></div>`);
+    if(skip)o.n(`${skip} Werte mit P(X = k) < 0,00005 ausgeblendet.`);}});
+
+def({g:G.bin,id:'binomial-gesucht-k',t:'Binomialverteilung: gesucht k (Grenze)',
+  inp:()=>[wNum('n','n'),wNum('p','p'),wSel('m','Bedingung',[['a','kleinstes k: P(X ≤ k) ≥ α'],['b','größtes k: P(X ≤ k) ≤ α'],['c','kleinstes k: P(X ≥ k) ≤ α'],['d','größtes k: P(X ≥ k) ≥ α']],'a'),wNum('al','α')],
+  ex:{n:'50',p:'0,4',m:'a',al:'0,9'},
+  run({n:nq,p,m,al},o){const n=needInt(nq,'n',1,100000);needP(p);needP(al,'α');const pn=p.num(),a=al.num(),eps=1e-12;
+    const pm=[];for(let k=0;k<=n;k++)pm.push(bpmf(n,pn,k));const F=[];let s=0;pm.forEach(v=>{s+=v;F.push(Math.min(1,s));});
+    const Gq=Array(n+2).fill(0);for(let k=n;k>=0;k--)Gq[k]=Math.min(1,Gq[k+1]+pm[k]);
+    const Fk=k=>k<0?0:k>n?1:F[k],Gk=k=>k<=0?1:k>n?0:Gq[k];let k=null,fn,sym;
+    if(m==='a'){fn=Fk;sym='≤';for(let i=0;i<=n;i++)if(F[i]>=a-eps){k=i;break;}}
+    if(m==='b'){fn=Fk;sym='≤';for(let i=n;i>=0;i--)if(F[i]<=a+eps){k=i;break;}}
+    if(m==='c'){fn=Gk;sym='≥';for(let i=0;i<=n+1;i++)if(Gk(i)<=a+eps){k=i;break;}}
+    if(m==='d'){fn=Gk;sym='≥';for(let i=n;i>=0;i--)if(Gk(i)>=a-eps){k=i;break;}}
+    if(k===null){o.v('Es gibt kein k mit dieser Eigenschaft.','warn');return;}
+    o.m('Ergebnis',`k = ${k}`);
+    o.st('Kontrolle',[k-1,k,k+1].filter(i=>i>=0&&i<=n+1).map(i=>`P(X ${sym} ${i}) ≈ ${decP(fn(i))}${i===k?' ←':''}`).join('<br>'));
+    o.raw(histSVG(n,pn,sym==='≤'?0:k,sym==='≤'?k:n));}});
+
+def({g:G.bin,id:'binomial-gesucht-n',t:'Binomialverteilung: gesucht n (Mindestanzahl)',
+  inp:()=>[wNum('p','p'),wSel('m','Bedingung',[['ge','kleinstes n: P(X ≥ k) ≥ α'],['le','größtes n: P(X ≤ k) ≥ α']],'ge'),wNum('k','k'),wNum('al','α')],
+  ex:{p:'0,05',m:'ge',k:'1',al:'0,9'},
+  run({p,m,k:kq,al},o){needP(p);needOpen(al,'α');const pn=p.num(),k=needInt(kq,'k',0,5000),a=al.num();
+    const cdf=(n,kk)=>{let s=0;for(let i=0;i<=Math.min(kk,n);i++)s+=bpmf(n,pn,i);return Math.min(1,s);};
+    let budget=3e7,res=null;
+    if(m==='ge'){if(pn<=0)throw new MErr('Mit p = 0 tritt nie ein Treffer ein.');
+      for(let n=Math.max(k,1);n<=200000;n++){budget-=k;if(budget<0)break;if(1-cdf(n,k-1)>=a-1e-12){res=n;break;}}
+      if(res===null)throw new MErr('Kein n bis 200.000 gefunden.');
+      o.m('Mindestens nötig',`n = ${res}`);
+      o.st('Kontrolle',`n = ${res-1}: P(X ≥ ${k}) ≈ ${decP(1-cdf(res-1,k-1))}<br>n = ${res}: P(X ≥ ${k}) ≈ ${decP(1-cdf(res,k-1))}`);
+      if(k===1&&pn<1)o.st('Ansatz für k = 1',`1 − ${fqp(Q1.sub(p))}<sup>n</sup> ≥ ${fq(al)} ⇔ n ≥ ln(${fq(Q1.sub(al))}) / ln(${fq(Q1.sub(p))}) ≈ ${dec(Math.log(1-a)/Math.log(1-pn),4)}`);}
+    else{if(pn<=0){o.v('Mit p = 0 gilt P(X ≤ k) = 1 für jedes n.','info');return;}
+      if(cdf(Math.max(k,0),k)<a-1e-12&&k>=0){}
+      let last=null;for(let n=Math.max(k,1);n<=200000;n++){budget-=k+1;if(budget<0)break;if(cdf(n,k)>=a-1e-12)last=n;else break;}
+      if(last===null)throw new MErr('Schon für das kleinste n ist die Bedingung nicht erfüllt.');
+      o.m('Höchstens möglich',`n = ${last}`);
+      o.st('Kontrolle',`n = ${last}: P(X ≤ ${k}) ≈ ${decP(cdf(last,k))}<br>n = ${last+1}: P(X ≤ ${k}) ≈ ${decP(cdf(last+1,k))}`);
+      if(k===0)o.st('Ansatz für k = 0',`${fqp(Q1.sub(p))}<sup>n</sup> ≥ ${fq(al)} ⇔ n ≤ ln(${fq(al)}) / ln(${fq(Q1.sub(p))}) ≈ ${dec(Math.log(a)/Math.log(1-pn),4)}`);}}});
+
+def({g:G.bin,id:'binomial-gesucht-p',t:'Binomialverteilung: gesucht p',
+  inp:()=>[wNum('n','n'),wSel('m','Bedingung',[['ge','kleinstes p: P(X ≥ k) ≥ α'],['le','größtes p: P(X ≤ k) ≥ α']],'ge'),wNum('k','k'),wNum('al','α')],
+  ex:{n:'10',m:'ge',k:'1',al:'0,95'},
+  run({n:nq,m,k:kq,al},o){const n=needInt(nq,'n',1,20000),k=needInt(kq,'k',0,n);needOpen(al,'α');const a=al.num();
+    const f=m==='ge'?pp=>bsum(n,pp,k,n):pp=>bsum(n,pp,0,k);let lo=0,hi=1;
+    for(let i=0;i<60;i++){const mid=(lo+hi)/2;const ok=f(mid)>=a;if(m==='ge'){if(ok)hi=mid;else lo=mid;}else{if(ok)lo=mid;else hi=mid;}}
+    const pr=m==='ge'?hi:lo;
+    o.m(m==='ge'?'p mindestens':'p höchstens',`p ≈ ${dec(pr,6)} <span class="ap">(${pct(pr)})</span>`);
+    o.st('Kontrolle',`${m==='ge'?`P(X ≥ ${k})`:`P(X ≤ ${k})`} bei p = ${dec(pr,6)}: ${decP(f(pr))}`);
+    if(m==='ge'&&k===1)o.st('Ansatz für k = 1',`1 − (1 − p)<sup>${n}</sup> ≥ ${fq(al)} ⇔ p ≥ 1 − ${fqp(Q1.sub(al))}<sup>1/${n}</sup>`);
+    if(m==='le'&&k===0)o.st('Ansatz für k = 0',`(1 − p)<sup>${n}</sup> ≥ ${fq(al)} ⇔ p ≤ 1 − ${fqp(al)}<sup>1/${n}</sup>`);}});
+
+/* ---------- Beurteilende Statistik (LK) ---------- */
+def({g:G.beur,id:'prognoseintervall',t:'σ-Regeln und Prognoseintervall',lk:true,
+  inp:()=>[wNum('n','n'),wNum('p','p'),wSel('c','Sicherheit',CV,'1.96')],ex:{n:'200',p:'0,5',c:'1.96'},
+  run({n:nq,p,c},o){const n=needInt(nq,'n',1,1e7);needP(p);const cc=parseFloat(c),pn=p.num();
+    const mu=p.mul(q(n)),vr=mu.mul(Q1.sub(p)),sd=sqrtQ(vr),s=snum(sd),m=mu.num();
+    o.v(s>3?'Laplace-Bedingung σ > 3 erfüllt':'Laplace-Bedingung σ > 3 nicht erfüllt – σ-Regeln nur eingeschränkt anwendbar',s>3?'ok':'warn');
+    const lo=m-cc*s,hi=m+cc*s,a=Math.ceil(lo-1e-9),b=Math.floor(hi+1e-9);
+    o.m(`Prognoseintervall für X (${cLab(c)})`,`[${dec(lo,2)} ; ${dec(hi,2)}]`);
+    o.r('ganzzahlig',`${a} ≤ X ≤ ${b}`);
+    o.r('exakte Wahrscheinlichkeit dieses Bereichs',n<=1e6?fP(bsum(n,pn,a,b)):'–');
+    const e=cc*Math.sqrt(pn*(1-pn)/n);o.m('Prognoseintervall für die relative Häufigkeit',`[${dec(pn-e,4)} ; ${dec(pn+e,4)}]`);
+    o.st('μ ; σ',`${fqx(mu)} ; &nbsp; ${fsx(sd)}`);o.st('Grenzen',`μ ± ${dec(cc,2)} · σ = ${dec(m,4)} ± ${dec(cc*s,4)}`);
+    o.st('relative Häufigkeit',`p ± ${dec(cc,2)} · √(p(1 − p)/n) = ${dec(pn,4)} ± ${dec(e,4)}`);
+    if(n<=100000)o.raw(histSVG(n,pn,a,b));}});
+
+def({g:G.beur,id:'konfidenzintervall',t:'Konfidenzintervall',lk:true,
+  inp:()=>[wNum('n','Stichprobenumfang n'),wModes('H','Ergebnis',[['k','Anzahl Treffer',[wNum('k','k')]],['h','relative Häufigkeit',[wNum('h','h')]]],'k'),wSel('c','Sicherheit',CV,'1.96')],
+  ex:{n:'100',H:{m:'k',k:'20'},c:'1.96'},
+  run({n:nq,H,c},o){const n=needInt(nq,'n',1,1e9);const h=H.m==='k'?new Q(BI(needInt(H.k,'k',0,n)),BI(n)):needP(H.h,'h');const cc=parseFloat(c),hn=h.num();
+    const A=1+cc*cc/n,B=-(2*hn+cc*cc/n),C=hn*hn;const D=B*B-4*A*C;const p1=(-B-Math.sqrt(D))/(2*A),p2=(-B+Math.sqrt(D))/(2*A);
+    o.m(`Konfidenzintervall für p (${cLab(c)})`,`[${dec(p1,4)} ; ${dec(p2,4)}]`);
+    o.n('Alle p, für die h im Prognoseintervall p ± c·√(p(1 − p)/n) liegt.');
+    const e=cc*Math.sqrt(hn*(1-hn)/n);o.r('Näherung (p durch h ersetzt)',`[${dec(hn-e,4)} ; ${dec(hn+e,4)}]`);
+    o.st('h',fqx(h));o.st('Ansatz',`|h − p| ≤ ${dec(cc,2)} · √(p(1 − p)/${n}) &nbsp;⇒&nbsp; (h − p)² = ${dec(cc*cc,4)}·p(1 − p)/${n}`);
+    o.st('Quadratische Gleichung',`${dec(A,6)}·p² ${B<0?'−':'+'} ${dec(Math.abs(B),6)}·p + ${dec(C,6)} = 0`);}});
+
+def({g:G.beur,id:'stichprobenumfang',t:'Stichprobenumfang für ein Konfidenzintervall',lk:true,
+  inp:()=>[wModes('L','Vorgabe',[['L','Länge L des Intervalls',[wNum('L','L')]],['e','maximale Abweichung ±e',[wNum('e','e')]]],'L'),wSel('c','Sicherheit',CV,'1.96'),wNum('h','Schätzwert h',true,'0,5')],
+  ex:{L:{m:'L',L:'0,04'},c:'1.96',h:''},
+  run({L,c,h},o){const e=L.m==='L'?L.L.num()/2:L.e.num();if(e<=0)throw new MErr('Die Länge muss positiv sein.');
+    const hh=h===null?0.5:needOpen(h,'h').num();const cc=parseFloat(c);const n=cc*cc*hh*(1-hh)/(e*e);
+    o.m('Stichprobenumfang mindestens',`n = ${Math.ceil(n-1e-9)}`);
+    o.n(h===null?'Ohne Schätzwert wird der ungünstigste Fall h = 0,5 angenommen.':'Mit Schätzwert h für p.');
+    o.st('Ansatz',`${dec(cc,2)} · √(h(1 − h)/n) ≤ ${dec(e,6)} &nbsp;⇒&nbsp; n ≥ ${dec(cc,2)}² · ${dec(hh,4)} · ${dec(1-hh,4)} / ${dec(e,6)}² ≈ ${dec(n,4)}`);}});
+
+/* ---------- Normalverteilung (LK) ---------- */
+def({g:G.norm,id:'normal-wahrscheinlichkeit',t:'Normalverteilung: Wahrscheinlichkeiten',lk:true,
+  inp:()=>[wNum('mu','μ'),wNum('sd','σ'),wModes('Q','Gesucht',[['le','P(X ≤ b)',[wNum('b','b')]],['ge','P(X ≥ a)',[wNum('a','a')]],['iv','P(a ≤ X ≤ b)',[wNum('a','a'),wNum('b','b')]],['sym','P(μ − c ≤ X ≤ μ + c)',[wNum('c','c')]]],'iv')],
+  ex:{mu:'170',sd:'8',Q:{m:'iv',a:'160',b:'180'}},
+  run({mu,sd,Q:Qy},o){const m=mu.num(),s=sd.num();if(s<=0)throw new MErr('σ muss positiv sein.');let a=-Infinity,b=Infinity;
+    if(Qy.m==='le')b=Qy.b.num();if(Qy.m==='ge')a=Qy.a.num();if(Qy.m==='iv'){a=Qy.a.num();b=Qy.b.num();}if(Qy.m==='sym'){a=m-Qy.c.num();b=m+Qy.c.num();}
+    if(a>b)throw new MErr('Es muss a ≤ b gelten.');
+    const za=(a-m)/s,zb=(b-m)/s;const val=Math.max(0,(isFinite(zb)?Phi(zb):1)-(isFinite(za)?Phi(za):0));
+    const lab=Qy.m==='le'?`P(X ≤ ${dec(b,4)})`:Qy.m==='ge'?`P(X ≥ ${dec(a,4)})`:`P(${dec(a,4)} ≤ X ≤ ${dec(b,4)})`;
+    o.m(lab,fP(val));
+    o.st('Standardisierung z = (x − μ)/σ',[isFinite(za)?`z<sub>a</sub> = ${fz(za)}`:'',isFinite(zb)?`z<sub>b</sub> = ${fz(zb)}`:''].filter(Boolean).join(', &nbsp; '));
+    o.st('Φ-Werte',[isFinite(zb)?`Φ(${fz(zb)}) = ${dec(Phi(zb),4)}`:'',isFinite(za)?`Φ(${fz(za)}) = ${dec(Phi(za),4)}`:''].filter(Boolean).join(', &nbsp; '));
+    o.raw(normSVG(m,s,a,b));}});
+
+def({g:G.norm,id:'normal-quantil',t:'Normalverteilung: gesuchte Grenze, μ oder σ',lk:true,
+  inp:()=>[wModes('M','Gesucht',[
+    ['x','Grenze x: P(X ≤ x) = α',[wNum('mu','μ'),wNum('sd','σ'),wNum('al','α')]],
+    ['xr','Grenze x: P(X ≥ x) = α',[wNum('mu','μ'),wNum('sd','σ'),wNum('al','α')]],
+    ['c','Intervall μ ± c mit Wahrscheinlichkeit α',[wNum('mu','μ'),wNum('sd','σ'),wNum('al','α')]],
+    ['mu','μ: P(X ≤ x) = α',[wNum('sd','σ'),wNum('x','x'),wNum('al','α')]],
+    ['sd','σ: P(X ≤ x) = α',[wNum('mu','μ'),wNum('x','x'),wNum('al','α')]]],'x')],
+  ex:{M:{m:'x',mu:'170',sd:'8',al:'0,9'}},
+  run({M},o){const a=needOpen(M.al,'α').num();
+    if(M.m==='x'||M.m==='xr'||M.m==='c'){const m=M.mu.num(),s=M.sd.num();if(s<=0)throw new MErr('σ muss positiv sein.');
+      if(M.m==='c'){const z=invPhi((1+a)/2);o.m('c',`c ≈ ${dec(z*s,4)}`);o.r('Intervall',`[${dec(m-z*s,4)} ; ${dec(m+z*s,4)}]`);o.st('z mit Φ(z) = (1 + α)/2',`z ≈ ${fz(z)} &nbsp; → c = z · σ`);o.raw(normSVG(m,s,m-z*s,m+z*s));return;}
+      const z=M.m==='x'?invPhi(a):invPhi(1-a);const x=m+z*s;o.m('Grenze x',`x ≈ ${dec(x,4)}`);
+      o.st(M.m==='x'?'z mit Φ(z) = α':'z mit Φ(z) = 1 − α',`z ≈ ${fz(z)} &nbsp; → x = μ + z · σ`);o.raw(M.m==='x'?normSVG(m,s,-Infinity,x):normSVG(m,s,x,Infinity));return;}
+    const z=invPhi(a);const x=M.x.num();
+    if(M.m==='mu'){const s=M.sd.num();if(s<=0)throw new MErr('σ muss positiv sein.');const m=x-z*s;o.m('μ',`μ ≈ ${dec(m,4)}`);o.st('Ansatz',`(x − μ)/σ = z ≈ ${fz(z)} &nbsp; → μ = x − z · σ`);o.raw(normSVG(m,s,-Infinity,x));}
+    else{const m=M.mu.num();if(Math.abs(z)<1e-12)throw new MErr('Für α = 0,5 ist σ nicht bestimmt (x = μ).');const s=(x-m)/z;
+      if(s<=0)throw new MErr('Keine Lösung: x und α passen nicht zusammen (σ wäre negativ).');
+      o.m('σ',`σ ≈ ${dec(s,4)}`);o.st('Ansatz',`(x − μ)/σ = z ≈ ${fz(z)} &nbsp; → σ = (x − μ)/z`);o.raw(normSVG(m,s,-Infinity,x));}}});
+
+def({g:G.norm,id:'normal-naeherung',t:'Näherung der Binomialverteilung durch die Normalverteilung',lk:true,
+  inp:()=>[wNum('n','n'),wNum('p','p'),wNum('a','a'),wNum('b','b')],ex:{n:'100',p:'0,3',a:'25',b:'35'},
+  run({n:nq,p,a:aq,b:bq},o){const n=needInt(nq,'n',1,1e6);needP(p);const pn=p.num(),a=needInt(aq,'a',-1e7,1e7),b=needInt(bq,'b',-1e7,1e7);
+    if(a>b)throw new MErr('Es muss a ≤ b gelten.');const m=n*pn,s=Math.sqrt(n*pn*(1-pn));if(s===0)throw new MErr('σ = 0 – keine Näherung möglich.');
+    o.v(s>3?'Laplace-Bedingung σ > 3 erfüllt':'Laplace-Bedingung σ > 3 nicht erfüllt – Näherung ungenau',s>3?'ok':'warn');
+    const ex=bsum(n,pn,a,b),nk=Phi((b+0.5-m)/s)-Phi((a-0.5-m)/s),no=Phi((b-m)/s)-Phi((a-m)/s);
+    o.m(`exakt (Binomialverteilung) P(${a} ≤ X ≤ ${b})`,fP(ex));
+    o.m('Näherung mit Stetigkeitskorrektur',fP(nk));o.r('Näherung ohne Stetigkeitskorrektur',fP(no));
+    o.st('μ ; σ',`${dec(m,4)} ; ${dec(s,4)}`);
+    o.st('mit Korrektur',`Φ((${b} + 0,5 − μ)/σ) − Φ((${a} − 0,5 − μ)/σ) = Φ(${fz((b+0.5-m)/s)}) − Φ(${fz((a-0.5-m)/s)})`);
+    o.raw(normSVG(m,s,a-0.5,b+0.5));}});
+
+/* =====================================================================
+   6) OBERFLÄCHE
+   ===================================================================== */
+const main=document.getElementById('main'),nav=document.getElementById('nav');
+const navBtns={};
+function build(c){
+  const sec=el('section','calc');sec.hidden=true;
+  const head=el('div','chead');head.append(el('h2','',c.t+(c.lk?LKtag:'')));
+  const bt=el('div','cbtns');const bEx=el('button','btn','Beispiel'),bCl=el('button','btn','Leeren');bt.append(bEx,bCl);head.append(bt);
+  const inp=el('div','inputs');const ws=c.inp();ws.forEach(w=>inp.append(w.el));
+  const res=el('div','results');sec.append(head,inp,res);
+  const run=()=>{
+    try{const v={};ws.forEach(w=>{if(w.key)v[w.key]=w.get();});const o=new Out();c.run(v,o);res.innerHTML=o.html();}
+    catch(e){
+      if(e instanceof Incomplete)res.innerHTML='<div class="hint">Eingaben vervollständigen – das Ergebnis erscheint automatisch.</div>';
+      else if(e instanceof InErr||e instanceof MErr)res.innerHTML=`<div class="err">${esc(e.message)}</div>`;
+      else{console.error(e);res.innerHTML=`<div class="err">Interner Fehler: ${esc(e.message)}</div>`;}
+    }
+  };
+  sec.addEventListener('input',run);sec.addEventListener('change',run);
+  bEx.onclick=()=>{ws.forEach(w=>w.set&&w.set(c.ex?.[w.key]));run();};
+  bCl.onclick=()=>{ws.forEach(w=>w.set&&w.set(null));run();focusFirst(sec);};
+  c.sec=sec;c.run_=run;run();main.append(sec);
+}
+function focusFirst(sec){const b=sec.querySelector('.inputs .bx:not([hidden])');const vis=[...sec.querySelectorAll('.inputs .bx')].find(x=>x.offsetParent!==null);(vis||b)?.focus();}
+let current=null;
+function show(id,focus=true){
+  const c=CALCS.find(x=>x.id===id)||CALCS[0];
+  if(current)current.sec.hidden=true;current=c;c.sec.hidden=false;
+  for(const k in navBtns)navBtns[k].classList.toggle('on',k===c.id);
+  try{if(location.hash!=='#'+c.id)history.replaceState(null,'','#'+c.id);}catch(e){}
+  if(focus)focusFirst(c.sec);
+}
+let lastG=null;
+CALCS.forEach(c=>{
+  if(c.g!==lastG){const h=el('div','grp',c.g);h.dataset.g=c.g;nav.append(h);lastG=c.g;}
+  const b=el('button','',`<span>${c.t}</span>${c.lk?'<span class="lk">LK</span>':''}`);b.dataset.g=c.g;if(c.lk)b.dataset.lk='1';
+  b.onclick=()=>show(c.id);nav.append(b);navBtns[c.id]=b;build(c);
+});
+function filterNav(){
+  const qy=document.getElementById('search').value.trim().toLowerCase();const lk=document.getElementById('tgLK').checked;
+  const vis={};
+  CALCS.forEach(c=>{const ok=(lk||!c.lk)&&(!qy||(c.t+' '+c.g).toLowerCase().includes(qy));navBtns[c.id].hidden=!ok;if(ok)vis[c.g]=1;});
+  nav.querySelectorAll('.grp').forEach(h=>h.hidden=!vis[h.dataset.g]);
+}
+document.getElementById('search').addEventListener('input',filterNav);
+const tgS=document.getElementById('tgSteps'),tgL=document.getElementById('tgLK');
+try{const s=JSON.parse(localStorage.getItem('sr-prefs')||'{}');if(s.steps===false)tgS.checked=false;if(s.lk===false)tgL.checked=false;}catch(e){}
+const savePrefs=()=>{try{localStorage.setItem('sr-prefs',JSON.stringify({steps:tgS.checked,lk:tgL.checked}));}catch(e){}};
+const applySteps=()=>document.body.classList.toggle('nosteps',!tgS.checked);
+tgS.addEventListener('change',()=>{applySteps();savePrefs();});
+tgL.addEventListener('change',()=>{filterNav();savePrefs();});
+(function(){const K='mathe-theme';const mq=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;let t='dark';
+try{t=localStorage.getItem(K)||'dark';}catch(e){}
+const apply=()=>{const dk=t==='dark'||(t==='system'&&!!mq&&mq.matches);document.body.classList.toggle('dark',dk);
+  document.querySelectorAll('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));};
+document.querySelectorAll('#themeSeg button').forEach(b=>b.addEventListener('click',()=>{t=b.dataset.t;try{localStorage.setItem(K,t);}catch(e){}apply();}));
+if(mq&&mq.addEventListener)mq.addEventListener('change',()=>{if(t==='system')apply();});apply();})();
+applySteps();filterNav();
+show((location.hash||'').slice(1),false);
+window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(!current||current.id!==id)show(id);});
+</script>
+</body>
+</html>

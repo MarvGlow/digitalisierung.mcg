@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vektorrechner Q1/Q2</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#fff; --ink:#1b2230; --mut:#6a7385; --line:#e2e5ea; --box:#cdd3dc;
+  --acc:#2452c4; --accbg:#e9effc; --ok:#17693d; --okbg:#e3f3ea; --bad:#a8231a; --badbg:#fbe9e7;
+  --warn:#7d5300; --warnbg:#fff3d6; --info:#2d4a85; --infobg:#eaf0fb; --lk:#7540ad; --lkbg:#f1e9fa;
+  --math:"Cambria Math","STIX Two Math","Latin Modern Math","Cambria","Times New Roman",serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{height:54px;display:flex;align-items:center;gap:18px;padding:0 18px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0;font-weight:650;white-space:nowrap}
+header h1 span{color:var(--mut);font-weight:500}
+.hint-top{font-size:12.5px;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hint-top code{background:#eef0f3;border-radius:4px;padding:0 4px;font-size:12px}
+.tg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut);white-space:nowrap;cursor:pointer;user-select:none}
+.tg input{accent-color:var(--acc)}
+.layout{display:grid;grid-template-columns:262px 1fr;min-height:calc(100vh - 54px)}
+nav{background:#fff;border-right:1px solid var(--line);position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;padding:10px 0 30px}
+nav .search{margin:0 12px 8px;width:calc(100% - 24px);padding:7px 10px;border:1px solid var(--box);border-radius:7px;font:inherit;font-size:14px}
+nav .grp{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:650;padding:12px 16px 4px}
+nav button{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:14px;color:var(--ink);padding:5px 16px 5px 22px;cursor:pointer;border-left:3px solid transparent}
+nav button:hover{background:#f3f5f8}
+nav button.on{background:var(--accbg);border-left-color:var(--acc);color:var(--acc);font-weight:600}
+.lk{display:inline-block;font-size:10.5px;font-weight:700;color:var(--lk);background:var(--lkbg);border-radius:4px;padding:0 5px;line-height:17px;letter-spacing:.03em;vertical-align:middle}
+main{padding:22px 26px 60px;min-width:0}
+.calc{background:var(--card);border:1px solid var(--line);border-radius:12px;max-width:1080px}
+.chead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.chead h2{font-size:18px;margin:0;font-weight:650}
+.cbtns{display:flex;gap:8px}
+.btn{border:1px solid var(--box);background:#fff;border-radius:7px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+.btn:hover{background:#f3f5f8}
+.inputs{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);background:#fbfcfd}
+.w{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.w .lbl,.t{font-family:var(--math);font-size:17px;white-space:nowrap}
+.w .sep{color:var(--mut)}
+.bx{width:62px;padding:5px 6px;border:1px solid var(--box);border-radius:6px;font:inherit;font-size:15px;text-align:center;background:#fff;color:var(--ink)}
+.bx:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(36,82,196,.15)}
+.bx::placeholder{color:#b9c0cb}
+.vin{display:inline-flex;flex-direction:column;gap:3px;padding:3px 6px;border-left:2px solid #8f99a8;border-right:2px solid #8f99a8;border-radius:11px}
+.wline,.wplane,.wlgs,.wmatcalc{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%}
+.whead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.wname{font-weight:600;font-size:14px;min-width:70px}
+.eqrow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--box);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:#fff;font:inherit;font-size:12.5px;padding:4px 10px;cursor:pointer;color:var(--mut);border-right:1px solid var(--box)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accbg);color:var(--acc);font-weight:600}
+.dims{display:flex;align-items:center;gap:8px;font-size:14px;flex-wrap:wrap}
+.dims select{font:inherit;padding:3px 6px;border:1px solid var(--box);border-radius:6px;background:#fff}
+.mgrid{display:inline-grid;gap:3px;padding:3px 6px;border-left:2px solid #8f99a8;border-right:2px solid #8f99a8;border-radius:8px}
+.mgrid .bx{width:56px}
+.mats{display:flex;gap:26px;flex-wrap:wrap;align-items:center}
+.results{padding:16px 20px 20px}
+.row{display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:14px;align-items:center;padding:7px 0;border-bottom:1px dashed #eceef2}
+.row:last-child{border-bottom:0}
+.row .lb{color:var(--mut);font-size:13.5px}
+.row .vl{font-family:var(--math);font-size:18px;line-height:1.5;overflow-x:auto}
+.row.main .lb{color:var(--ink);font-weight:600}
+.row.main .vl{font-size:20px}
+.ap{color:var(--mut);font-size:.86em;white-space:nowrap;margin-left:.35em}
+.verdict{display:inline-block;margin:2px 0 8px;padding:6px 12px;border-radius:7px;font-weight:600;font-size:15px}
+.verdict.ok{background:var(--okbg);color:var(--ok)}
+.verdict.bad{background:var(--badbg);color:var(--bad)}
+.verdict.warn{background:var(--warnbg);color:var(--warn)}
+.verdict.info{background:var(--infobg);color:var(--info)}
+.note{font-size:13px;color:var(--mut);margin:6px 0}
+.results h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:14px 0 2px}
+.steps{margin-top:16px;border-top:1px solid var(--line);padding-top:8px}
+.stt{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:650;margin-bottom:2px}
+.steps .row .vl{font-size:16px}
+.nosteps .steps{display:none}
+.hint{color:var(--mut);font-size:14px}
+.err{color:var(--bad);background:var(--badbg);padding:8px 12px;border-radius:7px;font-size:14px;display:inline-block}
+/* Mathe-Satz */
+.cv{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;padding:.05em .38em;margin:.1em .12em;border-left:1.5px solid currentColor;border-right:1.5px solid currentColor;border-radius:.55em/1.3em;line-height:1.22}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.82em;margin:0 .08em;line-height:1.12}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 .12em}
+.fr>span:last-child{padding:0 .12em}
+.sr{font-family:system-ui,"Segoe UI",Arial,sans-serif;font-size:.95em;margin-right:-.06em}
+.rad{border-top:1px solid currentColor;padding:0 .08em;margin-left:0}
+.vn{position:relative;display:inline-block;padding-top:.28em;line-height:1}
+.vn::before{content:"";position:absolute;top:.12em;left:.02em;right:.05em;border-top:1px solid currentColor}
+.vn::after{content:"";position:absolute;top:-.03em;right:.03em;width:.24em;height:.24em;border:solid currentColor;border-width:1px 1px 0 0;transform:rotate(45deg)}
+table.mat{display:inline-table;vertical-align:middle;border-collapse:separate;border-spacing:.55em .12em;border-left:1.5px solid currentColor;border-right:1.5px solid currentColor;border-radius:.5em;margin:.15em .2em}
+table.mat td{text-align:center}
+table.mat td.ag{border-left:1px solid var(--mut);padding-left:.5em}
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr}
+  nav{position:static;height:auto;max-height:260px;border-right:0;border-bottom:1px solid var(--line)}
+  .hint-top{display:none}
+  main{padding:14px 10px 40px}
+  .row{grid-template-columns:1fr;gap:2px}
+}
+
+/* ---------- Dunkelmodus ---------- */
+body.dark{--bg:#14171c;--card:#1c2027;--ink:#e4e7ec;--mut:#9aa3b2;--line:#2e343e;--box:#3d4450;--acc:#7fa6ff;--accbg:#22304f;
+  --ok:#6fd49a;--okbg:#173326;--bad:#ff8a80;--badbg:#3a1d1b;--warn:#f3c56b;--warnbg:#3a2f14;--info:#a3bdff;--infobg:#1f2a44;--lk:#c9a2f5;--lkbg:#2f2342;color-scheme:dark}
+.dark header,.dark nav{background:var(--card)}
+.dark nav button:hover,.dark .btn:hover{background:#262b34}
+.dark .btn,.dark .bx,.dark .seg button,.dark .dims select,.dark textarea.ta,.dark input.tl,.dark nav .search{background:#151920;color:var(--ink)}
+.dark .seg button.on{background:var(--accbg);color:var(--acc)}
+.dark .inputs{background:#181c23}
+.dark .hint-top code{background:#262b34;color:var(--ink)}
+.dark .row{border-bottom-color:#2a2f38}
+.dark .bx::placeholder,.dark .ta::placeholder,.dark .tl::placeholder{color:#5c6574}
+.dark .vin,.dark .mgrid{border-color:#6b7586}
+.dark .bx:focus,.dark .ta:focus,.dark .tl:focus{box-shadow:0 0 0 3px rgba(127,166,255,.22)}
+.dark table.vt th,.dark table.bt th{background:#232831}
+.dark table.bt td,.dark table.bt th{border-bottom-color:#2a2f38}
+.dark .tk{fill:#9aa3b2}.dark .gridl{stroke:#2a2f38}.dark .bar{fill:#3a5592}.dark .bon{fill:var(--acc)}.dark .axis{stroke:#6b7586}
+.dark .shade{fill:rgba(127,166,255,.25)}
+.dark .tree .nd,.dark .tree .lf,.dark .treebig .nd,.dark .treebig .lf{fill:var(--ink)}
+.dark .tree .bp,.dark .treebig .bp{fill:var(--acc)}
+.dark .tree .br,.dark .treebig .br{stroke:#5d6676}
+
+/* ---------- Zurück-Link und Darstellungs-Umschalter ---------- */
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--acc);text-decoration:none;border:1px solid var(--box);border-radius:7px;padding:5px 10px;white-space:nowrap}
+.back:hover{background:var(--accbg)}
+.themeSeg{display:inline-flex;border:1px solid var(--box);border-radius:7px;overflow:hidden;flex-shrink:0}
+.themeSeg button{border:0;border-right:1px solid var(--box);background:transparent;color:var(--mut);font:inherit;font-size:12.5px;padding:4px 9px;cursor:pointer}
+.themeSeg button:last-child{border-right:0}
+.themeSeg button.on{background:var(--accbg);color:var(--acc);font-weight:600}
+@media (max-width:820px){header{gap:10px;padding:0 10px}.tg{font-size:12px}header h1 span{display:none}}
+</style>
+</head>
+<body class="dark">
+<header>
+  <a class="back" href="index.html" title="Zurück zur Übersicht">← Übersicht</a>
+  <h1>Vektorrechner <span>· Q1/Q2</span></h1>
+  <div class="hint-top">Eingabe: <code>3</code> <code>-3/4</code> <code>0,5</code> <code>2*(1-3)</code> · Punkt/Vektor schnell: <code>1|2|3</code> oder <code>1 2 3</code> ins erste Feld</div>
+  <div class="themeSeg" id="themeSeg" title="Darstellung"><button type="button" data-t="dark">Dunkel</button><button type="button" data-t="light">Hell</button><button type="button" data-t="system">System</button></div>
+  <label class="tg"><input type="checkbox" id="tgSteps" checked> Zwischenergebnisse</label>
+  <label class="tg"><input type="checkbox" id="tgLK" checked> LK-Rechner</label>
+</header>
+<div class="layout">
+  <nav id="nav"><input class="search" id="search" placeholder="Rechner suchen …" autocomplete="off"></nav>
+  <main id="main"></main>
+</div>
+<script>
+'use strict';
+/* =====================================================================
+   1) EXAKTE ARITHMETIK: Brüche (BigInt) und Wurzelterme c·√r
+   ===================================================================== */
+class Incomplete extends Error{}
+class InErr extends Error{}      // Eingabe nicht lesbar
+class MErr extends Error{}       // mathematisch unzulässig (z. B. Nullvektor)
+const BI=BigInt;
+const babs=x=>x<0n?-x:x;
+function gcd(a,b){a=babs(a);b=babs(b);while(b){const t=a%b;a=b;b=t;}return a;}
+
+class Q{
+  constructor(n,d=1n){
+    if(d===0n) throw new MErr('Division durch 0');
+    if(d<0n){n=-n;d=-d;}
+    const g=gcd(n,d)||1n; this.n=n/g; this.d=d/g;
+  }
+  add(o){return new Q(this.n*o.d+o.n*this.d,this.d*o.d)}
+  sub(o){return new Q(this.n*o.d-o.n*this.d,this.d*o.d)}
+  mul(o){return new Q(this.n*o.n,this.d*o.d)}
+  div(o){if(o.n===0n) throw new MErr('Division durch 0'); return new Q(this.n*o.d,this.d*o.n)}
+  neg(){return new Q(-this.n,this.d)}
+  abs(){return new Q(babs(this.n),this.d)}
+  z(){return this.n===0n}
+  sg(){return this.n>0n?1:this.n<0n?-1:0}
+  eq(o){return this.n===o.n&&this.d===o.d}
+  int(){return this.d===1n}
+  num(){return Number(this.n)/Number(this.d)}
+}
+const q=x=>new Q(BI(x));
+const Q0=q(0),Q1=q(1),HALF=new Q(1n,2n);
+
+/* Parser: Zahlen (Komma oder Punkt), + - * / ^ und Klammern */
+function parseQ(raw){
+  let s=String(raw).replace(/[−–—]/g,'-').replace(/[×·]/g,'*').replace(/[÷:]/g,'/').replace(/\s+/g,'');
+  s=s.replace(/^[A-Za-z]'*\(/,'('); // „P(1“ → „(1“
+  const cnt=c=>s.split(c).length-1;
+  while(cnt('(')>cnt(')')&&s.startsWith('(')) s=s.slice(1);   // Reste von „(1|2|3)“
+  while(cnt(')')>cnt('(')&&s.endsWith(')')) s=s.slice(0,-1);
+  if(s==='') return null;
+  let i=0;
+  const fail=()=>{throw new InErr('Eingabe nicht lesbar: „'+raw+'“');};
+  const expr=()=>{let v=term();while(s[i]==='+'||s[i]==='-'){const op=s[i++];const t=term();v=op==='+'?v.add(t):v.sub(t);}return v;};
+  const term=()=>{let v=unary();while(s[i]==='*'||s[i]==='/'){const op=s[i++];const f=unary();v=op==='*'?v.mul(f):v.div(f);}return v;};
+  const unary=()=>{if(s[i]==='-'){i++;return unary().neg();}if(s[i]==='+'){i++;return unary();}return power();};
+  const power=()=>{const b=atom();if(s[i]!=='^')return b;i++;const e=unary();if(!e.int()||babs(e.n)>64n)fail();
+    let k=e.n,base=b,r=Q1;if(k<0n){base=Q1.div(b);k=-k;}for(let j=0n;j<k;j++)r=r.mul(base);return r;};
+  const atom=()=>{
+    if(s[i]==='('){i++;const v=expr();if(s[i]!==')')fail();i++;return v;}
+    const m=/^(\d*)(?:[.,](\d*))?/.exec(s.slice(i)); const tok=m[0];
+    if(!/\d/.test(tok)) fail(); i+=tok.length;
+    const ip=m[1]||'0', fp=m[2]||'';
+    return new Q(BI(ip+fp),10n**BI(fp.length));
+  };
+  const v=expr(); if(i!==s.length) fail(); return v;
+}
+
+/* Wurzelterme: Wert = c·√r, r quadratfrei */
+function isqrt(n){if(n<2n)return n;let x=BI(Math.floor(Math.sqrt(Number(n))));while(x*x>n)x--;while((x+1n)*(x+1n)<=n)x++;return x;}
+function sqf(r){ // r = k²·m
+  let k=1n,m=1n,n=r;
+  for(let p=2n;p*p<=n&&p<200000n;p+=(p===2n?1n:2n)){let c=0n;while(n%p===0n){n/=p;c++;}if(c){k*=p**(c/2n);if(c%2n)m*=p;}}
+  const s=isqrt(n); if(s*s===n) k*=s; else m*=n;
+  return [k,m];
+}
+function S(c,r=1n){
+  if(r<0n) throw new MErr('Wurzel aus negativer Zahl');
+  if(r===0n||c.z()) return {c:Q0,r:1n};
+  const [k,m]=sqf(r); return {c:c.mul(new Q(k)),r:m};
+}
+const sq=x=>({c:x,r:1n});
+function sqrtQ(x){if(x.sg()<0) throw new MErr('Wurzel aus negativer Zahl'); return S(new Q(1n,x.d),x.n*x.d);}
+const smul=(a,b)=>S(a.c.mul(b.c),a.r*b.r);
+function sdiv(a,b){if(b.c.z()) throw new MErr('Division durch 0'); return S(a.c.div(b.c).div(new Q(b.r)),a.r*b.r);}
+const snum=a=>a.c.num()*Math.sqrt(Number(a.r));
+
+/* Vektoren (Arrays von Q) */
+const vadd=(a,b)=>a.map((x,i)=>x.add(b[i]));
+const vsub=(a,b)=>a.map((x,i)=>x.sub(b[i]));
+const vsc=(k,a)=>a.map(x=>k.mul(x));
+const vneg=a=>a.map(x=>x.neg());
+const dot=(a,b)=>a.reduce((s,x,i)=>s.add(x.mul(b[i])),Q0);
+const cross=(a,b)=>[a[1].mul(b[2]).sub(a[2].mul(b[1])),a[2].mul(b[0]).sub(a[0].mul(b[2])),a[0].mul(b[1]).sub(a[1].mul(b[0]))];
+const vz=a=>a.every(x=>x.z());
+const veq=(a,b)=>a.every((x,i)=>x.eq(b[i]));
+const len=a=>sqrtQ(dot(a,a));
+const det3=(a,b,c)=>dot(a,cross(b,c));
+function prim(a){ // auf teilerfremde ganze Zahlen kürzen, Orientierung bleibt
+  if(vz(a)) return a.slice();
+  let L=1n; a.forEach(x=>{L=L/gcd(L,x.d)*x.d;});
+  const w=a.map(x=>x.n*(L/x.d)); let g=0n; w.forEach(x=>g=gcd(g,x));
+  return w.map(x=>new Q(x/g));
+}
+function primS(a){const p=prim(a);const f=p.find(x=>!x.z());return f&&f.sg()<0?vneg(p):p;}
+function parK(a,b){ // b = k·a ? → k oder null
+  const i=a.findIndex(x=>!x.z()); if(i<0) return null;
+  const k=b[i].div(a[i]); return veq(b,vsc(k,a))?k:null;
+}
+
+/* LGS (Gauß-Jordan, exakt) */
+function solve(A,b){
+  const m=A.length,n=A[0].length;
+  const M=A.map((r,i)=>[...r,b[i]]); const piv=[]; let row=0;
+  for(let c=0;c<n&&row<m;c++){
+    let p=-1; for(let r=row;r<m;r++) if(!M[r][c].z()){p=r;break;}
+    if(p<0) continue;
+    [M[row],M[p]]=[M[p],M[row]];
+    const pv=M[row][c]; M[row]=M[row].map(x=>x.div(pv));
+    for(let r=0;r<m;r++) if(r!==row&&!M[r][c].z()){const f=M[r][c];M[r]=M[r].map((x,j)=>x.sub(f.mul(M[row][j])));}
+    piv.push(c); row++;
+  }
+  for(const r of M) if(r.slice(0,n).every(x=>x.z())&&!r[n].z()) return {t:'none',M,piv};
+  const free=[]; for(let c=0;c<n;c++) if(!piv.includes(c)) free.push(c);
+  const x=Array(n).fill(Q0); piv.forEach((c,i)=>x[c]=M[i][n]);
+  if(!free.length) return {t:'uni',x,M,piv,free};
+  const basis=free.map(f=>{const v=Array(n).fill(Q0);v[f]=Q1;piv.forEach((c,i)=>v[c]=M[i][f].neg());return v;});
+  return {t:'inf',x,basis,free,M,piv};
+}
+
+/* Geometrie-Objekte: Gerade {p,u}; Ebene {p,u,v,n,d,nr}, n·x = d */
+function mkPlane(p,u,v){
+  const nr=cross(u,v);
+  if(vz(nr)) throw new MErr('Die Spannvektoren sind parallel – sie spannen keine Ebene auf.');
+  const n=primS(nr); return {p,u,v,nr,n,d:dot(n,p)};
+}
+function planeND(n0,d0){
+  if(vz(n0)) throw new MErr('Der Normalenvektor darf nicht der Nullvektor sein.');
+  const n=primS(n0); const i=n0.findIndex(x=>!x.z()); const k=n[i].div(n0[i]); const d=d0.mul(k);
+  const p=[Q0,Q0,Q0]; p[i]=d.div(n[i]);
+  const [a,b,c]=n;
+  const cand=[[b,a.neg(),Q0],[c,Q0,a.neg()],[Q0,c,b.neg()]].filter(w=>!vz(w)).map(prim);
+  const u=cand[0], v=cand.find(w=>parK(u,w)===null);
+  return {p,u,v,nr:n0,n,d};
+}
+const onPlane=(P,E)=>dot(E.n,P).eq(E.d);
+function onLine(P,g){const w=vsub(P,g.p);if(vz(w))return Q0;return parK(g.u,w);}
+function lineLine(g,h){
+  if(parK(g.u,h.u)!==null) return onLine(h.p,g)!==null?{t:'ident'}:{t:'par'};
+  const A=[0,1,2].map(i=>[g.u[i],h.u[i].neg()]);
+  const sol=solve(A,vsub(h.p,g.p));
+  if(sol.t==='none') return {t:'wind'};
+  const [r,s]=sol.x; return {t:'schn',r,s,S:vadd(g.p,vsc(r,g.u))};
+}
+function linePlane(g,E){
+  const nu=dot(E.n,g.u), np=dot(E.n,g.p);
+  if(nu.z()) return {t:np.eq(E.d)?'in':'par',nu,np};
+  const r=E.d.sub(np).div(nu); return {t:'schn',r,S:vadd(g.p,vsc(r,g.u)),nu,np};
+}
+function planePlane(E,F){
+  const c=cross(E.n,F.n);
+  if(vz(c)) return {t:onPlane(F.p,E)?'ident':'par'};
+  const k=[2,1,0].find(i=>!c[i].z()); const [i,j]=[0,1,2].filter(t=>t!==k);
+  const a1=E.n[i],b1=E.n[j],a2=F.n[i],b2=F.n[j]; const D=a1.mul(b2).sub(b1.mul(a2));
+  const p=[Q0,Q0,Q0];
+  p[i]=E.d.mul(b2).sub(F.d.mul(b1)).div(D);
+  p[j]=a1.mul(F.d).sub(a2.mul(E.d)).div(D);
+  return {t:'schn',g:{p,u:prim(c)},raw:c,k};
+}
+function distPE(P,E){
+  const val=dot(E.n,P).sub(E.d);
+  return {val,d:sdiv(sq(val.abs()),len(E.n)),F:vsub(P,vsc(val.div(dot(E.n,E.n)),E.n))};
+}
+function distPL(P,g){
+  const t=dot(vsub(P,g.p),g.u).div(dot(g.u,g.u)); const F=vadd(g.p,vsc(t,g.u));
+  return {t,F,d:len(vsub(P,F))};
+}
+function distSkew(g,h){
+  const n=cross(g.u,h.u); const w=vsub(h.p,g.p);
+  const d=sdiv(sq(dot(w,n).abs()),len(n));
+  const W=vsub(g.p,h.p);
+  const sol=solve([[dot(g.u,g.u),dot(h.u,g.u).neg()],[dot(g.u,h.u),dot(h.u,h.u).neg()]],[dot(W,g.u).neg(),dot(W,h.u).neg()]);
+  const [r,s]=sol.x;
+  return {n,w,d,r,s,Fg:vadd(g.p,vsc(r,g.u)),Fh:vadd(h.p,vsc(s,h.u))};
+}
+const reflPE=(P,E)=>{const {F}=distPE(P,E);return vsub(vsc(q(2),F),P);};
+const cosS=(a,b,absv)=>{let d=dot(a,b);if(absv)d=d.abs();return sdiv(sq(d),smul(len(a),len(b)));};
+const clamp=x=>Math.max(-1,Math.min(1,x));
+const acosd=s=>Math.acos(clamp(snum(s)))*180/Math.PI;
+const asind=s=>Math.asin(clamp(snum(s)))*180/Math.PI;
+function matmul(A,B){return A.map(r=>B[0].map((_,j)=>r.reduce((s,x,k)=>s.add(x.mul(B[k][j])),Q0)));}
+
+/* =====================================================================
+   2) AUSGABE-FORMATIERUNG (HTML)
+   ===================================================================== */
+const MI='−';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const vn=s=>`<span class="vn">${s}</span>`;
+const XV=vn('x');
+const XS=['x<sub>1</sub>','x<sub>2</sub>','x<sub>3</sub>'];
+function fq(x){const neg=x.n<0n,n=babs(x.n);if(x.d===1n)return(neg?MI:'')+n;return(neg?MI:'')+`<span class="fr"><span>${n}</span><span>${x.d}</span></span>`;}
+const fqp=x=>(x.n<0n||x.d!==1n)?'('+fq(x)+')':fq(x);
+function dec(x,dg=4){if(!isFinite(x))return'–';const f=10**dg;let v=Math.round(x*f)/f;if(v===0)v=0;return v.toLocaleString('de-DE',{maximumFractionDigits:dg}).replace('-',MI);}
+const fqx=x=>x.int()?fq(x):fq(x)+` <span class="ap">≈ ${dec(x.num())}</span>`;
+function fs(a){
+  if(a.r===1n) return fq(a.c);
+  const neg=a.c.n<0n,m=a.c.abs(); const rt=`<span class="sr">√</span><span class="rad">${a.r}</span>`;
+  const nu=(m.n===1n?'':m.n)+rt;
+  return (neg?MI:'')+(m.d===1n?nu:`<span class="fr"><span>${nu}</span><span>${m.d}</span></span>`);
+}
+const fsx=a=>(a.r===1n&&a.c.int())?fs(a):fs(a)+` <span class="ap">≈ ${dec(snum(a))}</span>`;
+const fv=a=>`<span class="cv">${a.map(x=>`<span>${fq(x)}</span>`).join('')}</span>`;
+const fvd=a=>`<span class="cv">${a.map(x=>`<span>${dec(x.num())}</span>`).join('')}</span>`;
+const fvx=a=>a.every(x=>x.int())?fv(a):fv(a)+` <span class="ap">≈ ${fvd(a)}</span>`;
+function fvs(a){const ex=`<span class="cv">${a.map(x=>`<span>${fs(x)}</span>`).join('')}</span>`;
+  return a.every(x=>x.r===1n&&x.c.int())?ex:ex+` <span class="ap">≈ <span class="cv">${a.map(x=>`<span>${dec(snum(x))}</span>`).join('')}</span></span>`;}
+function fpt(nm,a){const ex=`${nm}(${a.map(fq).join(' | ')})`;
+  return a.every(x=>x.int())?ex:ex+` <span class="ap">≈ ${nm}(${a.map(x=>dec(x.num())).join(' | ')})</span>`;}
+function fdeg(x){const r=Math.round(x);return Math.abs(x-r)<1e-9?`= ${r}°`:`≈ ${dec(x,2)}°`;}
+const fline=(nm,L,par='r')=>`${nm}: ${XV} = ${fv(L.p)} + ${par} · ${fv(L.u)}`;
+const fplP=(nm,E)=>`${nm}: ${XV} = ${fv(E.p)} + r · ${fv(E.u)} + s · ${fv(E.v)}`;
+/* lineare Terme: c + k1·v1 + k2·v2 … mit sauberen Vorzeichen */
+function fLin(c,terms,sep=''){
+  let h=''; const push=(neg,body)=>{h+=h===''?(neg?MI:'')+body:(neg?' − ':' + ')+body;};
+  if(c&&!c.z()) push(c.sg()<0,fq(c.abs()));
+  terms.forEach(([k,v])=>{if(k.z())return;const a=k.abs();push(k.sg()<0,(a.n===1n&&a.d===1n?'':fq(a)+sep)+v);});
+  return h||'0';
+}
+const flhs=n=>fLin(null,n.map((c,i)=>[c,XS[i]]));
+const fkoord=(nm,E)=>`${nm}: ${flhs(E.n)} = ${fq(E.d)}`;
+const fnorm=(nm,E)=>`${nm}: [${XV} − ${fv(E.p)}] · ${fv(E.n)} = 0`;
+function fhnf(nm,E){const L=len(E.n);if(L.r===1n&&L.c.eq(Q1))return fkoord(nm,E)+' <span class="ap">(|n| = 1)</span>';const top=flhs(E.n)+(E.d.z()?'':(E.d.sg()>0?' − ':' + ')+fq(E.d.abs()));
+  return `${nm}: <span class="fr"><span>${top}</span><span>${fs(L)}</span></span> = 0`;}
+const sumSq=v=>v.map(x=>fqp(x)+'²').join(' + ')+' = '+fq(dot(v,v));
+const dotExpr=(a,b)=>a.map((x,i)=>fqp(x)+' · '+fqp(b[i])).join(' + ')+' = '+fq(dot(a,b));
+function fsum(list){ // Summe von Wurzeltermen, gleiche Radikanden zusammenfassen
+  const m=new Map(); list.forEach(s=>{const k=s.r.toString();m.set(k,(m.get(k)||Q0).add(s.c));});
+  const terms=[...m.entries()].filter(([,c])=>!c.z()).sort((a,b)=>BI(a[0])<BI(b[0])?-1:1).map(([k,c])=>({c,r:BI(k)}));
+  if(!terms.length) return '0';
+  let h=''; terms.forEach((t,i)=>{const neg=t.c.sg()<0;const body=fs({c:t.c.abs(),r:t.r});h+=i===0?(neg?MI:'')+body:(neg?' − ':' + ')+body;});
+  const tot=list.reduce((s,x)=>s+snum(x),0);
+  return (terms.length===1&&terms[0].r===1n&&terms[0].c.int())?h:h+` <span class="ap">≈ ${dec(tot)}</span>`;
+}
+const fmat=(M,f=fq,aug=-1)=>`<table class="mat">${M.map(r=>`<tr>${r.map((x,j)=>`<td${j===aug?' class="ag"':''}>${f(x)}</td>`).join('')}</tr>`).join('')}</table>`;
+const fmatx=M=>{const f=M.flat();if(f.every(x=>x.int()))return fmat(M);const d=fmat(M,x=>dec(x.num()));
+  return f.some(x=>x.d>100000n)?'≈ '+d+' <span class="ap">(exakte Brüche zu lang)</span>':fmat(M)+` <span class="ap">≈ ${d}</span>`;};
+
+class Out{
+  constructor(){this.a=[];this.s=[];}
+  v(t,k='ok'){this.a.push(`<div class="verdict ${k}">${t}</div>`);}
+  m(l,h){this.a.push(`<div class="row main"><div class="lb">${l}</div><div class="vl">${h}</div></div>`);}
+  r(l,h){this.a.push(`<div class="row"><div class="lb">${l}</div><div class="vl">${h}</div></div>`);}
+  st(l,h){this.s.push(`<div class="row"><div class="lb">${l}</div><div class="vl">${h}</div></div>`);}
+  n(t){this.a.push(`<div class="note">${t}</div>`);}
+  h(t){this.a.push(`<h3>${t}</h3>`);}
+  html(){return this.a.join('')+(this.s.length?`<div class="steps"><div class="stt">Zwischenergebnisse</div>${this.s.join('')}</div>`:'');}
+}
+
+/* =====================================================================
+   3) EINGABE-WIDGETS
+   ===================================================================== */
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+function mkBox(ph){const i=el('input','bx');i.type='text';i.autocomplete='off';i.spellcheck=false;if(ph)i.placeholder=ph;return i;}
+function splitParts(v){
+  let s=v.trim(); if(!/[|;\s]/.test(s)) return null;
+  s=s.replace(/^[A-Za-z][A-Za-z0-9']*\s*(?=\()/,'').replace(/^\(/,'').replace(/\)$/,'').replace(/\s*([+*/^])\s*/g,'$1');
+  const parts=s.split(/[|;\s]+/).filter(x=>x!==''); return parts.length>=2?parts:null;
+}
+/* "1|2|3" oder "1 2 3" in ein Feld → auf die Felder der Gruppe verteilen */
+function linkGroup(bs){
+  bs.forEach((b,idx)=>b.addEventListener('input',()=>{
+    const parts=splitParts(b.value); if(!parts) return;
+    for(let k=0;k<parts.length&&idx+k<bs.length;k++) bs[idx+k].value=parts[k];
+    const last=Math.min(idx+parts.length,bs.length)-1; bs[last].focus();
+    const L=bs[last].value.length; bs[last].setSelectionRange(L,L);
+  }));
+}
+function readTriple(bs,opt){const v=bs.map(b=>parseQ(b.value));
+  if(v.every(x=>x===null)){if(opt)return null;throw new Incomplete();}
+  if(v.some(x=>x===null)) throw new Incomplete(); return v;}
+function setTriple(bs,s){const p=(s==null||s==='')?[]:String(s).split('|');bs.forEach((b,i)=>b.value=p[i]??'');}
+
+function wPt(key,label=key,opt=false){
+  const bs=[mkBox(),mkBox(),mkBox()]; linkGroup(bs);
+  const e=el('span','w wpt'); e.append(el('span','lbl',label+'('),bs[0],el('span','sep','|'),bs[1],el('span','sep','|'),bs[2],el('span','lbl',')'));
+  return {key,el:e,get:()=>readTriple(bs,opt),set:s=>setTriple(bs,s)};
+}
+function bareVec(){const bs=[mkBox(),mkBox(),mkBox()];linkGroup(bs);const e=el('span','vin');bs.forEach(b=>e.append(b));
+  return {el:e,get:o=>readTriple(bs,o),set:s=>setTriple(bs,s)};}
+function wVec(key,label,opt=false){const v=bareVec();const e=el('span','w wvec');e.append(el('span','lbl',label+' ='),v.el);
+  return {key,el:e,get:()=>v.get(opt),set:v.set};}
+function wNum(key,label,opt=false,ph=''){const b=mkBox(ph);const e=el('span','w wnum');e.append(el('span','lbl',label+' ='),b);
+  return {key,el:e,get(){const x=parseQ(b.value);if(x===null&&!opt)throw new Incomplete();return x;},set(s){b.value=s??'';}};}
+function seg(opts,cur,onSet){
+  const e=el('div','seg'); const btns={};
+  const set=v=>{cur=v;for(const k in btns)btns[k].classList.toggle('on',k===v);onSet(v);};
+  opts.forEach(([v,t])=>{const b=el('button','',t);b.type='button';b.onclick=()=>{set(v);e.dispatchEvent(new Event('change',{bubbles:true}));};btns[v]=b;e.append(b);});
+  set(cur); return {el:e,set,get:()=>cur};
+}
+function wSel(key,label,opts,def){const e=el('span','w wsel');if(label)e.append(el('span','wname',label));const s=seg(opts,def,()=>{});e.append(s.el);
+  return {key,el:e,get:s.get,set:v=>{if(v!=null)s.set(v);}};}
+function mkSelect(vals,def){const s=el('select');vals.forEach(v=>{const o=el('option','',String(v));o.value=v;s.append(o);});s.value=def;return s;}
+
+function wLine(key,name,par){
+  const e=el('div','w wline');
+  const p=bareVec(),u=bareVec(),A=wPt('A','P'),B=wPt('B','Q');
+  const p1=el('div','eqrow');p1.append(el('span','t',`${name}: ${XV} =`),p.el,el('span','t',`+ ${par} ·`),u.el);
+  const p2=el('div','eqrow');p2.append(el('span','t',`${name} durch`),A.el,el('span','t','und'),B.el);
+  const sg=seg([['pr','Stütz- + Richtungsvektor'],['pp','zwei Punkte']],'pr',m=>{p1.hidden=m!=='pr';p2.hidden=m!=='pp';});
+  const hd=el('div','whead');hd.append(el('span','wname',`Gerade ${name}`),sg.el);
+  e.append(hd,p1,p2);
+  const subs={p,u,A,B};
+  return {key,el:e,
+    get(){
+      if(sg.get()==='pr'){const P=p.get(),U=u.get();if(vz(U))throw new MErr(`Der Richtungsvektor von ${name} darf nicht der Nullvektor sein.`);return {p:P,u:U};}
+      const a=A.get(),b=B.get(),U=vsub(b,a);if(vz(U))throw new MErr(`Die beiden Punkte für ${name} sind identisch.`);return {p:a,u:U};
+    },
+    set(x){Object.values(subs).forEach(s=>s.set(null));if(x){sg.set(x.m);for(const k in x)if(subs[k])subs[k].set(x[k]);}}
+  };
+}
+function wPlane(key,name){
+  const e=el('div','w wplane');
+  const kb=[mkBox('0'),mkBox('0'),mkBox('0'),mkBox()]; linkGroup(kb);
+  const pk=el('div','eqrow');pk.append(el('span','t',name+':'),kb[0],el('span','t',XS[0]+' +'),kb[1],el('span','t',XS[1]+' +'),kb[2],el('span','t',XS[2]+' ='),kb[3]);
+  const pp=bareVec(),pu=bareVec(),pv=bareVec();
+  const pa=el('div','eqrow');pa.append(el('span','t',`${name}: ${XV} =`),pp.el,el('span','t','+ r ·'),pu.el,el('span','t','+ s ·'),pv.el);
+  const np=bareVec(),nn=bareVec();
+  const pn=el('div','eqrow');pn.append(el('span','t',`${name}: [ ${XV} −`),np.el,el('span','t','] ·'),nn.el,el('span','t','= 0'));
+  const A=wPt('A','A'),B=wPt('B','B'),C=wPt('C','C');
+  const p3=el('div','eqrow');p3.append(el('span','t',name+' durch'),A.el,B.el,C.el);
+  const panes={p:pa,k:pk,n:pn,'3':p3};
+  const sg=seg([['p','Parameterform'],['k','Koordinatenform'],['n','Normalenform'],['3','3 Punkte']],'p',m=>{for(const k in panes)panes[k].hidden=k!==m;});
+  const hd=el('div','whead');hd.append(el('span','wname',`Ebene ${name}`),sg.el);
+  e.append(hd,pa,pk,pn,p3);
+  const subs={k:{set:s=>setTriple(kb,s)},p:pp,u:pu,v:pv,np,nn,A,B,C};
+  return {key,el:e,
+    get(){
+      switch(sg.get()){
+        case 'k':{const vals=kb.map(b=>parseQ(b.value));if(vals.every(x=>x===null)||vals[3]===null)throw new Incomplete();
+          return planeND(vals.slice(0,3).map(x=>x??Q0),vals[3]);}
+        case 'p':return mkPlane(pp.get(),pu.get(),pv.get());
+        case 'n':{const P=np.get(),N=nn.get();const E=planeND(N,dot(N,P));E.p=P;return E;}
+        default:{const a=A.get(),b=B.get(),c=C.get();const u=vsub(b,a),v=vsub(c,a);
+          if(vz(cross(u,v)))throw new MErr(`Die drei Punkte liegen auf einer Geraden – sie legen keine Ebene fest.`);return mkPlane(a,u,v);}
+      }
+    },
+    set(x){Object.values(subs).forEach(s=>s.set(null));if(x){sg.set(x.m);for(const k in x)if(subs[k])subs[k].set(x[k]);}}
+  };
+}
+function wMatrix(name){
+  const e=el('span','w');const grid=el('span','mgrid');e.append(el('span','lbl',name+' ='),grid);
+  let boxes=[];
+  function dims(R,C){const old=boxes.map(r=>r.map(b=>b.value));grid.innerHTML='';grid.style.gridTemplateColumns=`repeat(${C},auto)`;boxes=[];
+    for(let i=0;i<R;i++){const row=[];for(let j=0;j<C;j++){const b=mkBox('0');b.value=old[i]?.[j]??'';grid.append(b);row.push(b);}linkGroup(row);boxes.push(row);}}
+  return {el:e,dims,
+    get(opt){const v=boxes.map(r=>r.map(b=>parseQ(b.value)));if(v.flat().every(x=>x===null)){if(opt)return null;throw new Incomplete();}return v.map(r=>r.map(x=>x??Q0));},
+    set(M){boxes.flat().forEach(b=>b.value='');if(M)M.forEach((row,i)=>row.split('|').forEach((x,j)=>{if(boxes[i]?.[j])boxes[i][j].value=x;}));}};
+}
+
+/* =====================================================================
+   4) RECHNER
+   ===================================================================== */
+const CALCS=[];
+const def=c=>CALCS.push(c);
+const G={grund:'Grundlagen',prod:'Produkte & Winkel',fig:'Figuren',ger:'Geraden',eb:'Ebenen',abs:'Abstände',sp:'Spiegelungen',hilf:'Hilfsmittel'};
+const LKtag=' <span class="lk">LK</span>';
+
+/* ---------- Grundlagen ---------- */
+def({g:G.grund,id:'zwei-punkte',t:'Zwei Punkte: Vektor, Abstand, Mittelpunkt',
+  inp:()=>[wPt('A'),wPt('B')],ex:{A:'1|2|-1',B:'4|-2|11'},
+  run({A,B},o){const AB=vsub(B,A);
+    o.m('Verbindungsvektor '+vn('AB'),fvx(AB));
+    o.r('Gegenvektor '+vn('BA'),fvx(vneg(AB)));
+    o.m('Abstand |'+vn('AB')+'|',fsx(len(AB)));
+    o.m('Mittelpunkt',fpt('M',vsc(HALF,vadd(A,B))));
+    o.st('|'+vn('AB')+'|²',sumSq(AB));}});
+
+def({g:G.grund,id:'teilungspunkt',t:'Teilungspunkt einer Strecke (m : n)',
+  inp:()=>[wPt('A'),wPt('B'),wNum('m','m'),wNum('n','n')],ex:{A:'0|0|0',B:'6|3|9',m:'1',n:'2'},
+  run({A,B,m,n},o){const s=m.add(n);if(s.z())throw new MErr('m + n darf nicht 0 sein.');
+    const k=m.div(s),AB=vsub(B,A),T=vadd(A,vsc(k,AB));
+    o.m('Teilungspunkt',fpt('T',T));
+    o.n('T teilt die Strecke AB im Verhältnis |AT| : |TB| = m : n.');
+    o.st('Ansatz',`${vn('OT')} = ${vn('OA')} + ${fq(k)} · ${vn('AB')}`);o.st(vn('AB'),fv(AB));}});
+
+def({g:G.grund,id:'betrag',t:'Betrag und Einheitsvektor',
+  inp:()=>[wVec('a',vn('a'))],ex:{a:'2|-3|6'},
+  run({a},o){if(vz(a))throw new MErr('Der Nullvektor hat Betrag 0 und keinen Einheitsvektor.');
+    const L=len(a),inv=sdiv(sq(Q1),L);
+    o.m('Betrag |'+vn('a')+'|',fsx(L));
+    o.m('Einheitsvektor '+vn('a')+'<sub>0</sub>',fvs(a.map(x=>smul(sq(x),inv))));
+    o.st('|'+vn('a')+'|²',sumSq(a));o.st('Ansatz',`${vn('a')}<sub>0</sub> = ${fs(inv)} · ${fv(a)}`);}});
+
+def({g:G.grund,id:'linearkombination',t:'Linearkombination r·a + s·b + t·c',
+  inp:()=>[wNum('r','r'),wVec('a',vn('a')),wNum('s','s'),wVec('b',vn('b')),wNum('t','t',true),wVec('c',vn('c'),true)],
+  ex:{r:'2',a:'1|0|-1',s:'-3',b:'2|1|1',t:'1/2',c:'4|2|0'},
+  run(v,o){let res=vadd(vsc(v.r,v.a),vsc(v.s,v.b));const terms=[[v.r,v.a],[v.s,v.b]];
+    if(v.t!==null||v.c!==null){if(v.t===null||v.c===null)throw new Incomplete();res=vadd(res,vsc(v.t,v.c));terms.push([v.t,v.c]);}
+    o.m('Ergebnis',fvx(res));o.st('Einzelterme',terms.map(([k,w])=>fv(vsc(k,w))).join(' + '));
+    o.n('t und c sind optional.');}});
+
+def({g:G.grund,id:'kollinear',t:'Kollinearität zweier Vektoren',
+  inp:()=>[wVec('a',vn('a')),wVec('b',vn('b'))],ex:{a:'2|-1|3',b:'-4|2|-6'},
+  run({a,b},o){if(vz(a)||vz(b)){o.v('Mindestens ein Vektor ist der Nullvektor (formal kollinear).','info');return;}
+    const k=parK(a,b);
+    o.st('Komponentenweise',a.map((x,i)=>x.z()?`${XS[i]}: ${fq(b[i])} = k · 0 ${b[i].z()?'✓':'✗'}`:`${XS[i]}: k = ${fq(b[i].div(x))}`).join('<br>'));
+    if(k!==null){o.v('kollinear (parallel)'+(k.sg()<0?', entgegengesetzt orientiert':', gleich orientiert'),'ok');o.m(`${vn('b')} = k · ${vn('a')}`,'k = '+fqx(k));}
+    else o.v('nicht kollinear','bad');}});
+
+def({g:G.grund,id:'lineare-abhaengigkeit',t:'Lineare (Un-)Abhängigkeit von drei Vektoren',
+  inp:()=>[wVec('a',vn('a')),wVec('b',vn('b')),wVec('c',vn('c'))],ex:{a:'1|2|3',b:'2|0|1',c:'4|4|7'},
+  run({a,b,c},o){const D=det3(a,b,c);
+    o.st(`det(${vn('a')}, ${vn('b')}, ${vn('c')})`,fq(D));
+    if(!D.z()){o.v('linear unabhängig','ok');o.n('Nur die triviale Linearkombination ergibt den Nullvektor; die Vektoren spannen den Raum auf.');return;}
+    o.v('linear abhängig (komplanar)','bad');
+    const sol=solve([0,1,2].map(i=>[a[i],b[i],c[i]]),[Q0,Q0,Q0]);
+    o.m('Nichttriviale Kombination',sol.basis.map(w=>{w=prim(w);return fLin(null,[[w[0],vn('a')],[w[1],vn('b')],[w[2],vn('c')]],' · ')+' = '+vn('0');}).join('<br>'));
+    if(sol.basis.length>1)o.n('Rang 1: alle drei Vektoren sind zueinander parallel (bzw. Nullvektoren).');
+    const s2=solve([0,1,2].map(i=>[a[i],b[i]]),c);
+    if(s2.t==='uni')o.r(`${vn('c')} als Kombination`,`${vn('c')} = `+fLin(null,[[s2.x[0],vn('a')],[s2.x[1],vn('b')]],' · '));
+    else if(s2.t==='none')o.n(`${vn('c')} lässt sich nicht aus ${vn('a')} und ${vn('b')} kombinieren (${vn('a')} ∥ ${vn('b')}).`);}});
+
+/* ---------- Produkte & Winkel ---------- */
+def({g:G.prod,id:'skalarprodukt',t:'Skalarprodukt',
+  inp:()=>[wVec('a',vn('a')),wVec('b',vn('b'))],ex:{a:'2|-1|3',b:'1|5|1'},
+  run({a,b},o){const d=dot(a,b);o.m(`${vn('a')} · ${vn('b')}`,fqx(d));
+    o.v(d.z()?`orthogonal (${vn('a')} ⟂ ${vn('b')})`:'nicht orthogonal',d.z()?'ok':'info');
+    o.st('Rechnung',dotExpr(a,b));}});
+
+def({g:G.prod,id:'winkel-vektoren',t:'Winkel zwischen zwei Vektoren',
+  inp:()=>[wVec('a',vn('a')),wVec('b',vn('b'))],ex:{a:'1|2|2',b:'2|-1|2'},
+  run({a,b},o){if(vz(a)||vz(b))throw new MErr('Mit dem Nullvektor ist kein Winkel definiert.');
+    const cs=cosS(a,b),deg=acosd(cs);
+    o.m('Winkel α','α '+fdeg(deg));o.r('cos α',fsx(cs));
+    if(deg>90+1e-9)o.r('Schnittwinkel zugehöriger Geraden',fdeg(180-deg));
+    o.st(`${vn('a')} · ${vn('b')}`,dotExpr(a,b));o.st(`|${vn('a')}| ; |${vn('b')}|`,fsx(len(a))+' ; '+fsx(len(b)));}});
+
+def({g:G.prod,id:'kreuzprodukt',t:'Kreuzprodukt / Normalenvektor',lk:true,
+  inp:()=>[wVec('a',vn('a')),wVec('b',vn('b'))],ex:{a:'1|2|-1',b:'3|0|2'},
+  run({a,b},o){const c=cross(a,b);o.m(`${vn('a')} × ${vn('b')}`,fvx(c));
+    if(vz(c)){o.v(`${vn('a')} und ${vn('b')} sind parallel – Kreuzprodukt ist der Nullvektor.`,'warn');return;}
+    const p=prim(c);if(!veq(p,c))o.r('gekürzter Normalenvektor',fv(p));
+    const L=len(c);o.r('Fläche Parallelogramm [FE]',fsx(L));o.r('Fläche Dreieck [FE]',fsx(smul(sq(HALF),L)));
+    o.st('Komponenten',[[1,2],[2,0],[0,1]].map(([i,j],k)=>`${fqp(a[i])}·${fqp(b[j])} − ${fqp(a[j])}·${fqp(b[i])} = ${fq(c[k])}`).join('<br>'));}});
+
+def({g:G.prod,id:'spatprodukt',t:'Spatprodukt und Volumen',lk:true,
+  inp:()=>[wVec('a',vn('a')),wVec('b',vn('b')),wVec('c',vn('c'))],ex:{a:'2|0|0',b:'1|3|0',c:'1|1|4'},
+  run({a,b,c},o){const cr=cross(a,b),s=dot(cr,c),V=s.abs();
+    o.m(`(${vn('a')} × ${vn('b')}) · ${vn('c')}`,fqx(s));
+    o.r('Volumen Spat [VE]',fqx(V));o.r('Volumen Pyramide, Parallelogramm-Grundfläche (⅓) [VE]',fqx(V.div(q(3))));o.r('Volumen Tetraeder / Dreieckspyramide (⅙) [VE]',fqx(V.div(q(6))));
+    if(s.z())o.v('Spatprodukt 0 → die Vektoren sind komplanar.','warn');
+    o.st(`${vn('a')} × ${vn('b')}`,fv(cr));}});
+
+/* ---------- Figuren ---------- */
+def({g:G.fig,id:'dreieck',t:'Dreieck aus drei Punkten',
+  inp:()=>[wPt('A'),wPt('B'),wPt('C')],ex:{A:'1|0|0',B:'3|2|1',C:'0|2|-2'},
+  run({A,B,C},o){const AB=vsub(B,A),AC=vsub(C,A),BC=vsub(C,B);const cr=cross(AB,AC);
+    if(vz(cr))throw new MErr('A, B und C liegen auf einer Geraden – kein Dreieck.');
+    const a2=dot(BC,BC),b2=dot(AC,AC),c2=dot(AB,AB);const a=sqrtQ(a2),b=sqrtQ(b2),c=sqrtQ(c2);
+    const dA=dot(AB,AC),dB=dot(vneg(AB),BC),dC=dot(vneg(AC),vneg(BC));
+    const typ=[];
+    if(a2.eq(b2)&&b2.eq(c2))typ.push('gleichseitig');
+    else{if(a2.eq(b2))typ.push('gleichschenklig (a = b, Basis c)');if(b2.eq(c2))typ.push('gleichschenklig (b = c, Basis a)');if(a2.eq(c2))typ.push('gleichschenklig (a = c, Basis b)');}
+    if(dA.z())typ.push('rechtwinklig bei A');else if(dB.z())typ.push('rechtwinklig bei B');else if(dC.z())typ.push('rechtwinklig bei C');
+    else if(dA.sg()<0||dB.sg()<0||dC.sg()<0)typ.push('stumpfwinklig');else typ.push('spitzwinklig');
+    o.v(typ.join(' · '),'info');
+    o.m('Seite a = |'+vn('BC')+'|',fsx(a));o.m('Seite b = |'+vn('AC')+'|',fsx(b));o.m('Seite c = |'+vn('AB')+'|',fsx(c));
+    const cA=sdiv(sq(dA),smul(c,b)),cB=sdiv(sq(dB),smul(c,a)),cC=sdiv(sq(dC),smul(b,a));
+    const wA=acosd(cA),wB=acosd(cB),wC=acosd(cC);
+    o.m('Innenwinkel',`α ${fdeg(wA)}, &nbsp; β ${fdeg(wB)}, &nbsp; γ ${fdeg(wC)}`);
+    const F=smul(sq(HALF),len(cr));o.m('Flächeninhalt [FE]',fsx(F));
+    o.r('Umfang',fsum([a,b,c]));
+    o.r('Schwerpunkt',fpt('S',vsc(new Q(1n,3n),vadd(vadd(A,B),C))));
+    o.st('Seitenvektoren',`${vn('AB')} = ${fv(AB)} &nbsp; ${vn('AC')} = ${fv(AC)} &nbsp; ${vn('BC')} = ${fv(BC)}`);
+    o.st('cos α ; cos β ; cos γ',`${fsx(cA)} ; &nbsp;${fsx(cB)} ; &nbsp;${fsx(cC)}`);
+    o.st('Winkelsumme (Kontrolle)',fdeg(wA+wB+wC));
+    o.st(`${vn('AB')} × ${vn('AC')}`,fv(cr)+' , Betrag '+fsx(len(cr)));}});
+
+def({g:G.fig,id:'viereck',t:'Viereck ABCD: Art, Seiten, Winkel, Fläche',
+  inp:()=>[wPt('A'),wPt('B'),wPt('C'),wPt('D')],ex:{A:'1|1|0',B:'5|1|3',C:'5|6|3',D:'1|6|0'},
+  run({A,B,C,D},o){const AB=vsub(B,A),BC=vsub(C,B),CD=vsub(D,C),DA=vsub(A,D),AC=vsub(C,A),BD=vsub(D,B);
+    if([AB,BC,CD,DA].some(vz))throw new MErr('Zwei aufeinanderfolgende Eckpunkte sind identisch.');
+    const dt=det3(AB,AC,vsub(D,A)),planar=dt.z();
+    if(!planar)o.v('A, B, C, D liegen nicht in einer Ebene – kein ebenes Viereck.','bad');
+    const l2=[AB,BC,CD,DA].map(v=>dot(v,v));
+    const pg=veq(AB,vneg(CD)),pa1=parK(AB,CD)!==null,pa2=parK(BC,DA)!==null;
+    let art;
+    if(pg){const re=dot(AB,BC).z(),ra=l2[0].eq(l2[1]);art=re&&ra?'Quadrat':re?'Rechteck':ra?'Raute':'Parallelogramm';}
+    else if(pa1||pa2)art='Trapez ('+(pa1?'AB ∥ CD':'BC ∥ AD')+')'+((pa1&&!l2[1].eq(l2[3]))||(pa2&&!l2[0].eq(l2[2]))?'':' – gleichschenklig');
+    else if((l2[0].eq(l2[3])&&l2[1].eq(l2[2]))||(l2[0].eq(l2[1])&&l2[2].eq(l2[3])))art='Drachenviereck';
+    else art='allgemeines Viereck';
+    if(planar)o.v(art,'info');
+    o.m('Seiten',['AB','BC','CD','DA'].map((n,i)=>`|${vn(n)}| = ${fsx(sqrtQ(l2[i]))}`).join('<br>'));
+    const ang=[[AB,vneg(DA)],[vneg(AB),BC],[vneg(BC),CD],[vneg(CD),DA]].map(([x,y])=>acosd(cosS(x,y)));
+    o.m('Innenwinkel',['α','β','γ','δ'].map((s,i)=>`${s} ${fdeg(ang[i])}`).join(', &nbsp;'));
+    o.r('Diagonalen',`|${vn('AC')}| = ${fsx(len(AC))}<br>|${vn('BD')}| = ${fsx(len(BD))}`+(dot(AC,BD).z()?'<br><span class="ap">Diagonalen sind orthogonal</span>':''));
+    if(planar){const F=smul(sq(HALF),len(cross(AC,BD)));o.m('Flächeninhalt [FE]',fsx(F));
+      const ll=lineLine({p:A,u:AC},{p:B,u:BD});
+      if(ll.t==='schn'){o.r('Diagonalenschnittpunkt',fpt('M',ll.S));
+        const inside=ll.r.sg()>0&&ll.r.num()<1&&ll.s.sg()>0&&ll.s.num()<1;
+        if(!inside)o.n('Die Diagonalen schneiden sich außerhalb – Viereck ist nicht konvex (oder überschlagen); Flächenformel ½|AC × BD| gilt nur für nicht überschlagene Vierecke.');}}
+    o.r('Umfang',fsum(l2.map(sqrtQ)));
+    o.st('Komplanarität det('+vn('AB')+', '+vn('AC')+', '+vn('AD')+')',fq(dt));
+    o.st('Seitenvektoren',`${vn('AB')} = ${fv(AB)} ${vn('BC')} = ${fv(BC)} ${vn('CD')} = ${fv(CD)} ${vn('DA')} = ${fv(DA)}`);
+    o.st(`${vn('AB')} = ${vn('DC')} ?`,pg?'ja → Parallelogramm':'nein');}});
+
+def({g:G.fig,id:'parallelogramm',t:'Parallelogramm ergänzen (4. Punkt)',
+  inp:()=>[wPt('A'),wPt('B'),wPt('C')],ex:{A:'1|2|0',B:'4|3|1',C:'5|6|2'},
+  run({A,B,C},o){if(vz(cross(vsub(B,A),vsub(C,A))))throw new MErr('A, B, C liegen auf einer Geraden.');
+    o.m('D für Parallelogramm ABCD',fpt('D',vadd(vsub(A,B),C)));
+    o.r('Mittelpunkt (Diagonalenschnitt)',fpt('M',vsc(HALF,vadd(A,C))));
+    o.h('Weitere Möglichkeiten');
+    o.r('Parallelogramm ABDC',fpt('D',vadd(vsub(B,A),C)));
+    o.r('Parallelogramm ADBC',fpt('D',vadd(vsub(A,C),B)));
+    o.st('Ansatz ABCD',`${vn('OD')} = ${vn('OA')} + ${vn('BC')} = ${fv(A)} + ${fv(vsub(C,B))}`);}});
+
+def({g:G.fig,id:'pyramide',t:'Pyramide: Höhe und Volumen',lk:true,
+  inp:()=>[wSel('typ','Grundfläche',[['3','Dreieck ABC'],['p','Parallelogramm ABCD'],['4','Viereck ABCD']],'3'),wPt('A'),wPt('B'),wPt('C'),wPt('D','D',true),wPt('S')],
+  ex:{typ:'3',A:'0|0|0',B:'4|0|0',C:'0|4|0',S:'1|1|6'},
+  run({typ,A,B,C,D,S:Sp},o){const AB=vsub(B,A),AC=vsub(C,A);const cr=cross(AB,AC);
+    if(vz(cr))throw new MErr('A, B, C liegen auf einer Geraden.');
+    const E=mkPlane(A,AB,AC);let G_;
+    if(typ==='3'){G_=smul(sq(HALF),len(cr));}
+    else if(typ==='p'){const Dp=vadd(vsub(A,B),C);if(D&&!veq(D,Dp))o.n('Hinweis: eingegebenes D ergibt kein Parallelogramm – verwendet wird D = A + '+vn('BC')+'.');
+      o.r('D (berechnet)',fpt('D',Dp));G_=len(cr);}
+    else{if(!D)throw new Incomplete();if(!onPlane(D,E))throw new MErr('D liegt nicht in der Ebene durch A, B, C.');G_=smul(sq(HALF),len(cross(AC,vsub(D,B))));}
+    if(onPlane(Sp,E))throw new MErr('Die Spitze S liegt in der Grundflächenebene.');
+    const r=distPE(Sp,E);const V=smul(smul(sq(new Q(1n,3n)),G_),r.d);
+    o.m('Volumen V = ⅓·G·h [VE]',fsx(V));o.r('Grundfläche G [FE]',fsx(G_));o.r('Höhe h',fsx(r.d));o.r('Höhenfußpunkt',fpt('F',r.F));
+    o.st('Grundflächenebene',fkoord('E',E));o.st(`${vn('AB')} × ${vn('AC')}`,fv(cr));}});
+
+/* ---------- Geraden ---------- */
+def({g:G.ger,id:'gerade-zwei-punkte',t:'Geradengleichung durch zwei Punkte',
+  inp:()=>[wPt('A'),wPt('B')],ex:{A:'2|-1|3',B:'6|1|-1'},
+  run({A,B},o){const u=vsub(B,A);if(vz(u))throw new MErr('A und B sind identisch.');
+    o.m('Parameterform',fline('g',{p:A,u}));const p=prim(u);
+    if(!veq(p,u))o.r('mit gekürztem Richtungsvektor',fline('g',{p:A,u:p}));
+    o.r('Strecke AB','für 0 ≤ r ≤ 1 (mit '+vn('AB')+' als Richtungsvektor)');}});
+
+def({g:G.ger,id:'punktprobe-gerade',t:'Punktprobe: Liegt P auf g?',
+  inp:()=>[wLine('g','g','r'),wPt('P')],ex:{g:{m:'pr',p:'1|2|0',u:'2|-1|3'},P:'7|-1|9'},
+  run({g,P},o){const t=onLine(P,g);
+    if(t!==null){o.v('P liegt auf g','ok');o.m('Parameter','r = '+fqx(t));}else o.v('P liegt nicht auf g','bad');
+    o.st('Komponentenweise',[0,1,2].map(i=>`${fq(P[i])} = ${fLin(g.p[i],[[g.u[i],'r']])} &nbsp;→&nbsp; `+
+      (g.u[i].z()?(P[i].eq(g.p[i])?'für jedes r erfüllt':'Widerspruch'):'r = '+fq(P[i].sub(g.p[i]).div(g.u[i])))).join('<br>'));}});
+
+def({g:G.ger,id:'lage-gerade-gerade',t:'Lagebeziehung zweier Geraden',
+  inp:()=>[wLine('g','g','r'),wLine('h','h','s')],ex:{g:{m:'pr',p:'1|0|2',u:'1|1|-1'},h:{m:'pr',p:'1|2|0',u:'1|-1|1'}},
+  run({g,h},o){const k=parK(g.u,h.u);
+    o.st('Richtungsvektoren',`${vn('u')} = ${fv(g.u)}, &nbsp; ${vn('v')} = ${fv(h.u)}`);
+    if(k!==null){
+      o.st('Parallelität',`${vn('v')} = ${fq(k)} · ${vn('u')} → Richtungsvektoren kollinear`);
+      const t=onLine(h.p,g);o.st('Punktprobe Stützpunkt von h in g',t!==null?`r = ${fq(t)} → liegt auf g`:'kein passendes r → liegt nicht auf g');
+      if(t!==null)o.v('g und h sind identisch','info');
+      else{o.v('g und h sind echt parallel','info');const r=distPL(h.p,g);o.m('Abstand'+LKtag,fsx(r.d));}
+      return;}
+    o.st('Parallelität',`${vn('v')} ist kein Vielfaches von ${vn('u')} → nicht parallel`);
+    o.st('Gleichsetzen',[0,1,2].map(i=>`${fLin(g.p[i],[[g.u[i],'r']])} = ${fLin(h.p[i],[[h.u[i],'s']])}`).join('<br>'));
+    const res=lineLine(g,h);
+    if(res.t==='schn'){o.v('g und h schneiden sich','ok');o.m('Schnittpunkt',fpt('S',res.S));
+      const cs=cosS(g.u,h.u,true),deg=acosd(cs);o.m('Schnittwinkel','α '+fdeg(deg));
+      o.st('Lösung des LGS',`r = ${fqx(res.r)}, &nbsp; s = ${fqx(res.s)}`);o.st('cos α = |u·v| / (|u|·|v|)',fsx(cs));}
+    else{o.v('g und h sind windschief','warn');o.st('Lösung des LGS','keine Lösung (Widerspruch)');
+      const r=distSkew(g,h);o.m('Abstand'+LKtag,fsx(r.d));}}});
+
+def({g:G.ger,id:'spurpunkte-gerade',t:'Spurpunkte einer Geraden',
+  inp:()=>[wLine('g','g','r')],ex:{g:{m:'pr',p:'2|-1|4',u:'1|1|-2'}},
+  run({g},o){const names=[['S<sub>23</sub>','x<sub>2</sub>x<sub>3</sub>-Ebene (x<sub>1</sub> = 0)'],['S<sub>13</sub>','x<sub>1</sub>x<sub>3</sub>-Ebene (x<sub>2</sub> = 0)'],['S<sub>12</sub>','x<sub>1</sub>x<sub>2</sub>-Ebene (x<sub>3</sub> = 0)']];
+    [2,1,0].forEach(k=>{const [nm,lab]=names[k];
+      if(g.u[k].z()){o.r(lab,g.p[k].z()?'g liegt in dieser Ebene':'kein Spurpunkt (g parallel zur Ebene)');return;}
+      const r=g.p[k].neg().div(g.u[k]);const P=vadd(g.p,vsc(r,g.u));o.m(lab,fpt(nm,P));o.st(nm,`${fLin(g.p[k],[[g.u[k],'r']])} = 0 → r = ${fq(r)}`);});}});
+
+/* ---------- Ebenen ---------- */
+function axisForm(E){
+  if(E.d.z())return 'nicht möglich (E enthält den Ursprung)';
+  return E.n.map((c,i)=>c.z()?null:`<span class="fr"><span>${XS[i]}</span><span>${fq(E.d.div(c))}</span></span>`).filter(Boolean).join(' + ')+' = 1';
+}
+def({g:G.eb,id:'ebenenformen',t:'Ebenengleichung: alle Formen, Spurpunkte, Spurgeraden',
+  inp:()=>[wPlane('E','E')],ex:{E:{m:'p',p:'1|0|2',u:'2|1|-1',v:'0|3|1'}},
+  run({E},o){
+    o.m('Parameterform',fplP('E',E));
+    o.m('Koordinatenform'+LKtag,fkoord('E',E));
+    o.m('Normalenform'+LKtag,fnorm('E',E));
+    o.r('Hesse-Normalform'+LKtag,fhnf('E',E));
+    o.r('Achsenabschnittsform',axisForm(E));
+    o.h('Spurpunkte (Schnitt mit den Achsen)');
+    E.n.forEach((c,i)=>{const lab=`${XS[i]}-Achse`;
+      if(c.z()){o.r(lab,E.d.z()?'Achse liegt in E':'keiner (E parallel zur Achse)');return;}
+      const P=[Q0,Q0,Q0];P[i]=E.d.div(c);o.r(lab,fpt('S<sub>'+(i+1)+'</sub>',P));});
+    o.h('Spurgeraden (Schnitt mit den Koordinatenebenen)');
+    [[2,'x<sub>1</sub>x<sub>2</sub>-Ebene'],[1,'x<sub>1</sub>x<sub>3</sub>-Ebene'],[0,'x<sub>2</sub>x<sub>3</sub>-Ebene']].forEach(([k,lab])=>{
+      const n=[Q0,Q0,Q0];n[k]=Q1;const r=planePlane(E,{n,d:Q0,p:[Q0,Q0,Q0]});
+      o.r(lab,r.t==='schn'?fline('s',r.g,'t'):r.t==='ident'?'E ist diese Koordinatenebene':'keine (E parallel)');});
+    o.st('Normalenvektor',`${vn('n')} = ${vn('u')} × ${vn('v')} = ${fv(E.nr)}`+(veq(E.nr,E.n)?'':` → gekürzt ${fv(E.n)}`));
+    o.st('d = '+vn('n')+' · '+vn('p'),dotExpr(E.n,E.p));}});
+
+def({g:G.eb,id:'punktprobe-ebene',t:'Punktprobe: Liegt P in E?',
+  inp:()=>[wPlane('E','E'),wPt('P')],ex:{E:{m:'p',p:'1|0|2',u:'2|1|-1',v:'0|3|1'},P:'3|4|4'},
+  run({E,P},o){const val=dot(E.n,P),ok=val.eq(E.d);
+    o.v(ok?'P liegt in E':'P liegt nicht in E',ok?'ok':'bad');
+    o.st('Einsetzen in '+fkoord('E',E),`${E.n.map((c,i)=>fqp(c)+' · '+fqp(P[i])).join(' + ')} = ${fq(val)} ${ok?'=':'≠'} ${fq(E.d)}`);
+    if(ok){const s=solve([0,1,2].map(i=>[E.u[i],E.v[i]]),vsub(P,E.p));o.m('Parameter',`r = ${fqx(s.x[0])}, &nbsp; s = ${fqx(s.x[1])}`);o.st('bezogen auf',fplP('E',E));}
+    else{o.st('Abstand'+LKtag,fsx(distPE(P,E).d));}}});
+
+def({g:G.eb,id:'lage-gerade-ebene',t:'Lagebeziehung Gerade – Ebene',
+  inp:()=>[wLine('g','g','r'),wPlane('E','E')],ex:{g:{m:'pr',p:'1|2|3',u:'1|-1|2'},E:{m:'k',k:'2|1|-1|4'}},
+  run({g,E},o){const r=linePlane(g,E);
+    o.st('Ebene',fkoord('E',E));
+    o.st('g in E einsetzen',E.n.map((c,i)=>c.z()?null:fqp(c)+'·('+fLin(g.p[i],[[g.u[i],'r']])+')').filter(Boolean).join(' + ')+' = '+fq(E.d));
+    o.st('vereinfacht',`${fLin(r.np,[[r.nu,'r']])} = ${fq(E.d)}`);
+    if(r.t==='in'){o.v('g liegt in E','info');o.st(vn('n')+' · '+vn('u'),'0 und Stützpunkt in E');}
+    else if(r.t==='par'){o.v('g ist echt parallel zu E','info');o.st(vn('n')+' · '+vn('u'),'0, Stützpunkt nicht in E');o.m('Abstand'+LKtag,fsx(distPE(g.p,E).d));}
+    else{o.v('g schneidet E','ok');o.m('Schnittpunkt',fpt('S',r.S));
+      const s=cosS(g.u,E.n,true),deg=asind(s);o.m('Schnittwinkel'+LKtag,'α '+fdeg(deg));
+      if(parK(E.n,g.u)!==null)o.n('g ist orthogonal zu E.');
+      o.st('r',fqx(r.r));o.st('sin α = |n·u| / (|n|·|u|)',fsx(s));}}});
+
+def({g:G.eb,id:'lage-ebene-ebene',t:'Lagebeziehung Ebene – Ebene',lk:true,
+  inp:()=>[wPlane('E','E'),wPlane('F','F')],ex:{E:{m:'k',k:'1|2|-1|3'},F:{m:'k',k:'2|-1|1|1'}},
+  run({E,F},o){const r=planePlane(E,F);
+    o.st('Koordinatenformen',fkoord('E',E)+'<br>'+fkoord('F',F));
+    o.st('Normalenvektoren',`${vn('n')}<sub>E</sub> = ${fv(E.n)}, &nbsp; ${vn('n')}<sub>F</sub> = ${fv(F.n)}`);
+    if(r.t==='ident'){o.v('E und F sind identisch','info');return;}
+    if(r.t==='par'){o.v('E und F sind echt parallel','info');o.m('Abstand',fsx(distPE(F.p,E).d));return;}
+    o.v('E und F schneiden sich','ok');o.m('Schnittgerade',fline('s',r.g,'t'));
+    const cs=cosS(E.n,F.n,true);o.m('Schnittwinkel','α '+fdeg(acosd(cs)));
+    if(dot(E.n,F.n).z())o.n('E und F sind orthogonal.');
+    o.st('Richtung '+vn('n')+'<sub>E</sub> × '+vn('n')+'<sub>F</sub>',fv(r.raw));
+    o.st('Stützpunkt',`${XS[r.k]} = 0 gesetzt → ${fpt('P',r.g.p)}`);
+    o.st('cos α = |n<sub>E</sub>·n<sub>F</sub>| / (|n<sub>E</sub>|·|n<sub>F</sub>|)',fsx(cs));}});
+
+def({g:G.eb,id:'vier-punkte',t:'Liegen vier Punkte in einer Ebene?',
+  inp:()=>[wPt('A'),wPt('B'),wPt('C'),wPt('D')],ex:{A:'1|0|0',B:'0|1|0',C:'0|0|1',D:'2|-1|0'},
+  run({A,B,C,D},o){const AB=vsub(B,A),AC=vsub(C,A),AD=vsub(D,A),dt=det3(AB,AC,AD);
+    o.v(dt.z()?'Die vier Punkte liegen in einer Ebene':'Die vier Punkte liegen nicht in einer Ebene',dt.z()?'ok':'bad');
+    o.st(`det(${vn('AB')}, ${vn('AC')}, ${vn('AD')})`,fq(dt));
+    if(!vz(cross(AB,AC))){const E=mkPlane(A,AB,AC);o.r('Ebene durch A, B, C',fkoord('E',E));
+      if(!dt.z())o.r('Abstand D zu E'+LKtag,fsx(distPE(D,E).d));
+      else{const s=solve([0,1,2].map(i=>[AB[i],AC[i]]),AD);o.st(vn('AD')+' als Kombination',`${vn('AD')} = `+fLin(null,[[s.x[0],vn('AB')],[s.x[1],vn('AC')]],' · '));}}
+    else o.n('A, B, C liegen auf einer Geraden.');}});
+
+/* ---------- Abstände (LK) ---------- */
+def({g:G.abs,id:'abstand-punkt-ebene',t:'Abstand Punkt – Ebene',lk:true,
+  inp:()=>[wPt('P'),wPlane('E','E')],ex:{P:'5|1|4',E:{m:'k',k:'2|-1|2|3'}},
+  run({P,E},o){const r=distPE(P,E);
+    o.m('Abstand d(P, E)',fsx(r.d));o.r('Lotfußpunkt',fpt('F',r.F));
+    if(!r.val.z())o.n(`P liegt auf der Seite von E, in die ${vn('n')} ${r.val.sg()>0?'zeigt':'nicht zeigt'}.`);else o.v('P liegt in E','info');
+    o.st('Hesse-Normalform',fhnf('E',E));
+    o.st('P einsetzen',`|${fq(dot(E.n,P))} − ${fqp(E.d)}| / ${fs(len(E.n))}`);
+    o.st('Lotgerade',fline('l',{p:P,u:E.n},'t')+' , t = '+fq(r.val.div(dot(E.n,E.n)).neg()));}});
+
+def({g:G.abs,id:'abstand-punkt-gerade',t:'Abstand Punkt – Gerade',lk:true,
+  inp:()=>[wPt('P'),wLine('g','g','r')],ex:{P:'4|5|1',g:{m:'pr',p:'1|0|2',u:'1|2|-2'}},
+  run({P,g},o){const r=distPL(P,g);
+    o.m('Abstand d(P, g)',fsx(r.d));o.r('Lotfußpunkt',fpt('F',r.F));
+    if(r.d.c.z())o.v('P liegt auf g','info');
+    o.st('Ansatz',`(${vn('OF')} − ${vn('OP')}) · ${vn('u')} = 0 mit F ∈ g`);
+    o.st('r',fqx(r.t));o.st(vn('FP'),fv(vsub(P,r.F)));}});
+
+def({g:G.abs,id:'abstand-gerade-gerade',t:'Abstand Gerade – Gerade',lk:true,
+  inp:()=>[wLine('g','g','r'),wLine('h','h','s')],ex:{g:{m:'pr',p:'1|0|2',u:'1|1|-1'},h:{m:'pr',p:'0|3|0',u:'2|-1|1'}},
+  run({g,h},o){const ll=lineLine(g,h);
+    if(ll.t==='ident'){o.v('identisch – Abstand 0','info');return;}
+    if(ll.t==='schn'){o.v('g und h schneiden sich – Abstand 0','info');o.r('Schnittpunkt',fpt('S',ll.S));return;}
+    if(ll.t==='par'){o.v('g und h sind parallel','info');const r=distPL(h.p,g);o.m('Abstand',fsx(r.d));o.r('Lotfußpunkt des Stützpunkts von h auf g',fpt('F',r.F));return;}
+    const r=distSkew(g,h);o.v('g und h sind windschief','warn');
+    o.m('Abstand',fsx(r.d));o.r('Lotfußpunkt auf g',fpt('F<sub>g</sub>',r.Fg));o.r('Lotfußpunkt auf h',fpt('F<sub>h</sub>',r.Fh));
+    o.st(vn('n')+' = '+vn('u')+' × '+vn('v'),fv(r.n));
+    o.st('d = |('+vn('q')+' − '+vn('p')+') · '+vn('n')+'| / |'+vn('n')+'|',`|${fq(dot(r.w,r.n))}| / ${fs(len(r.n))}`);
+    o.st('Parameter der Lotfußpunkte',`r = ${fqx(r.r)}, &nbsp; s = ${fqx(r.s)}`);}});
+
+def({g:G.abs,id:'abstand-gerade-ebene',t:'Abstand Gerade – Ebene',lk:true,
+  inp:()=>[wLine('g','g','r'),wPlane('E','E')],ex:{g:{m:'pr',p:'3|1|4',u:'1|0|-1'},E:{m:'k',k:'1|2|1|2'}},
+  run({g,E},o){const r=linePlane(g,E);
+    if(r.t==='schn'){o.v('g schneidet E – Abstand 0','info');o.r('Schnittpunkt',fpt('S',r.S));return;}
+    if(r.t==='in'){o.v('g liegt in E – Abstand 0','info');return;}
+    const d=distPE(g.p,E);o.v('g ist parallel zu E','info');o.m('Abstand',fsx(d.d));
+    o.st(vn('n')+' · '+vn('u'),'0');o.st('Abstand des Stützpunkts',`|${fq(dot(E.n,g.p))} − ${fqp(E.d)}| / ${fs(len(E.n))}`);
+    o.st('Lotfußpunkt des Stützpunkts',fpt('F',d.F));}});
+
+def({g:G.abs,id:'abstand-ebene-ebene',t:'Abstand Ebene – Ebene',lk:true,
+  inp:()=>[wPlane('E','E'),wPlane('F','F')],ex:{E:{m:'k',k:'2|-2|1|3'},F:{m:'k',k:'-4|4|-2|12'}},
+  run({E,F},o){const r=planePlane(E,F);
+    if(r.t==='schn'){o.v('E und F schneiden sich – Abstand 0','info');o.r('Schnittgerade',fline('s',r.g,'t'));return;}
+    if(r.t==='ident'){o.v('identisch – Abstand 0','info');return;}
+    const d=distPE(F.p,E);o.v('E und F sind parallel','info');o.m('Abstand',fsx(d.d));
+    o.st('Koordinatenformen',fkoord('E',E)+'<br>'+fkoord('F',F));o.st('Punkt von F',fpt('P',F.p));}});
+
+/* ---------- Spiegelungen ---------- */
+def({g:G.sp,id:'spiegel-punkt-punkt',t:'Punkt an Punkt spiegeln',
+  inp:()=>[wPt('P'),wPt('Z')],ex:{P:'1|-2|4',Z:'3|0|1'},
+  run({P,Z},o){o.m('Bildpunkt',fpt("P'",vsub(vsc(q(2),Z),P)));o.st('Ansatz',`${vn("OP'")} = ${vn('OP')} + 2 · ${vn('PZ')}, &nbsp; ${vn('PZ')} = ${fv(vsub(Z,P))}`);}});
+
+def({g:G.sp,id:'spiegel-punkt-gerade',t:'Punkt an Gerade spiegeln',lk:true,
+  inp:()=>[wPt('P'),wLine('g','g','r')],ex:{P:'4|5|1',g:{m:'pr',p:'1|0|2',u:'1|2|-2'}},
+  run({P,g},o){const r=distPL(P,g);o.m('Bildpunkt',fpt("P'",vsub(vsc(q(2),r.F),P)));
+    o.r('Lotfußpunkt',fpt('F',r.F));o.r('Abstand d(P, g)',fsx(r.d));o.st('r (Lotfußpunkt)',fqx(r.t));o.st('Ansatz',`${vn("OP'")} = ${vn('OP')} + 2 · ${vn('PF')}`);}});
+
+def({g:G.sp,id:'spiegel-punkt-ebene',t:'Punkt an Ebene spiegeln',lk:true,
+  inp:()=>[wPt('P'),wPlane('E','E')],ex:{P:'5|1|4',E:{m:'k',k:'2|-1|2|3'}},
+  run({P,E},o){const r=distPE(P,E);o.m('Bildpunkt',fpt("P'",vsub(vsc(q(2),r.F),P)));
+    o.r('Lotfußpunkt',fpt('F',r.F));o.r('Abstand d(P, E)',fsx(r.d));
+    o.st('Lotgerade',fline('l',{p:P,u:E.n},'t'));o.st('t (Lotfußpunkt)',fqx(r.val.div(dot(E.n,E.n)).neg()));o.st('Bildpunkt bei','t = '+fqx(r.val.div(dot(E.n,E.n)).neg().mul(q(2))));}});
+
+def({g:G.sp,id:'spiegel-gerade-ebene',t:'Gerade an Ebene spiegeln',lk:true,
+  inp:()=>[wLine('g','g','r'),wPlane('E','E')],ex:{g:{m:'pr',p:'1|2|3',u:'1|-1|2'},E:{m:'k',k:'2|1|-1|4'}},
+  run({g,E},o){const r=linePlane(g,E);
+    if(r.t==='in'){o.v('g liegt in E – Bildgerade ist g selbst','info');o.m('Bildgerade',fline("g'",g));return;}
+    if(r.t==='par'){const P1=reflPE(g.p,E);o.v('g ist parallel zu E','info');o.m('Bildgerade',fline("g'",{p:P1,u:prim(g.u)}));o.st("Gespiegelter Stützpunkt",fpt("P'",P1));return;}
+    const Pp=veq(g.p,r.S)?vadd(g.p,g.u):g.p;const P1=reflPE(Pp,E);const u=prim(vsub(P1,r.S));
+    o.v('g schneidet E – Bildgerade geht durch den Schnittpunkt','info');
+    o.m('Bildgerade',fline("g'",{p:r.S,u}));
+    o.st('Schnittpunkt',fpt('S',r.S));o.st('Gespiegelter Punkt von g',fpt('P',Pp)+' → '+fpt("P'",P1));}});
+
+/* ---------- Hilfsmittel ---------- */
+def({g:G.hilf,id:'lgs',t:'Lineares Gleichungssystem lösen',
+  inp:()=>{
+    const w=el('div','w wlgs');const sv=mkSelect([2,3,4,5],3),se=mkSelect([2,3,4,5],3);
+    const dm=el('div','dims');dm.append('Variablen',sv,'Gleichungen',se);const grid=el('div');w.append(dm,grid);
+    let rows=[];
+    function upd(){const nv=+sv.value,ne=+se.value;const old=rows.map(r=>({c:r.c.map(b=>b.value),r:r.r.value}));grid.innerHTML='';rows=[];
+      for(let i=0;i<ne;i++){const line=el('div','eqrow');line.style.marginBottom='5px';const c=[];
+        for(let j=0;j<nv;j++){const b=mkBox('0');b.value=old[i]?.c[j]??'';c.push(b);line.append(b,el('span','t',`x<sub>${j+1}</sub>`+(j<nv-1?' +':' =')));}
+        const rb=mkBox('0');rb.value=old[i]?.r??'';line.append(rb);linkGroup([...c,rb]);grid.append(line);rows.push({c,r:rb});}}
+    [sv,se].forEach(s=>s.addEventListener('change',upd));upd();
+    return [{key:'S',el:w,
+      get(){const A=rows.map(r=>r.c.map(b=>parseQ(b.value))),b=rows.map(r=>parseQ(r.r.value));
+        if([...A.flat(),...b].every(x=>x===null))throw new Incomplete();
+        return {A:A.map(r=>r.map(x=>x??Q0)),b:b.map(x=>x??Q0),nv:+sv.value};},
+      set(x){if(!x){rows.forEach(r=>{r.c.forEach(b=>b.value='');r.r.value='';});return;}
+        sv.value=x.nv;se.value=x.ne;upd();x.rows.forEach((s,i)=>{const p=s.split('|');rows[i].c.forEach((b,j)=>b.value=p[j]??'');rows[i].r.value=p[x.nv]??'';});}}];
+  },
+  ex:{S:{nv:3,ne:3,rows:['2|1|-1|8','-3|-1|2|-11','-2|1|2|-3']}},
+  run({S},o){const sol=solve(S.A,S.b);const X=i=>`x<sub>${i+1}</sub>`;
+    if(sol.t==='none'){o.v('keine Lösung','bad');o.m('Lösungsmenge','L = { }');}
+    else if(sol.t==='uni'){o.v('genau eine Lösung','ok');o.m('Lösung',sol.x.map((x,i)=>`${X(i)} = ${fqx(x)}`).join('<br>'));}
+    else{const P=['t','u','w','z'];o.v(`unendlich viele Lösungen (${sol.free.length} Parameter)`,'info');
+      o.m('Lösungsmenge',`${XV} = ${fv(sol.x)}`+sol.basis.map((v,i)=>` + ${P[i]} · ${fv(prim(v))}`).join(''));
+      o.n('Freie Variable(n): '+sol.free.map(X).join(', '));}
+    o.st('Rang',`Rang(A) = ${sol.piv.length}`);o.st('reduzierte Stufenform',fmat(sol.M,fq,S.nv));}});
+
+def({g:G.hilf,id:'matrizen',t:'Matrizenmultiplikation',
+  inp:()=>{
+    const A=wMatrix('A'),B=wMatrix('B');const sm=mkSelect([1,2,3,4,5],3),sn=mkSelect([1,2,3,4,5],3),sp=mkSelect([1,2,3,4,5],3);
+    const nlab=el('span','','');const dm=el('div','dims');dm.append('A:',sm,'×',sn,'   B:',nlab,sp);
+    const upd=()=>{A.dims(+sm.value,+sn.value);B.dims(+sn.value,+sp.value);nlab.textContent=sn.value+' ×';};
+    [sm,sn,sp].forEach(s=>s.addEventListener('change',upd));upd();
+    const box=el('div','w wmatcalc');const mats=el('div','mats');mats.append(A.el,B.el);box.append(dm,mats);
+    const k=wNum('k','Potenz A<sup>k</sup>: k',true);
+    return [{key:'dims',el:box,get:()=>null,set(x){if(x){sm.value=x[0];sn.value=x[1];sp.value=x[2];upd();}}},
+      {key:'A',el:el('span'),get:()=>A.get(),set:A.set},{key:'B',el:el('span'),get:()=>B.get(true),set:B.set},k];
+  },
+  ex:{dims:[2,3,2],A:['1|2|0','-1|3|1'],B:['2|1','0|-1','4|1/2'],k:''},
+  run({A,B,k},o){
+    if(B){const P=matmul(A,B);o.m(`A · B <span class="ap">(${A.length}×${B[0].length})</span>`,fmatx(P));}
+    if(k!==null){if(!k.int()||k.sg()<0||k.n>500n)throw new MErr('k muss eine natürliche Zahl ≤ 500 sein.');
+      if(A.length!==A[0].length)throw new MErr('Aᵏ ist nur für quadratische Matrizen definiert.');
+      let R=A.map((r,i)=>r.map((_,j)=>i===j?Q1:Q0)),base=A,e=k.n;
+      while(e>0n){if(e&1n)R=matmul(R,base);base=matmul(base,base);e>>=1n;}
+      o.m(`A<sup>${k.n}</sup>`,fmatx(R));}
+    if(!B&&k===null)o.n('Matrix B eingeben (für A · B) oder k (für A<sup>k</sup>). Leere Felder zählen als 0.');}});
+
+/* =====================================================================
+   5) OBERFLÄCHE
+   ===================================================================== */
+const main=document.getElementById('main'),nav=document.getElementById('nav');
+const navBtns={};
+function build(c){
+  const sec=el('section','calc');sec.hidden=true;
+  const head=el('div','chead');head.append(el('h2','',c.t+(c.lk?LKtag:'')));
+  const bt=el('div','cbtns');const bEx=el('button','btn','Beispiel'),bCl=el('button','btn','Leeren');bt.append(bEx,bCl);head.append(bt);
+  const inp=el('div','inputs');const ws=c.inp();ws.forEach(w=>inp.append(w.el));
+  const res=el('div','results');sec.append(head,inp,res);
+  const run=()=>{
+    try{const v={};ws.forEach(w=>{if(w.key)v[w.key]=w.get();});const o=new Out();c.run(v,o);res.innerHTML=o.html();}
+    catch(e){
+      if(e instanceof Incomplete)res.innerHTML='<div class="hint">Eingaben vervollständigen – das Ergebnis erscheint automatisch.</div>';
+      else if(e instanceof InErr||e instanceof MErr)res.innerHTML=`<div class="err">${esc(e.message)}</div>`;
+      else{console.error(e);res.innerHTML=`<div class="err">Interner Fehler: ${esc(e.message)}</div>`;}
+    }
+  };
+  sec.addEventListener('input',run);sec.addEventListener('change',run);
+  bEx.onclick=()=>{ws.forEach(w=>w.set&&w.set(c.ex?.[w.key]));run();};
+  bCl.onclick=()=>{ws.forEach(w=>w.set&&w.set(null));run();focusFirst(sec);};
+  c.sec=sec;c.run_=run;run();main.append(sec);
+}
+function focusFirst(sec){const b=sec.querySelector('.inputs .bx:not([hidden])');const vis=[...sec.querySelectorAll('.inputs .bx')].find(x=>x.offsetParent!==null);(vis||b)?.focus();}
+let current=null;
+function show(id,focus=true){
+  const c=CALCS.find(x=>x.id===id)||CALCS[0];
+  if(current)current.sec.hidden=true;current=c;c.sec.hidden=false;
+  for(const k in navBtns)navBtns[k].classList.toggle('on',k===c.id);
+  try{if(location.hash!=='#'+c.id)history.replaceState(null,'','#'+c.id);}catch(e){}
+  if(focus)focusFirst(c.sec);
+}
+let lastG=null;
+CALCS.forEach(c=>{
+  if(c.g!==lastG){const h=el('div','grp',c.g);h.dataset.g=c.g;nav.append(h);lastG=c.g;}
+  const b=el('button','',`<span>${c.t}</span>${c.lk?'<span class="lk">LK</span>':''}`);b.dataset.g=c.g;if(c.lk)b.dataset.lk='1';
+  b.onclick=()=>show(c.id);nav.append(b);navBtns[c.id]=b;build(c);
+});
+function filterNav(){
+  const qy=document.getElementById('search').value.trim().toLowerCase();const lk=document.getElementById('tgLK').checked;
+  const vis={};
+  CALCS.forEach(c=>{const ok=(lk||!c.lk)&&(!qy||(c.t+' '+c.g).toLowerCase().includes(qy));navBtns[c.id].hidden=!ok;if(ok)vis[c.g]=1;});
+  nav.querySelectorAll('.grp').forEach(h=>h.hidden=!vis[h.dataset.g]);
+}
+document.getElementById('search').addEventListener('input',filterNav);
+const tgS=document.getElementById('tgSteps'),tgL=document.getElementById('tgLK');
+try{const s=JSON.parse(localStorage.getItem('vr-prefs')||'{}');if(s.steps===false)tgS.checked=false;if(s.lk===false)tgL.checked=false;}catch(e){}
+const savePrefs=()=>{try{localStorage.setItem('vr-prefs',JSON.stringify({steps:tgS.checked,lk:tgL.checked}));}catch(e){}};
+const applySteps=()=>document.body.classList.toggle('nosteps',!tgS.checked);
+tgS.addEventListener('change',()=>{applySteps();savePrefs();});
+tgL.addEventListener('change',()=>{filterNav();savePrefs();});
+(function(){const K='mathe-theme';const mq=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;let t='dark';
+try{t=localStorage.getItem(K)||'dark';}catch(e){}
+const apply=()=>{const dk=t==='dark'||(t==='system'&&!!mq&&mq.matches);document.body.classList.toggle('dark',dk);
+  document.querySelectorAll('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));};
+document.querySelectorAll('#themeSeg button').forEach(b=>b.addEventListener('click',()=>{t=b.dataset.t;try{localStorage.setItem(K,t);}catch(e){}apply();}));
+if(mq&&mq.addEventListener)mq.addEventListener('change',()=>{if(t==='system')apply();});apply();})();
+applySteps();filterNav();
+show((location.hash||'').slice(1),false);
+window.addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(!current||current.id!==id)show(id);});
+</script>
+</body>
+</html>
