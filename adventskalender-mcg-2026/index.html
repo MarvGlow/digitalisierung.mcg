@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digitaler Adventskalender 2026 · Marie-Curie-Gymnasium Düsseldorf</title>
+  <meta name="description" content="24 kurze, praxisnahe Digital-Tipps für das Kollegium des Marie-Curie-Gymnasiums Düsseldorf.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <img class="wasserzeichen" src="assets/bildmarke.png" alt="" aria-hidden="true">
+
+  <div class="band">
+  <canvas id="schnee" aria-hidden="true"></canvas>
+  <header class="kopf">
+    <img class="logo" src="assets/logo.png" alt="Marie Curie Gymnasium Düsseldorf">
+    <div class="kopf-text">
+      <p class="kicker">Für unser Kollegium</p>
+      <h1>Digitaler Adventskalender <span id="jahr">2026</span></h1>
+      <p class="unterzeile">24 Türchen, jedes in 2 Minuten gelesen und direkt ausprobierbar.</p>
+    </div>
+  </header>
+  <div class="lichter" aria-hidden="true"></div>
+  </div>
+
+  <main>
+    <section class="status" id="status" aria-live="polite"></section>
+
+    <ul class="legende" aria-label="Kategorien">
+      <li><span class="punkt k-nrw"></span>NRW &amp; Recht</li>
+      <li><span class="punkt k-tool"></span>Tool-Tipp</li>
+      <li><span class="punkt k-unterricht"></span>Unterricht</li>
+      <li><span class="punkt k-fuerdich"></span>Für dich</li>
+    </ul>
+
+    <ol class="kalender" id="kalender" aria-label="Türchen"></ol>
+  </main>
+
+  <footer class="fuss">
+    <p id="fuss-absender"></p>
+    <p>Alle Angaben wurden sorgfältig geprüft und sind mit Quellen verlinkt (Stand: <span id="fuss-stand"></span>). Rechtliche Hinweise ersetzen keine Beratung – im Zweifel Schulleitung oder Medienberatung fragen.</p>
+    <form class="vorschau" id="vorschau-form" autocomplete="off">
+      <label for="vorschau-passwort">Vorschau für den Arbeitskreis:</label>
+      <input type="password" id="vorschau-passwort" placeholder="Passwort">
+      <button type="submit" id="vorschau-knopf">Entsperren</button>
+      <span id="vorschau-meldung" aria-live="polite"></span>
+    </form>
+  </footer>
+
+  <dialog id="tuer-dialog" aria-labelledby="dlg-titel">
+    <article class="tuer-inhalt" id="dlg-inhalt" tabindex="-1"></article>
+    <form method="dialog" class="dlg-leiste">
+      <button class="schliessen" value="close" aria-label="Schließen">Schließen</button>
+    </form>
+  </dialog>
+
+  <script src="tuerchen.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
