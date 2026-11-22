@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notenschlüssel-Rechner – Gymnasium NRW</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #fff; --line: #c9d1d9; --text: #1f2933;
+    --muted: #5b6770; --accent: #1f5f9e; --accent-dark: #174a7c;
+    --err-bg: #fdecea; --err: #a12622; --warn-bg: #fff6e0; --warn: #7a5200;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.45; }
+  header { background: var(--accent); color: #fff; padding: 14px 20px; }
+  header h1 { margin: 0; font-size: 1.35rem; }
+  header p { margin: 2px 0 0; font-size: .9rem; opacity: .9; }
+  main { display: grid; gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { main { grid-template-columns: minmax(340px, 420px) 1fr; align-items: start; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  .field { margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+  label, legend { font-weight: 600; font-size: .92rem; }
+  input[type=text], select { padding: 7px 9px; border: 1px solid #8795a1; border-radius: 5px; font-size: 1rem; background: #fff; color: var(--text); }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid #f0a500; outline-offset: 1px; }
+  input:disabled, select:disabled { background: #eceff1; color: #78858f; }
+  .seg { display: flex; margin-bottom: 14px; }
+  .seg button { flex: 1; padding: 9px; font-size: 1rem; border: 1px solid var(--accent); background: #fff; color: var(--accent); cursor: pointer; }
+  .seg button:first-child { border-radius: 5px 0 0 5px; }
+  .seg button:last-child { border-radius: 0 5px 5px 0; border-left: 0; }
+  .seg button[aria-pressed=true] { background: var(--accent); color: #fff; font-weight: 600; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px 12px; margin: 0 0 14px; }
+  .pct-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; }
+  .pct { display: flex; flex-direction: column; gap: 2px; font-weight: 400; font-size: .85rem; }
+  .pct .inp { display: flex; align-items: center; gap: 4px; }
+  .pct input { width: 100%; min-width: 0; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; margin-bottom: 14px; }
+  .check input { margin-top: 4px; }
+  .hint { font-size: .82rem; color: var(--muted); margin: 6px 0 0; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: #e8eef4; }
+  tbody tr:nth-child(even) { background: #f8fafb; }
+  td.empty { color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .actions button { padding: 9px 14px; font-size: .95rem; border: 1px solid var(--accent-dark); background: var(--accent); color: #fff; border-radius: 5px; cursor: pointer; }
+  .actions button:hover:not(:disabled) { background: var(--accent-dark); }
+  .actions button:disabled { opacity: .45; cursor: not-allowed; }
+  .msg { padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; font-size: .92rem; }
+  .msg.error { background: var(--err-bg); color: var(--err); border: 1px solid var(--err); }
+  .msg.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid #e0b34a; }
+  #summary { font-size: .9rem; color: var(--muted); margin-bottom: 10px; }
+  #status { min-height: 1.4em; margin: 8px 0 0; font-size: .9rem; font-weight: 600; color: #1d6b34; }
+  #status.fail { color: var(--err); }
+  details { margin-top: 14px; font-size: .88rem; }
+  summary { cursor: pointer; font-weight: 600; }
+  details ul { padding-left: 20px; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Notenschlüssel-Rechner</h1>
+  <p>Gymnasium NRW · Sek I (Noten 1–6) und Sek II (Notenpunkte 0–15) · ohne Speicherung von Daten</p>
+</header>
+
+<main>
+  <section class="card" aria-labelledby="h-set">
+    <h2 id="h-set">Einstellungen</h2>
+
+    <div class="seg" role="group" aria-label="Stufe wählen">
+      <button type="button" data-level="sek1" aria-pressed="true">Sek I</button>
+      <button type="button" data-level="sek2" aria-pressed="false">Sek II</button>
+    </div>
+
+    <div class="field">
+      <label for="max">Maximalpunktzahl</label>
+      <input type="text" id="max" inputmode="decimal" value="100" autocomplete="off">
+    </div>
+
+    <div id="levelSettings"></div>
+
+    <fieldset>
+      <legend>Ausgabe</legend>
+      <label class="check"><input type="checkbox" id="showPercent" checked> Prozentspalte anzeigen</label>
+      <div class="field" style="margin-bottom:0">
+        <label for="decimal">Dezimaltrennzeichen in der Tabelle</label>
+        <select id="decimal">
+          <option value=",">Komma (deutsches Excel/LibreOffice)</option>
+          <option value=".">Punkt (englische Einstellung)</option>
+        </select>
+      </div>
+    </fieldset>
+
+    <details>
+      <summary>Hinweise zu Notenschlüssel und Rundung</summary>
+      <ul>
+        <li><strong>Sek II:</strong> Das Raster entspricht der Beispieltabelle des Schulministeriums zur Notenbildung im Zentralabitur (95 % = 15 NP bis 20 % = 1 NP). Dort wird die Grenze zu ganzen Punkten aufgerundet. Das entspricht der Option „streng“ mit Schrittweite 1.</li>
+        <li><strong>Sek I:</strong> Für Klassenarbeiten gibt es keine landesweit verbindlichen Prozentgrenzen. Die Fachkonferenz beschließt die Grundsätze. Die Voreinstellungen sind <em>nicht amtlich</em>. Bitte mit dem Fachkonferenzbeschluss abgleichen.</li>
+        <li><strong>Rundung der Grenzpunktzahl:</strong> „Zugunsten“ rundet die Mindestpunktzahl ab, „streng“ rundet auf, „mathematisch“ rundet kaufmännisch. „Exakt“ rundet nicht und zeigt zwei Nachkommastellen.</li>
+        <li><strong>Tendenzen (Sek I):</strong> Jeder Notenbereich wird prozentual in drei gleich große Teile geteilt (z. B. 2+, 2, 2−). Die Note 6 hat keine Tendenz.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="h-out">
+    <h2 id="h-out">Punkteverteilung auf die Noten</h2>
+    <div id="messages" role="alert"></div>
+    <div id="summary"></div>
+    <div class="table-wrap"><table id="resultTable"></table></div>
+    <div class="actions">
+      <button type="button" id="copyTsv">Kopieren für Excel / LibreOffice</button>
+      <button type="button" id="copyRich">Kopieren für Word (formatierte Tabelle)</button>
+    </div>
+    <p id="status" aria-live="polite"></p>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+/* ---------- Konstanten ---------- */
+const SEK1_GRADES = [
+  { label: '1', name: 'sehr gut' }, { label: '2', name: 'gut' },
+  { label: '3', name: 'befriedigend' }, { label: '4', name: 'ausreichend' },
+  { label: '5', name: 'mangelhaft' }, { label: '6', name: 'ungenügend' }
+];
+// Index 0 = 15 NP ... Index 15 = 0 NP
+const SEK2_NOTE = ['1+','1','1-','2+','2','2-','3+','3','3-','4+','4','4-','5+','5','5-','6'];
+
+const PRESETS = {
+  sek1: {
+    linear:  { name: 'Linear (Note 4 ab 50 %)', pct: [87.5, 75, 62.5, 50, 25, 0] },
+    gaengig: { name: 'Gängiges Raster (92/81/67/50/30) – nicht amtlich', pct: [92, 81, 67, 50, 30, 0] },
+    custom:  { name: 'Eigene Prozentgrenzen', pct: null }
+  },
+  sek2: {
+    offiziell: { name: 'Offiziell: Zentralabitur NRW', pct: [95,90,85,80,75,70,65,60,55,50,45,40,33,27,20,0] },
+    custom:    { name: 'Eigene Prozentgrenzen', pct: null }
+  }
+};
+
+const ROUNDING = {
+  floor: 'Zugunsten der Schüler:innen (Grenze abrunden)',
+  math:  'Mathematisch runden',
+  ceil:  'Streng (Grenze aufrunden)',
+  exact: 'Exakt (nicht runden)'
+};
+const ROUNDING_SHORT = { floor: 'zugunsten (abrunden)', math: 'mathematisch', ceil: 'streng (aufrunden)', exact: 'exakt' };
+
+/* ---------- Hilfsfunktionen ---------- */
+const fmtComma = n => String(n).replace('.', ',');
+// Gleitkomma-Artefakte entfernen (z. B. 0.95*40 = 37.99999999)
+const clean = v => Math.round(v * 1e6) / 1e6;
+
+function parseNum(s) {
+  const t = String(s).trim().replace(',', '.');
+  return /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+}
+
+/* ---------- Zustand (getrennt je Stufe) ---------- */
+const state = {
+  level: 'sek1', max: '100', showPercent: true, decimal: ',',
+  sek1: { preset: 'linear',    pct: PRESETS.sek1.linear.pct.map(fmtComma),    tendency: false, rounding: 'math', step: 0.5 },
+  sek2: { preset: 'offiziell', pct: PRESETS.sek2.offiziell.pct.map(fmtComma),                   rounding: 'ceil', step: 1 }
+};
+let current = null; // letzte gültige Tabelle {head, rows} für die Kopierfunktionen
+
+const $ = id => document.getElementById(id);
+
+// Ausgabeformat für Zahlen in der Tabelle (max. 2 Nachkommastellen)
+function fmt(n) {
+  const s = String(Math.round(n * 100) / 100);
+  return state.decimal === ',' ? s.replace('.', ',') : s;
+}
+
+function labelFor(i) {
+  return state.level === 'sek1' ? 'Note ' + (i + 1) : (15 - i) + ' NP (' + SEK2_NOTE[i] + ')';
+}
+
+/* ---------- Einstellungen rendern (stufenabhängig) ---------- */
+function renderLevelSettings() {
+  const L = state.level, cfg = state[L];
+  let h = '<div class="field"><label for="preset">Notenschlüssel</label><select id="preset">';
+  for (const [k, p] of Object.entries(PRESETS[L])) {
+    h += `<option value="${k}"${cfg.preset === k ? ' selected' : ''}>${p.name}</option>`;
+  }
+  h += '</select></div>';
+
+  h += '<fieldset><legend>Prozentgrenzen (Mindestanteil der Punkte)</legend><div class="pct-grid">';
+  cfg.pct.forEach((v, i) => {
+    const last = i === cfg.pct.length - 1;
+    h += `<label class="pct"><span>${labelFor(i)} ab</span><span class="inp">` +
+         `<input type="text" class="pct-input" data-i="${i}" inputmode="decimal" value="${v}" ` +
+         `${last ? 'disabled' : ''} aria-label="Prozentgrenze ${labelFor(i)}" autocomplete="off"><span>%</span></span></label>`;
+  });
+  h += '</div><p class="hint">' + (L === 'sek1'
+    ? 'Für Klassenarbeiten gibt es keine landesweit verbindlichen Grenzen. Die Fachkonferenz legt sie fest.'
+    : 'Die Grenze für 0 NP ergibt sich automatisch (alles darunter).') + '</p></fieldset>';
+
+  if (L === 'sek1') {
+    h += `<label class="check"><input type="checkbox" id="tendency"${cfg.tendency ? ' checked' : ''}>` +
+         '<span>Tendenzen (+/−) ausweisen<br><span class="hint">Offiziell gibt es in der Sek I nur ganze Noten.</span></span></label>';
+  }
+
+  h += '<div class="field"><label for="rounding">Rundung der Grenzpunktzahlen</label><select id="rounding">';
+  for (const [k, t] of Object.entries(ROUNDING)) h += `<option value="${k}"${cfg.rounding === k ? ' selected' : ''}>${t}</option>`;
+  h += '</select></div>';
+
+  h += `<div class="field"><label for="step">Schrittweite der Punkte</label><select id="step"${cfg.rounding === 'exact' ? ' disabled' : ''}>`;
+  [[1, '1 Punkt'], [0.5, '0,5 Punkte'], [0.25, '0,25 Punkte']].forEach(([v, t]) => {
+    h += `<option value="${v}"${cfg.step === v ? ' selected' : ''}>${t}</option>`;
+  });
+  h += '</select></div>';
+
+  $('levelSettings').innerHTML = h;
+}
+
+/* ---------- Berechnung ---------- */
+function showError(text) {
+  current = null;
+  $('messages').innerHTML = `<div class="msg error">${text}</div>`;
+  $('summary').textContent = '';
+  $('resultTable').innerHTML = '';
+  $('copyTsv').disabled = $('copyRich').disabled = true;
+}
+
+// Prozentgrenze -> Mindestpunktzahl gemäß gewählter Rundung
+function boundPoints(pct, max, cfg) {
+  const x = clean(pct * max / 100);
+  if (cfg.rounding === 'exact') return x;
+  const q = clean(x / cfg.step);
+  const r = cfg.rounding === 'floor' ? Math.floor(q)
+          : cfg.rounding === 'ceil'  ? Math.ceil(q)
+          : Math.round(q);               // mathematisch (kaufmännisch)
+  return clean(r * cfg.step);
+}
+
+// Einträge (Zeilen) aus den Prozentgrenzen aufbauen
+function buildEntries(pct, cfg) {
+  if (state.level === 'sek2') {
+    return pct.map((p, i) => ({ a: String(15 - i), b: SEK2_NOTE[i], pct: p, key: 'NP ' + (15 - i) }));
+  }
+  if (!cfg.tendency) {
+    return SEK1_GRADES.map((g, i) => ({ a: g.label, b: g.name, pct: pct[i], key: 'Note ' + g.label }));
+  }
+  const out = [];
+  for (let i = 0; i < 5; i++) {              // Noten 1–5 mit Tendenz
+    const lo = pct[i], hi = i === 0 ? 100 : pct[i - 1], w = hi - lo, g = SEK1_GRADES[i];
+    out.push({ a: g.label + '+', b: g.name, pct: lo + 2 * w / 3, key: 'Note ' + g.label + '+' });
+    out.push({ a: g.label,       b: g.name, pct: lo + w / 3,     key: 'Note ' + g.label });
+    out.push({ a: g.label + '-', b: g.name, pct: lo,             key: 'Note ' + g.label + '-' });
+  }
+  out.push({ a: '6', b: SEK1_GRADES[5].name, pct: 0, key: 'Note 6' });
+  return out;
+}
+
+function calculate() {
+  $('status').textContent = ''; $('status').className = '';
+  const cfg = state[state.level];
+
+  const max = parseNum(state.max);
+  if (!(max > 0) || max > 10000) return showError('Bitte eine Maximalpunktzahl größer 0 und höchstens 10000 eingeben (Dezimalkomma ist erlaubt).');
+
+  const pct = cfg.pct.map(parseNum);
+  pct[pct.length - 1] = 0; // niedrigste Stufe beginnt immer bei 0 %
+  const bad = pct.findIndex(p => isNaN(p) || p > 100);
+  if (bad >= 0) return showError(`Ungültiger Prozentwert bei „${labelFor(bad)}“. Erlaubt sind Zahlen von 0 bis 100.`);
+  for (let i = 1; i < pct.length; i++) {
+    if (pct[i] > pct[i - 1]) return showError(`Die Prozentgrenzen müssen von der besten zur schlechtesten Note fallen: „${labelFor(i)}“ (${fmtComma(pct[i])} %) liegt über „${labelFor(i - 1)}“ (${fmtComma(pct[i - 1])} %).`);
+  }
+
+  const entries = buildEntries(pct, cfg);
+  const t = entries.map(e => boundPoints(e.pct, max, cfg));
+  const exact = cfg.rounding === 'exact';
+  const rows = [], empty = [];
+
+  entries.forEach((e, i) => {
+    const upper = i > 0 ? t[i - 1] : null;
+    // Bereich leer, wenn Grenze über dem Maximum liegt oder nicht unter der nächstbesseren Grenze
+    const isEmpty = t[i] > max + 1e-9 || (i > 0 && t[i] >= upper - 1e-9);
+    let von = '–', bis = '–';
+    if (isEmpty) {
+      empty.push(e.key);
+    } else {
+      von = fmt(t[i]);
+      if (i === 0 || upper > max + 1e-9) bis = fmt(max);
+      else bis = exact ? 'unter ' + fmt(upper) : fmt(upper - cfg.step);
+    }
+    const row = [e.a, e.b];
+    if (state.showPercent) row.push(fmt(e.pct));
+    row.push(von, bis);
+    rows.push(row);
+  });
+
+  const head = [state.level === 'sek1' ? 'Note' : 'Notenpunkte', state.level === 'sek1' ? 'Bezeichnung' : 'Note'];
+  if (state.showPercent) head.push('Ab Prozent (%)');
+  head.push('Punkte von', 'Punkte bis');
+  current = { head, rows };
+
+  // Anzeige
+  $('resultTable').innerHTML =
+    '<thead><tr>' + head.map(h => `<th scope="col">${h}</th>`).join('') + '</tr></thead><tbody>' +
+    rows.map(r => '<tr>' + r.map(c => `<td${c === '–' ? ' class="empty"' : ''}>${c}</td>`).join('') + '</tr>').join('') + '</tbody>';
+
+  $('messages').innerHTML = empty.length
+    ? `<div class="msg warn">Bei dieser Kombination aus Maximalpunktzahl, Rundung und Schrittweite gibt es keinen Punktebereich für: ${empty.join(', ')}. Eine kleinere Schrittweite oder eine andere Rundung kann helfen.</div>`
+    : '';
+  $('summary').textContent = `Maximalpunktzahl: ${fmt(max)} · Rundung: ${ROUNDING_SHORT[cfg.rounding]}` + (exact ? '' : ` · Schrittweite: ${fmt(cfg.step)}`);
+  $('copyTsv').disabled = $('copyRich').disabled = false;
+}
+
+/* ---------- Kopierfunktionen ---------- */
+function tsv() {
+  return [current.head, ...current.rows].map(r => r.join('\t')).join('\n');
+}
+function tableHtml() {
+  const cell = (tag, c, extra) => `<${tag} style="border:1px solid #000;padding:4px 8px;text-align:left;${extra}">${c}</${tag}>`;
+  return '<table style="border-collapse:collapse"><thead><tr>' + current.head.map(h => cell('th', h, 'background:#e8e8e8;')).join('') +
+         '</tr></thead><tbody>' + current.rows.map(r => '<tr>' + r.map(c => cell('td', c, '')).join('') + '</tr>').join('') + '</tbody></table>';
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (_) { /* Fallback */ }
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+  ta.remove(); return ok;
+}
+async function copyRich() {
+  try {
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([tableHtml()], { type: 'text/html' }),
+        'text/plain': new Blob([tsv()], { type: 'text/plain' })
+      })]);
+      return true;
+    }
+  } catch (_) { /* Fallback: sichtbare Tabelle markieren und kopieren */ }
+  const sel = getSelection(), range = document.createRange();
+  range.selectNode($('resultTable'));
+  sel.removeAllRanges(); sel.addRange(range);
+  let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+  sel.removeAllRanges(); return ok;
+}
+function setStatus(ok, text) {
+  const s = $('status');
+  s.textContent = ok ? text : 'Kopieren nicht möglich. Bitte die Tabelle markieren und mit Strg+C kopieren.';
+  s.className = ok ? '' : 'fail';
+}
+
+/* ---------- Ereignisse ---------- */
+document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
+  state.level = btn.dataset.level;
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+  renderLevelSettings(); calculate();
+}));
+
+$('max').addEventListener('input', e => { state.max = e.target.value; calculate(); });
+$('showPercent').addEventListener('change', e => { state.showPercent = e.target.checked; calculate(); });
+$('decimal').addEventListener('change', e => { state.decimal = e.target.value; calculate(); });
+
+// Prozentfelder: bei Änderung automatisch auf „Eigene Prozentgrenzen“ wechseln
+$('levelSettings').addEventListener('input', e => {
+  const t = e.target;
+  if (!t.classList.contains('pct-input')) return;
+  const cfg = state[state.level], i = Number(t.dataset.i);
+  cfg.pct[i] = t.value;
+  const p = PRESETS[state.level][cfg.preset];
+  if (p.pct && parseNum(t.value) !== p.pct[i]) { cfg.preset = 'custom'; $('preset').value = 'custom'; }
+  calculate();
+});
+$('levelSettings').addEventListener('change', e => {
+  const t = e.target, cfg = state[state.level];
+  if (t.id === 'preset') {
+    cfg.preset = t.value;
+    const p = PRESETS[state.level][t.value];
+    if (p.pct) cfg.pct = p.pct.map(fmtComma);
+    renderLevelSettings();
+  } else if (t.id === 'tendency') { cfg.tendency = t.checked; }
+  else if (t.id === 'rounding') { cfg.rounding = t.value; $('step').disabled = t.value === 'exact'; }
+  else if (t.id === 'step') { cfg.step = Number(t.value); }
+  else return;
+  calculate();
+});
+
+$('copyTsv').addEventListener('click', async () => {
+  if (current) setStatus(await copyText(tsv()), 'Tabelle kopiert (Tabulator-getrennt) – jetzt in Excel/LibreOffice einfügen.');
+});
+$('copyRich').addEventListener('click', async () => {
+  if (current) setStatus(await copyRich(), 'Formatierte Tabelle kopiert – jetzt in Word einfügen.');
+});
+
+/* ---------- Start ---------- */
+renderLevelSettings();
+calculate();
+</script>
+</body>
+</html>

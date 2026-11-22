@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dynamische Parabeltransformation</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: system-ui, sans-serif;
+      color: #172033;
+      background: #f3f6fb;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px #17203318;
+    }
+    h1 { margin-top: 0; }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 18px;
+      margin: 24px 0;
+    }
+    .control {
+      padding: 14px;
+      background: #f3f6fb;
+      border-radius: 10px;
+    }
+    label { display: flex; justify-content: space-between; font-weight: 650; }
+    input { width: 100%; margin-top: 12px; accent-color: #4f46e5; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 440px;
+      border: 1px solid #d9dfeb;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .readout {
+      margin-top: 18px;
+      padding: 16px;
+      background: #eef2ff;
+      border-radius: 10px;
+      line-height: 1.7;
+    }
+    .equation { font-size: 1.2rem; font-weight: 700; }
+    .hint { color: #596579; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Dynamische Parabeltransformation</h1>
+  <p>Verändere die Parameter und beobachte, wie sich der Graph verändert.</p>
+
+  <div class="controls">
+    <div class="control">
+      <label for="a">Streckung / Spiegelung <span>a = <output id="aValue">1</output></span></label>
+      <input id="a" type="range" min="-3" max="3" step="0.1" value="1">
+    </div>
+    <div class="control">
+      <label for="h">Verschiebung nach rechts <span>h = <output id="hValue">0</output></span></label>
+      <input id="h" type="range" min="-5" max="5" step="0.1" value="0">
+    </div>
+    <div class="control">
+      <label for="k">Verschiebung nach oben <span>k = <output id="kValue">0</output></span></label>
+      <input id="k" type="range" min="-5" max="5" step="0.1" value="0">
+    </div>
+  </div>
+
+  <canvas id="graph" aria-label="Koordinatensystem mit dem Graphen der Parabel"></canvas>
+
+  <div class="readout" aria-live="polite">
+    <div class="equation" id="equation"></div>
+    <div id="vertex"></div>
+    <div id="description"></div>
+  </div>
+  <p class="hint">Die Parabel wird in Scheitelpunktform dargestellt: f(x) = a · (x − h)² + k.</p>
+</main>
+
+<script>
+  const canvas = document.getElementById("graph");
+  const ctx = canvas.getContext("2d");
+  const sliders = {
+    a: document.getElementById("a"),
+    h: document.getElementById("h"),
+    k: document.getElementById("k")
+  };
+
+  function format(value) {
+    return Number(value).toFixed(1).replace(/\.0$/, "").replace("-", "−");
+  }
+
+  function draw() {
+    const a = Number(sliders.a.value);
+    const h = Number(sliders.h.value);
+    const k = Number(sliders.k.value);
+
+    document.getElementById("aValue").textContent = format(a);
+    document.getElementById("hValue").textContent = format(h);
+    document.getElementById("kValue").textContent = format(k);
+
+    const hTerm = h === 0 ? "x" : `(x ${h > 0 ? "−" : "+"} ${format(Math.abs(h))})`;
+    const kTerm = k === 0 ? "" : ` ${k > 0 ? "+" : "−"} ${format(Math.abs(k))}`;
+    document.getElementById("equation").textContent =
+      `f(x) = ${format(a)} · ${hTerm}²${kTerm}`;
+    document.getElementById("vertex").textContent =
+      `Scheitelpunkt: S(${format(h)} | ${format(k)})`;
+
+    let description;
+    if (a > 0) description = "Die Parabel ist nach oben geöffnet.";
+    else if (a < 0) description = "Die Parabel ist nach unten geöffnet (Spiegelung an der x-Achse).";
+    else description = "Bei a = 0 entsteht keine Parabel, sondern eine konstante Funktion.";
+
+    if (Math.abs(a) > 1) description += " Sie ist gegenüber der Normalparabel gestreckt.";
+    else if (Math.abs(a) > 0 && Math.abs(a) < 1) description += " Sie ist gegenüber der Normalparabel gestaucht.";
+    document.getElementById("description").textContent = description;
+
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const width = rect.width;
+    const height = rect.height;
+    const xMin = -10, xMax = 10, yMin = -10, yMax = 10;
+    const px = x => (x - xMin) / (xMax - xMin) * width;
+    const py = y => height - (y - yMin) / (yMax - yMin) * height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Gitternetz
+    ctx.strokeStyle = "#e8ecf3";
+    ctx.lineWidth = 1;
+    ctx.font = "12px system-ui";
+    ctx.fillStyle = "#687386";
+    for (let x = xMin; x <= xMax; x++) {
+      ctx.beginPath();
+      ctx.moveTo(px(x), 0);
+      ctx.lineTo(px(x), height);
+      ctx.stroke();
+      if (x !== 0) ctx.fillText(x, px(x) + 3, py(0) + 16);
+    }
+    for (let y = yMin; y <= yMax; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, py(y));
+      ctx.lineTo(width, py(y));
+      ctx.stroke();
+      if (y !== 0) ctx.fillText(y, px(0) + 6, py(y) - 4);
+    }
+
+    // Koordinatenachsen
+    ctx.strokeStyle = "#536174";
+    ctx.lineWidth = 1.7;
+    ctx.beginPath();
+    ctx.moveTo(0, py(0));
+    ctx.lineTo(width, py(0));
+    ctx.moveTo(px(0), 0);
+    ctx.lineTo(px(0), height);
+    ctx.stroke();
+    ctx.fillStyle = "#364152";
+    ctx.fillText("x", width - 16, py(0) - 8);
+    ctx.fillText("y", px(0) + 8, 16);
+
+    // Parabel
+    if (a !== 0) {
+      ctx.beginPath();
+      let started = false;
+      for (let x = xMin; x <= xMax; x += 0.025) {
+        const y = a * (x - h) ** 2 + k;
+        if (y < yMin || y > yMax) {
+          started = false;
+          continue;
+        }
+        if (!started) {
+          ctx.moveTo(px(x), py(y));
+          started = true;
+        } else {
+          ctx.lineTo(px(x), py(y));
+        }
+      }
+      ctx.strokeStyle = "#4f46e5";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Scheitelpunkt
+    if (h >= xMin && h <= xMax && k >= yMin && k <= yMax) {
+      ctx.beginPath();
+      ctx.arc(px(h), py(k), 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#e11d48";
+      ctx.fill();
+    }
+  }
+
+  Object.values(sliders).forEach(slider => slider.addEventListener("input", draw));
+  window.addEventListener("resize", draw);
+  draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>MathRacer</title>
+<style>
+body{margin:0;font:18px sans-serif;background:#111;color:#fff;display:flex;flex-direction:column;height:100vh;touch-action:none;user-select:none;-webkit-user-select:none}
+h1{margin:0;padding:4px 0 0;text-align:center;font-size:24px;letter-spacing:3px;color:#fc0;text-shadow:2px 2px #a30}
+#hud{display:flex;justify-content:space-around;padding:6px;font-weight:bold}
+#hl{color:#f55;min-width:70px}
+#wrap{position:relative;flex:1;min-height:0}
+canvas{width:100%;height:100%;object-fit:contain;background:#000}
+#ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000a;text-align:center}
+#ov>div{background:#333;padding:20px;border-radius:12px;max-width:90%;min-width:260px}
+#ov button{display:block;width:100%;margin:8px 0;padding:14px;font-size:20px;border:0;border-radius:8px}
+#box>p:first-child{font-size:22px;line-height:1.6}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.15;font-size:.85em;margin:0 2px}
+.fr>span:first-child{border-bottom:2px solid currentColor;padding:0 3px}
+.hint{font-size:16px;color:#fdd;background:#522;padding:8px;border-radius:8px;text-align:left}
+#ov button.next{background:#fc0;font-weight:bold}
+#ctl{display:flex;gap:8px;padding:8px}
+#ctl button{flex:1;height:80px;font-size:40px;border:0;border-radius:12px;background:#555;color:#fff}
+#ctl button:active{background:#888}
+</style></head><body>
+<h1>MathRacer</h1>
+<div id="hud"><span id="hl"></span><span id="hs"></span><span id="ht"></span><span id="hv"></span></div>
+<div id="wrap"><canvas id="c" width="800" height="500"></canvas><div id="ov"><div id="box"></div></div></div>
+<div id="ctl"><button id="bl">◀</button><button id="br">▶</button></div>
+<script>
+const $=i=>document.getElementById(i), cv=$('c'), g=cv.getContext('2d');
+const W=800, Hc=500, H=190;      // Canvas-Größe, Horizont-Höhe
+const D=60;                      // "Kameraabstand": bestimmt die Perspektive
+const RW=W*0.45;                 // Straßen-Halbbreite am unteren Bildrand
+const LANES=[-2/3,0,2/3];        // 3 Spuren (Straße reicht von -1 bis +1)
+const CS=5e-6;                   // Kurvenstärke (Darstellung)
+const N=(Hc-H)/2;                // Anzahl gezeichneter Straßenzeilen
+const OBS_PEN=50, GRASS_PEN=15;  // Minuspunkte: pro Hindernis / pro Sekunde auf dem Rasen
+const keys={}, pad={l:0,r:0};
+let s, px, vx, v, dist, items, trees, nextRow, rowId, segs, segEnd, segStraight, bgx, shk, pop={t:0,txt:''}, state='over', last=0, tAnim=0;
+
+/* ===== AUFGABEN =====
+   Alle Rechnungen laufen exakt mit Brüchen {n,d} (keine Rundungsfehler durch Gleitkommazahlen).
+   Jeder Generator liefert: q = Aufgabentext (HTML), v = richtiges Ergebnis, f = Formatierung,
+   w = [[Fehlerwert, Erklärung des typischen Fehlers], ...]  -> daraus werden die 3 falschen Optionen. */
+const PER_LVL=4;                                  // alle 4 richtigen Antworten steigt das Level
+const LVL_NAME=['Ganze Zahlen & Dezimalzahlen','Brüche & Dezimalzahlen','Brüche mal/durch & Vorzeichen','Klammern & Rechengesetze'];
+const M='−', B='Berechne: ';
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1)), pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b)[a,b]=[b,a%b];return a||1;};
+const lcm=(a,b)=>a*b/gcd(a,b);
+// Bruch (automatisch gekürzt, Nenner positiv); null bei Nenner 0
+const Q=(n,d=1)=>{if(!d)return null;if(d<0){n=-n;d=-d;}const k=gcd(n,d);return{n:n/k||0,d:d/k};};
+const I=n=>Q(n), Dz=(n,k)=>Q(n,10**k);             // ganze Zahl / Dezimalzahl aus Ziffern (Dz(275,2)=2,75)
+const op=fn=>(a,b)=>a&&b?fn(a,b):null;
+const add=op((a,b)=>Q(a.n*b.d+b.n*a.d,a.d*b.d)), sub=op((a,b)=>Q(a.n*b.d-b.n*a.d,a.d*b.d)),
+      mul=op((a,b)=>Q(a.n*b.n,a.d*b.d)), div=op((a,b)=>Q(a.n*b.d,a.d*b.n)), neg=a=>a&&Q(-a.n,a.d);
+// Formatierung
+const fInt=n=>(n<0?M:'')+Math.abs(n);
+const fFr=x=>x.d===1?fInt(x.n):(x.n<0?M:'')+`<span class="fr"><span>${Math.abs(x.n)}</span><span>${x.d}</span></span>`;
+function fDec(x,fix=0){                           // Dezimalzahl mit Komma; null, falls nicht abbrechend
+  let k=0; while(k<=6&&10**k%x.d)k++; if(k>6)return null; k=Math.max(k,fix);
+  let s=String(Math.abs(x.n)*10**k/x.d).padStart(k+1,'0'); if(k)s=s.slice(0,-k)+','+s.slice(-k);
+  return (x.n<0?M:'')+s;
+}
+const pI=n=>n<0?`(${fInt(n)})`:fInt(n), pF=x=>x.n<0?`(${fFr(x)})`:fFr(x);   // negative Zahlen in Klammern
+const rfr=m=>{const d=ri(2,m);return Q(ri(1,d-1),d);};                          // zufälliger echter Bruch
+
+const GEN=[
+/* ---- Level 1: Ganze Zahlen und einfache Dezimalzahlen ---- */
+[
+ ()=>{const a=ri(3,15),b=ri(a+2,a+20);                                           // a − b < 0
+  return{q:B+`${a} ${M} ${b}`,v:I(a-b),f:fFr,w:[
+   [I(b-a),'Vorzeichenfehler: Die abgezogene Zahl ist größer, also ist das Ergebnis negativ.'],
+   [I(a+b),'Plus statt Minus gerechnet.'],
+   [I(-a-b),'Beträge addiert statt subtrahiert.']]};},
+ ()=>{const a=ri(4,20);let b=ri(2,20);if(b===a)b++;const mm=Math.random()<.5;   // −a + b  bzw.  −a − (−b)
+  return{q:B+(mm?`${M}${a} ${M} (${M}${b})`:`${M}${a} + ${b}`),v:I(b-a),f:fFr,w:[
+   [I(a-b),'Vorzeichenfehler: Das ist die Gegenzahl des Ergebnisses.'],
+   [I(-a-b),mm?`Minus mal Minus ergibt Plus: ${M}(${M}${b}) = +${b}.`:'Beträge addiert statt subtrahiert.'],
+   [I(a+b),'Das Minuszeichen vor der ersten Zahl übersehen.']]};},
+ ()=>{const a=ri(5,30),b=ri(2,6),c=ri(2,9),sg=Math.random()<.4?-1:1;            // Punkt vor Strich
+  return{q:B+`${a} ${sg<0?M:'+'} ${b} · ${c}`,v:I(a+sg*b*c),f:fFr,w:[
+   [I((a+sg*b)*c),'Von links nach rechts gerechnet – aber Punkt- vor Strichrechnung!'],
+   [I(a+sg*(b+c)),'Den Malpunkt wie ein Plus behandelt.'],
+   [I(a*b+sg*c),'Die falschen Zahlen miteinander multipliziert.']]};},
+ ()=>{let x,y;do{x=ri(11,99);y=ri(11,99);}while(x%10===0||y%10===0);            // 2,4 + 0,35
+  const X=Dz(x,1),Y=Dz(y,2),v=add(X,Y);
+  return{q:B+`${fDec(X)} + ${fDec(Y)}`,v,f:fDec,w:[
+   [Dz(x+y,2),'Kommas nicht untereinander geschrieben – Stellenwerte verwechselt.'],
+   [Dz(x+y,1),'Ziffern ohne Rücksicht auf die Stellenwerte addiert.'],
+   [mul(v,I(10)),'Das Komma ist um eine Stelle verrutscht.']]};},
+ ()=>{let n;do n=ri(12,999);while(n%10===0);                                     // · bzw. : 10/100/1000
+  const x=Dz(n,2),z=10**ri(1,3),m=Math.random()<.5,v=m?mul(x,I(z)):div(x,I(z));
+  return{q:B+`${fDec(x)} ${m?'·':':'} ${z}`,v,f:fDec,w:[
+   [m?mul(v,I(10)):div(v,I(10)),'Das Komma ist um eine Stelle zu weit verschoben.'],
+   [m?div(v,I(10)):mul(v,I(10)),'Das Komma ist um eine Stelle zu wenig verschoben.'],
+   [m?div(x,I(z)):mul(x,I(z)),'Das Komma wurde in die falsche Richtung verschoben.']]};},
+ ()=>{const a=ri(2,9);let b;do b=ri(2,19);while(b===10);                          // 0,3 · 1,2
+  const X=Dz(a,1),Y=Dz(b,1);
+  return{q:B+`${fDec(X)} · ${fDec(Y)}`,v:Dz(a*b,2),f:fDec,w:[
+   [Dz(a*b,1),'Zu wenige Nachkommastellen: Das Ergebnis hat so viele wie beide Faktoren zusammen.'],
+   [Dz(a*b,3),'Zu viele Nachkommastellen gesetzt.'],
+   [add(X,Y),'Addiert statt multipliziert.']]};}
+],
+/* ---- Level 2: Brüche (Addition/Subtraktion) und Dezimalzahlen ---- */
+[
+ ()=>{let A,C;do{A=rfr(9);C=rfr(10);}while(A.d===C.d);                           // a/b ± c/d
+  const[a,b,c,d]=[A.n,A.d,C.n,C.d],mi=Math.random()<.5,v=mi?sub(A,C):add(A,C);
+  return{q:B+`${fFr(A)} ${mi?M:'+'} ${fFr(C)}`,v,f:fFr,w:mi?[
+   [Q(a-c,b-d),'Zähler minus Zähler und Nenner minus Nenner gerechnet – erst gleichnamig machen!'],
+   [neg(v),'Vorzeichenfehler: Prüfe, welcher Bruch größer ist.'],
+   [Q(a-c,b*d),'Nenner gleichnamig gemacht, aber die Zähler nicht mit erweitert.']]:[
+   [Q(a+c,b+d),'Zähler plus Zähler und Nenner plus Nenner gerechnet – erst gleichnamig machen!'],
+   [Q(a+c,b*d),'Nenner gleichnamig gemacht, aber die Zähler nicht mit erweitert.'],
+   [Q(a*d+c,b*d),'Nur den ersten Bruch erweitert, den zweiten nicht.']]};},
+ ()=>{const[n,d]=pick([[1,2],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[1,8],[3,8],[5,8],[7,8],[1,20],[3,20],[7,20],[9,20],[1,25],[4,25],[7,50]]);
+  const v=Q(n,d),L=String(d).length;                                             // Bruch -> Dezimalzahl
+  return{q:`Schreibe ${fFr(v)} als Dezimalzahl.`,v,f:fDec,w:[
+   [Q(n*10**L+d,10**L),'Zähler und Nenner einfach mit Komma hintereinander geschrieben.'],
+   [mul(v,I(10)),'Das Komma ist um eine Stelle verrutscht.'],
+   [div(v,I(10)),'Das Komma ist um eine Stelle verrutscht.']]};},
+ ()=>{const a=ri(3,9),g=ri(1,a-1);let h;do h=ri(5,95);while(h%10===0);            // 5 − 1,25 (Übertrag)
+  const v=Dz(a*100-g*100-h,2);
+  return{q:B+`${a} ${M} ${fDec(Dz(g*100+h,2))}`,v,f:fDec,w:[
+   [Dz((a-g)*100+h,2),'Nur die ganzen Zahlen abgezogen und die Nachkommastellen einfach übernommen.'],
+   [Dz((a-g)*100+100-h,2),'Den Übertrag beim Abziehen vergessen.'],
+   [mul(v,I(10)),'Das Komma ist um eine Stelle verrutscht.']]};},
+ ()=>{const[n,d]=pick([[1,2],[1,4],[3,4],[1,5],[2,5],[3,5]]);let x;do x=ri(11,49);while(x%10===0);
+  const F=Q(n,d),X=Dz(x,1),v=add(X,F);                                            // Dezimalzahl + Bruch
+  return{q:`Berechne als Dezimalzahl: ${fDec(X)} + ${fFr(F)}`,v,f:fDec,w:[
+   [add(X,Q(n*10+d,10)),`Bruch falsch umgewandelt: ${n}/${d} ist nicht ${n},${d}.`],
+   [add(X,Q(n,10)),`Bruch falsch umgewandelt: ${n}/${d} ist nicht 0,${n} – der Nenner ist nicht 10.`],
+   [mul(v,I(10)),'Das Komma ist um eine Stelle verrutscht.']]};}
+],
+/* ---- Level 3: Multiplikation/Division mit Brüchen, Vorzeichen, einfache Rechengesetze ---- */
+[
+ ()=>{let A=rfr(9),C=rfr(9);const ng=Math.random()<.6;if(ng)A=neg(A);const v=mul(A,C);   // Bruch · Bruch
+  return{q:B+`${fFr(A)} · ${pF(C)}`,v,f:fFr,w:[
+   [div(A,C),'Mit dem Kehrwert multipliziert – das gehört nur zur Division.'],
+   ...(ng?[[neg(v),'Vorzeichenfehler: Minus mal Plus ergibt Minus.']]:[]),
+   [Q(A.n*C.n,A.d+C.d),'Zähler richtig multipliziert, aber die Nenner addiert.'],
+   [add(A,C),'Addiert statt multipliziert.']]};},
+ ()=>{let A,C;do{A=rfr(9);C=rfr(9);}while(A.n===C.n&&A.d===C.d);                   // Bruch : Bruch
+  const[s1,s2]=pick([[1,1],[-1,1],[1,-1],[-1,-1]]);if(s1<0)A=neg(A);if(s2<0)C=neg(C);
+  const v=div(A,C);
+  return{q:B+`${fFr(A)} : ${pF(C)}`,v,f:fFr,w:[
+   [mul(A,C),'Nicht mit dem Kehrwert multipliziert.'],
+   [div(C,A),'Den Kehrwert vom falschen (ersten) Bruch gebildet.'],
+   [neg(v),s1*s2<0?'Vorzeichenfehler: Minus geteilt durch Plus ergibt Minus.':s1<0?'Vorzeichenfehler: Minus geteilt durch Minus ergibt Plus.':'Vorzeichenfehler.']]};},
+ ()=>{const a=ri(2,9),b=ri(2,9),c=ri(2,9);                                         // Vorzeichenregeln
+  return Math.random()<.5
+   ?{q:B+`(${M}${a}) · ${b} ${M} (${M}${c})`,v:I(-a*b+c),f:fFr,w:[
+     [I(-a*b-c),`Minus mal Minus ergibt Plus: ${M}(${M}${c}) = +${c}.`],
+     [I(a*b+c),`Minus mal Plus ergibt Minus: (${M}${a}) · ${b} ist negativ.`],
+     [I(a*b-c),'Beide Vorzeichen falsch behandelt.']]}
+   :{q:B+`${M}${a} ${M} ${b} · (${M}${c})`,v:I(-a+b*c),f:fFr,w:[
+     [I((a+b)*c),'Von links nach rechts gerechnet – aber Punkt vor Strich!'],
+     [I(-a-b*c),`Minus mal Minus ergibt Plus: ${M} ${b} · (${M}${c}) = +${b*c}.`],
+     [I(a+b*c),'Das Minuszeichen vor der ersten Zahl übersehen.']]};},
+ ()=>{const a=ri(10,40),b=ri(5,25),c=ri(2,15),p=Math.random()<.5;                 // Minusklammer
+  const v=I(p?a-b-c:a-b+c);
+  return{q:B+`${a} ${M} (${b} ${p?'+':M} ${c})`,v,f:fFr,w:[
+   [I(p?a-b+c:a-b-c),'Minusklammer aufgelöst, ohne das Vorzeichen in der Klammer umzudrehen.'],
+   [I(p?a+b+c:a+b-c),'Das Minus vor der Klammer nicht beachtet.'],
+   [neg(v),'Vorzeichenfehler: Das ist die Gegenzahl des Ergebnisses.']]};}
+],
+/* ---- Level 4: Klammern, vorteilhaftes Rechnen, Distributivgesetz, Rundung ---- */
+[
+ ()=>{const a=ri(10,40),b=ri(2,6),c=ri(3,12);let d=ri(1,12);if(d===c)d++;         // a − b·(c − d)
+  return{q:B+`${a} ${M} ${b} · (${c} ${M} ${d})`,v:I(a-b*(c-d)),f:fFr,w:[
+   [I((a-b)*(c-d)),'Von links nach rechts gerechnet – erst Klammer, dann Punkt vor Strich!'],
+   [I(a-b*c-b*d),'Beim Ausmultiplizieren der Minusklammer das Vorzeichen nicht umgedreht.'],
+   [I(a-b*c+d),`Nur den ersten Summanden in der Klammer mit ${b} multipliziert.`]]};},
+ ()=>{const k=ri(3,19),[m,base]=pick([[99,100],[98,100],[97,100],[101,100],[102,100],[49,50],[51,50],[199,200],[201,200],[999,1000],[1001,1000]]),e=m-base;
+  return{q:`Rechne vorteilhaft: ${k} · ${m}`,v:I(k*m),f:fFr,w:[                    // 12·98 = 12·(100−2)
+   [I(k*base+e),`Distributivgesetz: Auch ${Math.abs(e)} muss mit ${k} multipliziert werden.`],
+   [I(k*base-k*e),'Beim Ausmultiplizieren das Vorzeichen vertauscht.'],
+   [I(k*base),'Den Korrekturterm vergessen.']]};},
+ ()=>{const a=ri(12,49);                                                         // Ausklammern
+  if(Math.random()<.5){const b=ri(11,89),c=100-b;
+   return{q:`Rechne vorteilhaft: ${a} · ${b} + ${a} · ${c}`,v:I(a*100),f:fFr,w:[
+    [I(a*b+c),`Beim zweiten Produkt den Faktor ${a} vergessen.`],
+    [I(a+100),'Ausgeklammert, dann aber addiert statt multipliziert.'],
+    [I(a*10),`Stellenfehler: ${b} + ${c} ergibt 100.`]]};}
+  const b=ri(20,89),c=b-10;
+  return{q:`Rechne vorteilhaft: ${a} · ${b} ${M} ${a} · ${c}`,v:I(a*10),f:fFr,w:[
+   [I(a*(b+c)),'Beim Ausklammern aus dem Minus ein Plus gemacht.'],
+   [I(a*b-c),`Beim zweiten Produkt den Faktor ${a} vergessen.`],
+   [I(a*100),`Stellenfehler: ${b} ${M} ${c} ergibt 10.`]]};},
+ ()=>{let A,C;do{A=rfr(6);C=rfr(6);}while(A.d===C.d);                              // (a/b + c/d)·k
+  const k=lcm(A.d,C.d)*ri(1,2);
+  return{q:`Rechne vorteilhaft: (${fFr(A)} + ${fFr(C)}) · ${k}`,v:mul(add(A,C),I(k)),f:fFr,w:[
+   [add(mul(A,I(k)),C),`Distributivgesetz: Beide Summanden müssen mit ${k} multipliziert werden.`],
+   [add(A,mul(C,I(k))),'Klammer missachtet: Nur der zweite Summand wurde multipliziert.'],
+   [mul(Q(A.n+C.n,A.d+C.d),I(k)),'In der Klammer Zähler plus Zähler und Nenner plus Nenner gerechnet.']]};},
+ ()=>{const b=pick([3,6,7,9,11,12,13]);let a;do a=ri(1,4*b);while(a%b===0);        // Rundung auf 2 Stellen
+  const th=Math.floor(a*1000/b),tr=Math.floor(th/10),r=tr+(th%10>=5?1:0),        // Tausendstel, abgeschnitten, gerundet
+        r1=Math.floor(tr/10)+(tr%10>=5?1:0),F=n=>fDec(Q(n,100),2);              // auf Zehntel gerundet
+  return{q:`Berechne ${a} : ${b} und runde auf 2 Nachkommastellen.`,v:Q(r,100),f:x=>fDec(x,2),w:[
+   r>tr?[F(tr),'Abgeschnitten statt gerundet – die 3. Nachkommastelle ist 5 oder größer.']
+       :[F(r+1),'Falsch aufgerundet – die 3. Nachkommastelle ist kleiner als 5.'],
+   [r1*10!==r?fDec(Q(r1,10),1):null,'Auf eine statt auf zwei Nachkommastellen gerundet.'],
+   [F(r*10),'Das Komma ist um eine Stelle verrutscht.']]};}
+]];
+
+/* Rückgabe: {q:Aufgabentext, o:[4 Optionen als HTML], h:[Fehlererklärungen], c:Index der richtigen} */
+let lastGen=null;
+function getTask(level){
+  const gens=GEN[level-1];let gen;do gen=pick(gens);while(gen===lastGen&&gens.length>1);lastGen=gen;
+  const t=gen(), fmt=e=>e==null?null:typeof e==='string'?e:t.f(e);
+  const o=[fmt(t.v)], h=[''];
+  const put=(e,hint)=>{const s=fmt(e);if(s&&o.length<4&&!o.includes(s)){o.push(s);h.push(hint);}};
+  t.w.forEach(([e,hint])=>put(e,hint));
+  // Sicherheitsnetz, falls zwei Fehlermuster zufällig dasselbe Ergebnis liefern
+  [add(t.v,I(1)),sub(t.v,I(1)),neg(t.v),mul(t.v,I(2)),add(t.v,I(2)),sub(t.v,I(2)),add(t.v,I(3))]
+    .forEach(e=>put(e,'Rechne die Aufgabe noch einmal Schritt für Schritt nach.'));
+  return{q:`<small style="color:#fc0">Level ${level}: ${LVL_NAME[level-1]}</small><br>${t.q}`,o,h,c:0};
+}
+
+/* ---------- Kurven ----------
+   Abwechselnd gerade und gekrümmte Abschnitte. curveAt(w) liefert die Krümmung (-1 links ... +1 rechts). */
+function genSegs(upTo){
+  while(segEnd<upTo){
+    const len=segStraight?700+Math.random()*900:600+Math.random()*400;
+    const c=segStraight?0:(Math.random()<.5?-1:1)*(.6+Math.random()*.4);
+    segs.push({a:segEnd,b:segEnd+len,c}); segEnd+=len; segStraight=!segStraight;
+  }
+}
+function curveAt(w){
+  for(const q of segs) if(w<q.b) return q.c*Math.sin(Math.PI*Math.max(0,w-q.a)/(q.b-q.a)); // weicher Ein-/Ausgang
+  return 0;
+}
+
+/* ---------- Spielzustand ---------- */
+const mkTree=z=>({z, x:(Math.random()<.5?-1:1)*(1.5+Math.random()*1.8), sc:.7+Math.random()*.6, c:Math.random()<.5?'#165a2a':'#1f7a35'});
+function resetWorld(){
+  px=0; vx=0; v=0; dist=0; items=[]; nextRow=250; rowId=0; bgx=0; shk=0; pop={t:0,txt:''};
+  segs=[{a:0,b:1000,c:0}]; segEnd=1000; segStraight=false;
+  trees=[]; for(let i=0;i<20;i++)trees.push(mkTree(i*40+10));
+}
+function newGame(){
+  s={lives:3,bonus:0,pen:0,ok:0,lvl:1,t:0};
+  resetWorld(); hide(); state='run'; last=performance.now();
+}
+// Punkte = Zeitpunkte + Bonuspunkte - Minuspunkte (nie unter 0)
+const score=()=>Math.max(0,Math.floor(s.t*10)+s.bonus-Math.floor(s.pen));
+
+/* ---------- Overlay ---------- */
+function show(html,opts){
+  const b=$('box'); b.innerHTML=`<p>${html}</p>`;
+  opts.forEach(([t,fn])=>{const e=document.createElement('button');e.innerHTML=t;e.onclick=()=>fn(e);b.appendChild(e);});
+  $('ov').style.display='flex';
+}
+const hide=()=>$('ov').style.display='none';
+
+function resume(){
+  if(s.lives<=0){state='over';show(`Game Over!<br>Punkte: ${score()}<br>Zeit: ${s.t.toFixed(1)} s<br>Richtige Antworten: ${s.ok}`,[['Neu starten',newGame]]);}
+  else{hide();state='run';last=performance.now();}
+}
+function ask(){
+  state='quiz';
+  const t=getTask(s.lvl);
+  const idx=shuffle(t.o.map((_,i)=>i));                    // Position der Lösung mischen
+  show(t.q,idx.map(i=>[t.o[i],e=>{
+    if(state!=='quiz')return; state='fb';                  // Doppelklick-Schutz
+    const ok=i===t.c;
+    e.style.background=ok?'#4c4':'#e44';
+    if(ok){
+      s.ok++; s.bonus+=100*s.lvl;
+      const nl=Math.min(4,1+Math.floor(s.ok/PER_LVL));     // Level richtet sich nach Anzahl richtiger Antworten
+      if(nl>s.lvl){s.lvl=nl;pop={t:1.5,txt:'Level '+nl+'!',col:'#fc0'};}
+      setTimeout(resume,700);
+    }else{                                                 // Fehler: Lösung zeigen + Fehlermuster erklären
+      s.lives--;
+      const box=e.parentNode;
+      box.querySelectorAll('button')[idx.indexOf(t.c)].style.background='#4c4';
+      const p=document.createElement('p'); p.className='hint';
+      p.innerHTML='<b>Typischer Fehler:</b> '+t.h[i]; box.appendChild(p);
+      const w=document.createElement('button'); w.textContent='Weiter ▶'; w.className='next';
+      w.onclick=resume; box.appendChild(w);
+    }
+  }]));
+}
+
+/* ---------- Logik ---------- */
+function update(dt){
+  genSegs(dist+10000);
+  while(segs.length>1&&segs[0].b<dist-50)segs.shift();
+  const cNow=curveAt(dist);                                 // Krümmung an der Kartposition
+  // Lenken (weich): Tastatur oder Touch-Buttons
+  const d=(keys.ArrowRight||keys.d||pad.r?1:0)-(keys.ArrowLeft||keys.a||pad.l?1:0);
+  vx+=(d*1.6-vx)*Math.min(1,8*dt);
+  // Kurve schiebt das Kart nach außen -> man muss gegenlenken
+  px=Math.max(-1.5,Math.min(1.5,px+vx*dt-cNow*.6*(v/130)*dt));
+  // Tempo wächst mit den Punkten (130 bis max. 240); auf dem Rasen langsam
+  const onGrass=Math.abs(px)>1.05;
+  const target=onGrass?50:130+Math.min(110,score()*.1);
+  v+=(target-v)*Math.min(1,2*dt);
+  if(onGrass)s.pen+=GRASS_PEN*dt;                           // Minuspunkte für jede Sekunde auf dem Rasen
+  dist+=v*dt; s.t+=dt; tAnim+=dt; shk=Math.max(0,shk-dt); pop.t-=dt;   // Zeit läuft nur beim Fahren
+  bgx+=cNow*v*dt*.15;                                       // Hintergrund wandert in Kurven mit
+  for(const t of trees){t.z-=v*dt; if(t.z<-8)Object.assign(t,mkTree(t.z+800));}
+  // Neue Reihe: Würfel (!) und/oder Hindernisse auf zufälligen der 3 Spuren
+  nextRow-=v*dt;
+  if(nextRow<=0){
+    nextRow=300+Math.random()*60; rowId++;
+    const r=Math.random();
+    const kinds=r<.5?['cube']:r<.65?['cube','cube']:r<.9?['obs','cube']:['obs','obs'];  // nie alle 3 Spuren blockiert
+    const l=[...LANES].sort(()=>Math.random()-.5);
+    kinds.forEach((k,i)=>items.push({type:k,x:l[i],z:700,row:rowId,done:false,hit:false}));
+  }
+  for(const c of items)c.z-=v*dt;
+  // Treffer prüfen (z<=3: Objekt auf Höhe des Karts)
+  for(const c of items){
+    if(!c.done&&c.z<=3){
+      c.done=true;
+      if(Math.abs(c.x-px)<.28){
+        if(c.type==='obs'){v=Math.min(v,35);shk=.6;s.pen+=OBS_PEN;pop={t:1,txt:'−'+OBS_PEN};}  // Hindernis: abbremsen + Minuspunkte
+        else{c.hit=true; items.forEach(o=>{if(o.row===c.row&&o.type==='cube')o.done=true;}); ask(); break;} // pro Reihe nur eine Aufgabe
+      }
+    }
+  }
+  items=items.filter(c=>c.z>-8);
+}
+
+/* ---------- Zeichnen ---------- */
+const sky=g.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#4aa8ff'); sky.addColorStop(1,'#bfe6ff');
+const wrapX=(x,m)=>((x%m)+m)%m;
+
+function mountains(col,base,amp,off,f){
+  g.fillStyle=col; g.beginPath(); g.moveTo(0,H);
+  for(let x=0;x<=W;x+=8)g.lineTo(x,H-base-amp*Math.sin((x+off)*f)-amp*.6*Math.sin((x+off)*f*2.3+1));
+  g.lineTo(W,H); g.fill();
+}
+function drawTree(t,p,sx,gy){
+  const tw=p*W*.04*t.sc, th=p*W*.1*t.sc;
+  g.fillStyle='#642'; g.fillRect(sx-tw/2,gy-th,tw,th);
+  g.fillStyle=t.c; g.beginPath();
+  g.moveTo(sx-p*W*.11*t.sc,gy-th*.6); g.lineTo(sx+p*W*.11*t.sc,gy-th*.6); g.lineTo(sx,gy-th-p*W*.3*t.sc); g.fill();
+}
+function drawCube(c,p,sx,gy){
+  const sz=p*W*.1, y=gy-sz*1.1-Math.sin(tAnim*4+c.row)*sz*.08;   // schwebt leicht
+  g.fillStyle='#fb0'; g.fillRect(sx-sz/2,y,sz,sz);
+  g.strokeStyle='#a60'; g.lineWidth=Math.max(1,sz*.08); g.strokeRect(sx-sz/2,y,sz,sz);
+  g.fillStyle='#a30'; g.font=`bold ${sz*.8}px sans-serif`; g.textAlign='center'; g.fillText('!',sx,y+sz*.78);
+}
+function drawObs(p,sx,gy){                                       // Verkehrshütchen
+  const sz=p*W*.09;
+  g.fillStyle='#333'; g.fillRect(sx-sz*.6,gy-sz*.12,sz*1.2,sz*.12);
+  g.fillStyle='#f70'; g.beginPath(); g.moveTo(sx-sz*.45,gy-sz*.12); g.lineTo(sx+sz*.45,gy-sz*.12); g.lineTo(sx,gy-sz*1.3); g.fill();
+  g.fillStyle='#fff'; g.fillRect(sx-sz*.25,gy-sz*.6,sz*.5,sz*.15);
+}
+function drawKart(){
+  const wob=(Math.abs(px)>1.05?Math.sin(tAnim*50)*3:0)+(shk>0?Math.sin(tAnim*60)*6:0);
+  g.save(); g.translate(W/2,430+wob); g.rotate(vx*.07);
+  g.fillStyle='#111'; g.fillRect(-66,-8,28,44); g.fillRect(38,-8,28,44);       // Hinterräder
+  g.fillStyle='#e22'; g.fillRect(-48,-28,96,46);                                 // Karosserie
+  g.fillStyle='#a11'; g.fillRect(-48,10,96,8);
+  g.fillStyle='#fc9'; g.beginPath(); g.arc(0,-40,20,0,7); g.fill();              // Kopf
+  g.fillStyle='#27d'; g.beginPath(); g.arc(0,-42,21,Math.PI,0); g.fill();        // Helm
+  g.restore();
+}
+function draw(){
+  g.fillStyle=sky; g.fillRect(0,0,W,H);
+  g.fillStyle='#fe8'; g.beginPath(); g.arc(wrapX(620-px*10-bgx*.3+100,W+200)-100,70,28,0,7); g.fill();   // Sonne
+  g.fillStyle='#fff'; for(let i=0;i<3;i++){const x=wrapX(i*330+tAnim*8-px*25-bgx*.5+100,W+200)-100;g.fillRect(x,40+i*22,90,16);g.fillRect(x+20,30+i*22,50,16);}
+  mountains('#8ab6a0',40,22,px*20+bgx,.007);                                     // Parallax: ferne Berge
+  mountains('#5f9a6a',18,14,px*45+bgx*2,.012);                                   // nähere Hügel
+
+  // Straße zeilenweise von unten (nah) nach oben (fern); Kurvenversatz wird entlang z aufsummiert
+  const offs=new Float32Array(N+1); let Lw=0, slope=0, zPrev=0;
+  for(let y=Hc-2;y>=H;y-=2){
+    const p=(y+1-H)/(Hc-H), z=D/p-D, dz=z-zPrev; zPrev=z;
+    const c=curveAt(dist+z)*CS;
+    Lw+=slope*dz+.5*c*dz*dz; slope+=c*dz;
+    const hw=p*RW, off=Lw*hw; offs[(y-H)/2]=Lw*p*RW;
+    const ph=Math.floor((z+dist)/14)&1, cx=W/2-px*hw+off;
+    g.fillStyle=ph?'#2a9a2a':'#33b033'; g.fillRect(0,y,W,2);                    // Gras
+    g.fillStyle=ph?'#d22':'#eee'; g.fillRect(cx-hw*1.1,y,hw*2.2,2);              // Randsteine
+    g.fillStyle=ph?'#666':'#707070'; g.fillRect(cx-hw,y,hw*2,2);                 // Fahrbahn
+    if(ph){g.fillStyle='#fff';const lw=hw*.012+.5;for(const l of [-1/3,1/3])g.fillRect(cx+l*hw-lw,y,lw*2,2);} // Spurtrenner
+  }
+
+  // Bäume, Würfel und Hindernisse von hinten nach vorn zeichnen
+  const list=[...trees.map(o=>[o.z,0,o]),...items.filter(c=>!c.hit).map(o=>[o.z,o.type==='cube'?1:2,o])].sort((a,b)=>b[0]-a[0]);
+  for(const [z,type,o] of list){
+    if(z<-8)continue;
+    const p=D/(z+D), gy=H+(Hc-H)*p;
+    const off=offs[Math.max(0,Math.min(N-1,Math.round((gy-H)/2)))];
+    const sx=W/2+(o.x-px)*p*RW+off;
+    g.globalAlpha=type?Math.min(1,(740-z)/120):1;                               // sanftes Einblenden
+    type===0?drawTree(o,p,sx,gy):type===1?drawCube(o,p,sx,gy):drawObs(p,sx,gy);
+    g.globalAlpha=1;
+  }
+  drawKart();
+  if(pop.t>0){                                                                   // "−50" nach Hindernis-Treffer
+    g.globalAlpha=Math.min(1,pop.t*2); g.fillStyle=pop.col||'#f33'; g.strokeStyle='#fff'; g.lineWidth=4;
+    g.font='bold 60px sans-serif'; g.textAlign='center';
+    g.strokeText(pop.txt,W/2,300-(1-pop.t)*40); g.fillText(pop.txt,W/2,300-(1-pop.t)*40); g.globalAlpha=1;
+  }
+  $('hl').textContent='❤'.repeat(Math.max(0,s.lives));
+  $('hs').textContent='Punkte: '+score();
+  $('hs').style.color=(state==='run'&&Math.abs(px)>1.05)?'#f55':'';              // rot, solange man auf dem Rasen Punkte verliert
+  $('ht').textContent='Zeit: '+s.t.toFixed(1)+' s';
+  $('hv').textContent='Level '+s.lvl;
+}
+
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(state==='run')update(dt);
+  draw(); requestAnimationFrame(loop);
+}
+
+/* ---------- Steuerung ---------- */
+addEventListener('keydown',e=>keys[e.key]=1);
+addEventListener('keyup',e=>keys[e.key]=0);
+[['bl','l'],['br','r']].forEach(([id,p])=>{
+  const b=$(id);
+  b.onpointerdown=e=>{pad[p]=1;e.preventDefault();};
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>pad[p]=0));
+});
+
+s={lives:3,bonus:0,pen:0,ok:0,lvl:1,t:0}; resetWorld();
+show('<b style="font-size:28px;color:#fc0">MathRacer</b><br>Lenke mit ◀ ▶ (oder Pfeiltasten). Fahre durch die ! -Würfel. Hütchen und Rasen kosten Punkte.<br>Alle 4 richtigen Antworten steigt das Level.',[['Start',newGame]]);
+requestAnimationFrame(loop);
+</script></body></html>

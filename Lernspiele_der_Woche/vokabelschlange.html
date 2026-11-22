@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vocab Snake – Englisch Klasse 5/6</title>
+<style>
+  :root { --ink:#1f2a44; --ok:#2e9e57; --bad:#d64545; --blue:#4f7cff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; height:100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(160deg, #e8f4ff, #fff4e0);
+    -webkit-user-select: none; user-select: none;
+    overscroll-behavior: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+  .hidden { display: none !important; }
+
+  #app {
+    height: 100vh; height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- Menü ---------- */
+  #menu { height: 100%; overflow-y: auto; padding: 16px; display:flex; flex-direction:column; align-items:center; }
+  #menu .inner { width: 100%; max-width: 560px; margin: auto; }
+  h1 { text-align:center; font-size: clamp(1.6rem, 6vw, 2.4rem); margin: 0 0 4px; }
+  .sub { text-align:center; margin: 0 0 18px; opacity:.8; }
+  .topic {
+    display:flex; align-items:center; gap:14px; width:100%; min-height:76px;
+    margin-bottom:12px; padding:12px 16px; text-align:left;
+    background:#fff; border:3px solid var(--c); border-radius:18px;
+    box-shadow: 0 4px 0 var(--c);
+  }
+  .topic:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--c); }
+  .ticon { font-size: 2.4rem; }
+  .tname { flex:1; font-weight:800; font-size:1.25rem; }
+  .tname small { display:block; font-weight:500; font-size:.85rem; opacity:.7; }
+  .tstars { font-size:1.4rem; color:#f5a623; letter-spacing:2px; }
+  .speed { display:flex; gap:10px; justify-content:center; margin: 18px 0 8px; }
+  .speed button { padding:10px 16px; min-height:48px; border-radius:14px; border:3px solid #cfd8ea; background:#fff; font-weight:700; }
+  .speed button[aria-pressed="true"] { border-color: var(--blue); background:#e6edff; }
+  .hint { text-align:center; font-size:.85rem; opacity:.7; margin-top:10px; }
+
+  /* ---------- Spielscreen (Hochformat) ---------- */
+  #game {
+    height:100%; width:100%; max-width:720px; margin:0 auto; padding:8px 10px;
+    display:grid; gap:8px;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas: "hud" "target" "board" "pad";
+  }
+  .hud { grid-area:hud; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .hud button { min-height:44px; min-width:44px; padding:6px 12px; border-radius:12px; border:2px solid #cfd8ea; background:#fff; font-weight:700; }
+  #lives { font-size:1.3rem; letter-spacing:2px; }
+  #progress { font-weight:800; }
+  .target {
+    grid-area:target; display:flex; align-items:center; gap:14px; justify-content:center;
+    background:#fff; border:3px solid var(--blue); border-radius:18px; padding:8px 14px; min-height:68px;
+    transition: background .2s, border-color .2s;
+  }
+  .target.ok  { background:#e3f8e8; border-color:var(--ok); }
+  .target.bad { background:#fde6e6; border-color:var(--bad); }
+  #tEmoji { font-size: 2.4rem; line-height:1; }
+  #tDe { font-size: clamp(1.2rem, 4.5vw, 1.7rem); font-weight:800; }
+  #tQ { font-size:.85rem; opacity:.7; display:block; font-weight:500; }
+
+  .boardwrap { grid-area:board; position:relative; min-height:0; min-width:0; touch-action:none; }
+  canvas {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,.2); touch-action:none;
+  }
+  #msg {
+    position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+    width:min(92%, 480px); padding:10px 14px; border-radius:14px; text-align:center;
+    background:rgba(31,42,68,.92); color:#fff; font-weight:600; line-height:1.4; z-index:2;
+  }
+  #msg.fb { background:#fff; color:var(--ink); border:3px solid var(--bad); }
+  #msg b { color: inherit; }
+
+  .pad {
+    grid-area:pad; display:grid; justify-content:center; gap:6px;
+    grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(2, 52px);
+  }
+  .pad button { border:none; border-radius:14px; background:var(--blue); color:#fff; font-size:1.5rem; box-shadow:0 3px 0 #3558c4; }
+  .pad button:active { transform: translateY(2px); box-shadow:none; }
+  .pad [data-dir="up"]    { grid-area:1 / 2; }
+  .pad [data-dir="left"]  { grid-area:2 / 1; }
+  .pad [data-dir="down"]  { grid-area:2 / 2; }
+  .pad [data-dir="right"] { grid-area:2 / 3; }
+
+  /* Querformat auf kleinen Displays: Spielfeld links, Bedienung rechts */
+  @media (orientation: landscape) and (max-height: 560px) {
+    #game {
+      max-width: none;
+      grid-template-columns: 1fr 250px; grid-template-rows: auto auto 1fr;
+      grid-template-areas: "board hud" "board target" "board pad";
+    }
+    .pad { align-content:center; }
+  }
+
+  /* ---------- Ergebnis ---------- */
+  #result { position:fixed; inset:0; background:rgba(31,42,68,.6); display:flex; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  #result .card { background:#fff; border-radius:22px; padding:22px; width:100%; max-width:440px; text-align:center; max-height:100%; overflow:auto; }
+  #result h2 { margin:0 0 6px; }
+  .bigstars { font-size:2.6rem; color:#f5a623; letter-spacing:4px; }
+  #result ul { text-align:left; margin:8px auto; padding-left:22px; }
+  .btns { display:flex; gap:10px; margin-top:14px; }
+  .btns button { flex:1; min-height:50px; border-radius:14px; border:3px solid var(--blue); background:#fff; font-weight:800; }
+  .btns button.primary { background:var(--blue); color:#fff; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Themenauswahl -->
+  <section id="menu">
+    <div class="inner">
+      <h1>🐍 Vocab Snake</h1>
+      <p class="sub">Steuere die Schlange und friss das richtige englische Wort! Beiß dich dabei nicht selbst.</p>
+      <div id="topics"></div>
+      <div class="speed" role="group" aria-label="Tempo">
+        <button data-speed="easy" aria-pressed="false">🐢 Easy</button>
+        <button data-speed="normal" aria-pressed="true">🐇 Normal</button>
+      </div>
+      <p class="hint">★★★ = ohne Fehler (falsches Wort oder Selbstbiss) · Das Spiel merkt sich deine beste Runde (im Browser).</p>
+    </div>
+  </section>
+
+  <!-- Spiel -->
+  <section id="game" class="hidden">
+    <div class="hud">
+      <button id="btnMenu" aria-label="Zurück zu den Themen">☰ Themen</button>
+      <span id="lives" aria-label="Leben"></span>
+      <span id="progress"></span>
+      <button id="btnPause" aria-label="Pause">⏸</button>
+    </div>
+    <div class="target" id="target">
+      <span id="tEmoji"></span>
+      <span><span id="tDe"></span><span id="tQ">Wie heißt das auf Englisch?</span></span>
+    </div>
+    <div class="boardwrap" id="wrap">
+      <canvas id="cv"></canvas>
+      <div id="msg" class="hidden"></div>
+    </div>
+    <div class="pad">
+      <button data-dir="up" aria-label="hoch">▲</button>
+      <button data-dir="left" aria-label="links">◀</button>
+      <button data-dir="down" aria-label="runter">▼</button>
+      <button data-dir="right" aria-label="rechts">▶</button>
+    </div>
+  </section>
+
+  <!-- Ergebnis -->
+  <div id="result" class="hidden"></div>
+</div>
+
+<script>
+/* =========================================================
+   VOKABELN – hier kann man Themen und Wörter ändern.
+   en = Englisch, de = Deutsch (mit Artikel), emoji = Bildhilfe
+   ========================================================= */
+const TOPICS = [
+  { id:'school', title:'School life', emoji:'🎒', color:'#4f7cff', words:[
+    { en:'pencil',      de:'der Bleistift',            emoji:'✏️' },
+    { en:'ruler',       de:'das Lineal',               emoji:'📏' },
+    { en:'school bag',  de:'die Schultasche',          emoji:'🎒' },
+    { en:'book',        de:'das Buch',                 emoji:'📖' },
+    { en:'teacher',     de:'der Lehrer / die Lehrerin',emoji:'🧑‍🏫' },
+    { en:'desk',        de:'der Schultisch',           emoji:'🪑' },
+    { en:'pencil case', de:'das Federmäppchen',        emoji:'👝' },
+    { en:'board',       de:'die Tafel',                emoji:'🪧' }
+  ]},
+  { id:'food', title:'Food & Drinks', emoji:'🍎', color:'#e8833a', words:[
+    { en:'apple',    de:'der Apfel',     emoji:'🍎' },
+    { en:'bread',    de:'das Brot',      emoji:'🍞' },
+    { en:'milk',     de:'die Milch',     emoji:'🥛' },
+    { en:'cheese',   de:'der Käse',      emoji:'🧀' },
+    { en:'sandwich', de:'das Sandwich',  emoji:'🥪' },
+    { en:'egg',      de:'das Ei',        emoji:'🥚' },
+    { en:'water',    de:'das Wasser',    emoji:'💧' },
+    { en:'banana',   de:'die Banane',    emoji:'🍌' }
+  ]},
+  { id:'pets', title:'Pets & Animals', emoji:'🐶', color:'#9b59d0', words:[
+    { en:'dog',        de:'der Hund',            emoji:'🐶' },
+    { en:'cat',        de:'die Katze',           emoji:'🐱' },
+    { en:'rabbit',     de:'das Kaninchen',       emoji:'🐰' },
+    { en:'hamster',    de:'der Hamster',         emoji:'🐹' },
+    { en:'fish',       de:'der Fisch',           emoji:'🐟' },
+    { en:'horse',      de:'das Pferd',           emoji:'🐴' },
+    { en:'bird',       de:'der Vogel',           emoji:'🐦' },
+    { en:'guinea pig', de:'das Meerschweinchen', emoji:'🐾' }
+  ]}
+];
+
+const G = 10;                                   // Spielfeld: G x G Felder (G muss gerade sein, siehe selfBite)
+const SPEEDS = { easy: 520, normal: 340 };      // Millisekunden pro Schritt
+const START_LIVES = 3;
+const STORE_KEY = 'vocabSnakeStars';
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = id => document.getElementById(id);
+const starStr = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function loadBest(){ try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch(e){ return {}; } }
+function saveBest(id, stars){
+  try { const b = loadBest(); if ((b[id]||0) < stars){ b[id] = stars; localStorage.setItem(STORE_KEY, JSON.stringify(b)); } } catch(e){ /* z. B. privater Modus */ }
+}
+function wrapDist(a, b){ const d = Math.abs(a - b); return Math.min(d, G - d); }
+
+/* ---------- Zustand ---------- */
+let S = null;               // aktuelles Spiel (null = Menü)
+let speedKey = 'normal';
+let size = 0, dpr = 1;
+const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap');
+
+/* ---------- Menü ---------- */
+function buildMenu(){
+  const best = loadBest(), box = $('topics');
+  box.innerHTML = '';
+  TOPICS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'topic';
+    b.style.setProperty('--c', t.color);
+    b.innerHTML = `<span class="ticon">${t.emoji}</span>
+      <span class="tname">${t.title}<small>${t.words.length} Wörter</small></span>
+      <span class="tstars">${starStr(best[t.id] || 0)}</span>`;
+    b.addEventListener('click', () => startGame(t));
+    box.appendChild(b);
+  });
+}
+document.querySelectorAll('.speed button').forEach(b => {
+  b.addEventListener('click', () => {
+    speedKey = b.dataset.speed;
+    document.querySelectorAll('.speed button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  });
+});
+
+/* ---------- Spielstart / Ende ---------- */
+function startGame(topic){
+  if (S) clearTimeout(S.timer);
+  S = {
+    topic, total: topic.words.length,
+    queue: shuffle(topic.words.slice()),   // noch offene Wörter (ohne aktuelles)
+    current: null, options: [],
+    snake: [{x:4,y:5},{x:3,y:5},{x:2,y:5}],  // Kopf = Index 0
+    dir: {x:1,y:0}, dirQueue: [],
+    lives: START_LIVES, done: 0, mistakes: 0, missed: new Set(),
+    status: 'ready',                         // ready | running | paused | feedback | over
+    biteOnly: false,                         // true = Feedback nach Selbstbiss (Aufgabe bleibt gleich)
+    timer: null, stepMs: SPEEDS[speedKey], acc: 0
+  };
+  $('menu').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  $('result').classList.add('hidden');
+  $('btnPause').textContent = '⏸';
+  nextTarget();
+  updateHud();
+  setMsg('👆 Wische, tippe einen Pfeil oder nutze die Pfeiltasten – dann geht es los!<br>Achtung: Beiß dich nicht selbst!');
+  requestAnimationFrame(resize);
+}
+
+function leaveGame(){
+  if (S) clearTimeout(S.timer);
+  S = null;
+  $('result').classList.add('hidden');
+  $('game').classList.add('hidden');
+  $('menu').classList.remove('hidden');
+  buildMenu();
+}
+
+function endGame(won){
+  S.status = 'over';
+  hideMsg();
+  const stars = won ? Math.max(1, 3 - S.mistakes) : 0;
+  if (won) saveBest(S.topic.id, stars);
+  const title = won ? (stars === 3 ? 'Perfekt! 🎉' : 'Geschafft! 👏') : 'Keine Leben mehr 💔';
+  const sub = won ? `Du hast alle ${S.total} Wörter gefressen.`
+                  : `Du hast ${S.done} von ${S.total} Wörtern geschafft. Versuch es nochmal!`;
+  const missed = Array.from(S.missed);
+  const list = missed.length
+    ? `<p><b>Zum Wiederholen:</b></p><ul>${missed.map(w => `<li>${w.emoji} ${w.en} = ${w.de}</li>`).join('')}</ul>` : '';
+  const r = $('result');
+  r.innerHTML = `<div class="card"><h2>${title}</h2><div class="bigstars">${starStr(stars)}</div>
+    <p>${sub}</p>${list}
+    <div class="btns"><button id="again" class="primary">🔁 Nochmal</button><button id="toMenu">📚 Themen</button></div></div>`;
+  r.classList.remove('hidden');
+  const topic = S.topic;
+  $('again').addEventListener('click', () => startGame(topic));
+  $('toMenu').addEventListener('click', leaveGame);
+}
+
+/* ---------- Aufgaben & Antwortfelder ---------- */
+function nextTarget(){
+  S.current = S.queue.shift();
+  $('tEmoji').textContent = S.current.emoji;
+  $('tDe').textContent = S.current.de;
+  spawnOptions();
+}
+
+function spawnOptions(){
+  // 1 richtige + 2 falsche Antworten aus demselben Thema
+  const others = shuffle(S.topic.words.filter(w => w !== S.current)).slice(0, 2);
+  const words = shuffle([S.current, ...others]);
+  const head = S.snake[0];
+  const placed = [];
+  const free = (x, y, strict) => {
+    if (S.snake.some(s => s.x === x && s.y === y)) return false;
+    if (strict && wrapDist(x, head.x) + wrapDist(y, head.y) < 3) return false;   // nicht direkt vor der Nase
+    // Texte sollen sich nicht überlappen: gleiche Zeile -> mind. 3 Felder Abstand
+    return placed.every(p => Math.abs(p.x - x) >= 3 || Math.abs(p.y - y) >= 2);
+  };
+  words.forEach(w => {
+    let x, y, tries = 0;
+    do { x = Math.floor(Math.random()*G); y = Math.floor(Math.random()*G); tries++; }
+    while (!free(x, y, tries < 150) && tries < 400);
+    placed.push({ x, y, word: w, correct: w === S.current, reveal: false });
+  });
+  S.options = placed;
+}
+
+/* ---------- Steuerung ---------- */
+function setDir(dx, dy){
+  if (!S || S.status === 'over') return;
+  const last = S.dirQueue.length ? S.dirQueue[S.dirQueue.length-1] : S.dir;
+  if (dx === last.x && dy === last.y) return;          // keine Änderung
+  if (dx === -last.x && dy === -last.y) return;        // keine 180°-Wendung
+  if (S.dirQueue.length < 2) S.dirQueue.push({x:dx, y:dy});
+  if (S.status === 'ready') startRunning();
+}
+function startRunning(){ S.status = 'running'; S.acc = 0; hideMsg(); }
+
+function togglePause(){
+  if (!S) return;
+  if (S.status === 'running'){ S.status = 'paused'; $('btnPause').textContent = '▶'; setMsg('⏸ Pause – drücke ▶ zum Weiterspielen.'); }
+  else if (S.status === 'paused'){ S.status = 'running'; S.acc = 0; $('btnPause').textContent = '⏸'; hideMsg(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (!S || $('game').classList.contains('hidden')) return;
+  const map = { ArrowUp:[0,-1], w:[0,-1], W:[0,-1], ArrowDown:[0,1], s:[0,1], S:[0,1],
+                ArrowLeft:[-1,0], a:[-1,0], A:[-1,0], ArrowRight:[1,0], d:[1,0], D:[1,0] };
+  if (map[e.key]){ e.preventDefault(); setDir(...map[e.key]); }
+  else if (e.key === ' ' || e.key === 'p' || e.key === 'P'){ e.preventDefault(); togglePause(); }
+});
+
+document.querySelectorAll('.pad button').forEach(b => {
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[b.dataset.dir];
+    setDir(...d);
+  });
+});
+
+// Wischen auf dem Spielfeld (Touch, Stift und Maus)
+let sx = 0, sy = 0, tracking = false, moved = false;
+wrap.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; tracking = true; moved = false; });
+wrap.addEventListener('pointermove', e => {
+  if (!tracking) return;
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+  moved = true;
+  if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0); else setDir(0, dy > 0 ? 1 : -1);
+  sx = e.clientX; sy = e.clientY;                      // weiter wischen ohne Absetzen
+});
+const endTrack = () => {
+  // Einfaches Antippen startet das Spiel (Schlange läuft nach rechts)
+  if (tracking && !moved && S && S.status === 'ready') startRunning();
+  tracking = false;
+};
+wrap.addEventListener('pointerup', endTrack);
+wrap.addEventListener('pointercancel', () => { tracking = false; });
+
+$('btnMenu').addEventListener('click', leaveGame);
+$('btnPause').addEventListener('click', togglePause);
+
+/* ---------- Spiellogik ---------- */
+function step(){
+  if (S.dirQueue.length) S.dir = S.dirQueue.shift();
+  const h = S.snake[0];
+  // Wände: die Schlange kommt auf der gegenüberliegenden Seite wieder heraus
+  const nh = { x:(h.x + S.dir.x + G) % G, y:(h.y + S.dir.y + G) % G };
+
+  // NEU: Selbstbiss prüfen. Die Schwanzspitze zählt nicht, denn sie rückt in diesem
+  // Schritt weiter (die Schlange wächst nur beim Fressen eines richtigen Wortes,
+  // und dort liegt nie ein Körperteil).
+  const body = S.snake.slice(0, -1);
+  const biteIdx = body.findIndex(s => s.x === nh.x && s.y === nh.y);
+  if (biteIdx !== -1){ selfBite(biteIdx); return; }
+
+  const hit = S.options.find(o => o.x === nh.x && o.y === nh.y);
+  S.snake.unshift(nh);
+  if (!hit){ S.snake.pop(); return; }
+
+  if (hit.correct){
+    S.done++;                                  // Schlange wächst: kein pop()
+    flashTarget('ok');
+    updateHud();
+    if (S.queue.length === 0) endGame(true); else nextTarget();
+  } else {
+    S.snake.pop();
+    wrongAnswer(hit);
+  }
+}
+
+/* NEU: Selbstbiss = Fehler. Leben weg, Schlange ab der Bissstelle gekürzt.
+   Aufgabe und Antwortfelder bleiben, das Wort kommt nicht erneut dran (kein Vokabelfehler).
+   Hinweis zur Länge: Da G gerade ist, liegt eine gebissene Stelle immer bei einem
+   ungeraden Index >= 3. Die Schlange behält also mindestens 3 Segmente. */
+function selfBite(idx){
+  S.lives--; S.mistakes++;
+  S.snake = S.snake.slice(0, idx);     // Segmente ab der Bissstelle fallen weg
+  S.dirQueue = [];                     // angefangene Wisch-Befehle verwerfen
+  S.biteOnly = true;
+  S.status = 'feedback';
+  flashTarget('bad');
+  updateHud();
+  setMsg('🐍 <b>Autsch!</b> Du hast dich selbst gebissen.<br>Dein Schwanz ist kürzer geworden. Pass auf deinen Körper auf!', true);
+  const g = S;
+  S.timer = setTimeout(() => { if (S === g) continueAfterFeedback(); }, 2200);
+}
+
+function wrongAnswer(hit){
+  S.lives--; S.mistakes++;
+  S.biteOnly = false;
+  S.missed.add(S.current);
+  // Wort kommt nach 2 weiteren Wörtern nochmal dran
+  S.queue.splice(Math.min(2, S.queue.length), 0, S.current);
+  S.options = S.options.filter(o => o !== hit);
+  S.options.forEach(o => { if (o.correct) o.reveal = true; });  // richtige Lösung markieren
+  S.status = 'feedback';
+  flashTarget('bad');
+  updateHud();
+  setMsg(`✖ <b>${hit.word.en}</b> heißt ${hit.word.de}.<br>✔ ${S.current.de} = <b>${S.current.en}</b>`, true);
+  const g = S;
+  S.timer = setTimeout(() => { if (S === g) continueAfterFeedback(); }, 2400);
+}
+
+function continueAfterFeedback(){
+  if (!S || S.status !== 'feedback') return;
+  clearTimeout(S.timer);
+  hideMsg();
+  if (S.lives <= 0){ endGame(false); return; }
+  if (!S.biteOnly) nextTarget();       // nach Selbstbiss bleibt die Aufgabe gleich
+  S.biteOnly = false;
+  S.status = 'running'; S.acc = 0;
+}
+$('msg').addEventListener('click', continueAfterFeedback);   // Antippen überspringt die Anzeige
+
+/* ---------- Anzeige ---------- */
+function updateHud(){
+  $('lives').textContent = '❤️'.repeat(S.lives) + '🖤'.repeat(START_LIVES - S.lives);
+  $('progress').textContent = `${S.done}/${S.total}`;
+}
+function flashTarget(cls){
+  const t = $('target');
+  t.classList.remove('ok','bad'); void t.offsetWidth; t.classList.add(cls);
+  setTimeout(() => t.classList.remove(cls), 600);
+}
+function setMsg(html, feedback){
+  const m = $('msg'); m.innerHTML = html; m.className = feedback ? 'fb' : '';
+}
+function hideMsg(){ $('msg').className = 'hidden'; }
+
+/* ---------- Zeichnen ---------- */
+function resize(){
+  const s = Math.floor(Math.min(wrap.clientWidth, wrap.clientHeight));
+  if (s <= 0) return;                                   // Spielscreen ist gerade versteckt
+  size = s; dpr = window.devicePixelRatio || 1;
+  cv.style.width = s + 'px'; cv.style.height = s + 'px';
+  cv.width = Math.round(s * dpr); cv.height = Math.round(s * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+if ('ResizeObserver' in window) new ResizeObserver(resize).observe(wrap);
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+function rr(x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+}
+
+function draw(){
+  if (!S || size <= 0) return;
+  const cell = size / G;
+  ctx.clearRect(0, 0, size, size);
+
+  // Hintergrund (Schachbrett)
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++){
+    ctx.fillStyle = (x + y) % 2 ? '#d8eedd' : '#e6f5e9';
+    ctx.fillRect(x*cell, y*cell, cell + 0.5, cell + 0.5);
+  }
+
+  // Schlange (vom Schwanz zum Kopf, damit der Kopf oben liegt)
+  // Nach einem Selbstbiss färbt sich die Schlange während der Anzeige rot.
+  const hurt = S.status === 'feedback' && S.biteOnly;
+  const pad = cell * 0.07;
+  for (let i = S.snake.length - 1; i >= 0; i--){
+    const p = S.snake[i];
+    ctx.fillStyle = hurt ? (i === 0 ? '#b83232' : '#e06666')
+                         : (i === 0 ? '#1d7f46' : (i % 2 ? '#34b36b' : '#2ea35f'));
+    rr(p.x*cell + pad, p.y*cell + pad, cell - 2*pad, cell - 2*pad, cell * 0.3);
+    ctx.fill();
+  }
+  // Augen
+  const hd = S.snake[0], cx = (hd.x + .5) * cell, cy = (hd.y + .5) * cell;
+  const fx = S.dir.x, fy = S.dir.y, px = -fy, py = fx;   // vorwärts / seitlich
+  [-1, 1].forEach(sd => {
+    const ex = cx + fx*cell*.15 + px*sd*cell*.2, ey = cy + fy*cell*.15 + py*sd*cell*.2;
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex, ey, cell*.12, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1f2a44'; ctx.beginPath(); ctx.arc(ex + fx*cell*.04, ey + fy*cell*.04, cell*.06, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Antwortfelder (Wörter) – liegen über der Schlange, damit sie lesbar bleiben
+  const fs = Math.max(12, Math.round(cell * 0.36));
+  ctx.font = `700 ${fs}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  S.options.forEach(o => {
+    const w = ctx.measureText(o.word.en).width + fs * 1.1, h = fs * 1.9;
+    let x = (o.x + .5) * cell;
+    x = Math.min(Math.max(x, w/2 + 2), size - w/2 - 2);
+    const y = (o.y + .5) * cell;
+    ctx.fillStyle = o.reveal ? '#e3f8e8' : '#fff';
+    ctx.strokeStyle = o.reveal ? '#2e9e57' : '#4f7cff';
+    ctx.lineWidth = o.reveal ? 4 : 3;
+    rr(x - w/2, y - h/2, w, h, h/2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1f2a44';
+    ctx.fillText(o.word.en, x, y + 1);
+  });
+}
+
+/* ---------- Game Loop ---------- */
+let last = 0;
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt = Math.min(t - (last || t), 100);   // Deckel gegen Sprünge nach Tab-Wechsel
+  last = t;
+  if (S && S.status === 'running'){
+    S.acc += dt;
+    while (S.acc >= S.stepMs){
+      S.acc -= S.stepMs;
+      step();
+      if (S.status !== 'running'){ S.acc = 0; break; }
+    }
+  }
+  draw();
+}
+
+buildMenu();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
